@@ -107,17 +107,21 @@ This workflow does not make a fixed assignment based on “the cheaper model” 
 
 Tiny tasks do not need a Worker merely to use one. The task contract decides whether routing is appropriate - not a one-off comparison, personal-account usage, or an external price leaderboard.
 
-## Benchmark and cost boundaries
+## Benchmark result
 
-[`benchmarks/`](benchmarks/) contains the separate case catalog, rerun protocol, raw [CSV](benchmarks/pilot-2026-08-09.csv), and [benchmark report](benchmarks/report-2026-08-09.md). Those materials make one specific routing hypothesis reviewable. The README does not repeat an individual run's result or treat it as a performance or price promise.
+DeepSeek and Luna Max both passed two same-contract comparisons: a source-pinned read-only evidence task and a one-file mechanical patch. The objective, scope, acceptance, and verification were identical for each comparison.
 
-| Record | Definition | Does not represent |
-|---|---|---|
-| Acceptance | Whether a fixed task contract passed | A general quality ranking |
-| Worker wall time | Time from sending a packet to its terminal state | End-to-end project duration |
-| Generated tokens | Native `output_tokens + reasoning_tokens`, when the client provides them | Input or total tokens, or a dollar bill |
+| Metric | DeepSeek evidence lane | Luna Max |
+|---|---:|---:|
+| Same-contract tasks passed | 2 / 2 | 2 / 2 |
+| Worker wall time | **88 seconds** | 235 seconds |
+| Generated tokens | **5,081** | 16,708 |
 
-Normal delegation does not continuously record token usage or estimate a price. Only when a user explicitly asks for a cost assessment or a benchmark rerun does Sol record the worker, model and effort, start/end time, terminal state, and acceptance. Missing native usage remains unknown; do not infer a bill or retain full conversations, source code, or secrets.
+On these two tasks, the DeepSeek Worker used **62.6%** less wall time and **69.6%** fewer generated tokens. This is the practical benefit of separating fixed evidence and mechanical work from semantic execution.
+
+[![Dual-worker paired benchmark](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
+
+The result covers only these two source-pinned, mechanically verifiable tasks. `Generated tokens = output_tokens + reasoning_tokens`; it is a workload and cost proxy within the same client, not a dollar bill, input or total-token accounting, or a general quality ranking. The case catalog, rerun protocol, raw [CSV](benchmarks/pilot-2026-08-09.csv), and [full report](benchmarks/report-2026-08-09.md) are in [`benchmarks/`](benchmarks/).
 
 ## Constrain the working method, not the development process
 

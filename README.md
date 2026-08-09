@@ -107,17 +107,21 @@ Return format: Facts; command result; files changed; risks.
 
 因此，极小任务也不必为了使用 Worker 而交接。路由是否合适由任务合同决定，而不是一次模型比较、个人账户用量或外部价格榜。
 
-## 基准与成本边界
+## 基准结果
 
-[`benchmarks/`](benchmarks/) 保存独立的案例目录、重跑协议、原始 [CSV](benchmarks/pilot-2026-08-09.csv) 和[基准报告](benchmarks/report-2026-08-09.md)。这些材料用于复核一项具体路由假设；README 不复述其中某次执行的结果，也不把它们当作性能或价格承诺。
+在两组同合同对照中，DeepSeek 与 Luna Max 都通过验收。两组任务分别是固定来源的只读证据查找和单文件机械补丁；目标、范围、验收和验证完全相同。
 
-| 记录项 | 口径 | 不代表 |
-|---|---|---|
-| 验收结果 | 固定任务合同是否通过 | 通用质量排名 |
-| Worker 墙钟 | 发出任务包到终态的时间 | 整个项目的端到端耗时 |
-| 生成 token | 客户端原生提供时的 `output_tokens + reasoning_tokens` | 输入或总 token，也不是美元账单 |
+| 指标 | DeepSeek evidence lane | Luna Max |
+|---|---:|---:|
+| 通过的同合同任务 | 2 / 2 | 2 / 2 |
+| Worker 墙钟 | **88 秒** | 235 秒 |
+| 生成 token | **5,081** | 16,708 |
 
-正常委派不常驻统计 token 或估算价格。只有用户明确要求成本评估或重跑基准时，Sol 才记录 worker、模型与推理强度、开始与结束时间、终态和验收；原生 usage 缺失时标为未知，不从自述推断账单，也不保存完整对话、源码或密钥。
+在这两个任务上，DeepSeek 的 Worker 墙钟减少 **62.6%**，生成 token 减少 **69.6%**。这正是工作流把固定证据和机械任务与语义执行分开的实际收益。
+
+[![双 Worker 首轮配对基准](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
+
+结果只覆盖这两组固定来源、可机械验收的任务。`生成 token = output_tokens + reasoning_tokens`，用于同一客户端内的工作量与成本代理，不是美元账单、输入或总 token，也不是通用质量排名。案例、重跑协议、原始 [CSV](benchmarks/pilot-2026-08-09.csv) 和[完整报告](benchmarks/report-2026-08-09.md)都在 [`benchmarks/`](benchmarks/)。
 
 ## 不规定流程，只约束工作方式
 
