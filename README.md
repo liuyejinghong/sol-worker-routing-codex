@@ -21,7 +21,7 @@
 - **按真正瓶颈分流**：Sol 保留目标和最终判断；DeepSeek V4 Flash 用速度、低成本和 1M 上下文处理大输入与强调吞吐的有界工作；Luna Max 用更长时间完成需要深度推理的任务。简单任务不再消耗过多时间和 token，深度任务也不会因为暂时沉默而被提前终止。
 - **少一些流程，多一些有效证据**：不把 TDD、spec-first、固定审查轮次或更多工具当成目标。默认只做一次聚焦合同检查和一次真实链路结果核对；新增验证之前，先确认它保护了什么具体风险，以及失败是否真的会改变决策。
 
-Sol 始终留在主线程，负责理解目标、拆分任务、检查证据和交付结果。两个 Worker 只接收边界明确、能够独立完成并验收的任务。
+Sol 始终留在主线程，负责理解目标、判断是否适合交接、检查证据和交付结果。Luna 接收 Sol 拆出的独立任务包；DeepSeek 当前通过原生继承模式接收完整的用户请求，下面会说明这项临时边界。
 
 | 执行者 | 最适合的工作 | 典型例子 |
 |---|---|---|
@@ -50,7 +50,7 @@ Sol 始终留在主线程，负责理解目标、拆分任务、检查证据和�
 flowchart LR
     U["用户目标"] --> S["Sol<br/>理解、拆分、验收、整合"]
     S -->|"一步即可完成"| D["Sol 直接完成"]
-    S -->|"大上下文、强调吞吐"| DS["DeepSeek V4 Flash<br/>快速通用 Worker"]
+    S -->|"完整用户请求；大上下文、强调吞吐"| DS["DeepSeek V4 Flash<br/>原生继承 Worker"]
     S -->|"隐蔽耦合、深度推理"| L["Luna Max<br/>深度 Worker"]
     D --> O["最终结果"]
     DS --> S
@@ -78,9 +78,9 @@ DeepSeek 官方模型目录把 V4 Flash 的上下文窗口声明为 **1,048,576 
 | 多语言与依赖数据 | 缺失 key、占位符差异、版本匹配和受影响文件候选 |
 | 边界清楚的多文件任务 | 语义分析、实现修改和指定验收结果 |
 
-联网搜索可以直接交给 DeepSeek 的原生 `web_search`：**Sol 先规定问题、日期范围、来源质量和验收；DeepSeek 负责有界发现、阅读大量页面并返回精确 URL、事实和证据限制；Sol 最后复核决定性的一手来源、处理冲突并写出结论。** 固定来源的任务仍可直接交 URL 或本地材料，但不再要求 Sol 先把每个页面抓取落地。这样才能真正利用 Flash 的速度、成本和 1M 上下文处理高网页吞吐。
+联网搜索可以直接交给 DeepSeek 的原生 `web_search`。当前前提是：**用户这一轮已经把问题、时间范围、来源要求和交付标准说完整。** DeepSeek 继承这一轮请求，负责有界发现、阅读大量页面并返回精确 URL、事实和证据限制；Sol 最后复核决定性的一手来源、处理冲突并写出结论。如果必须先由 Sol 私下发现来源、缩小范围或补充一份新任务包，就由 Sol 继续完成，或交给 Luna，不能假装这些新指令已经传给 DeepSeek。
 
-并发也不再固定卡在两个。Sol 先派两个 Worker 验证任务合同；首批结果合格、剩余材料确实相互独立且只读时，可以自动把 DeepSeek 扩到**最多四个**。涉及写入的 DeepSeek 和 Luna Max 同时最多两个，且所有权必须完全分离；同一写入面仍按顺序执行。
+并发上限不是固定数字，但当前不能把一条用户请求偷偷切成四份再发给 DeepSeek，因为跨 provider 的动态任务包仍会丢失。通常一轮用户请求最多启用一个继承式 DeepSeek Worker；Luna 可以在任务包与写入所有权完全独立时并行，任何共享写入面仍按顺序执行。等 Codex 修复动态交接后，再恢复 DeepSeek 的隐藏分片扩容。
 
 ## 让长推理真正完成
 
@@ -119,11 +119,17 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 安装 Agent 会检查现有官方 provider 和凭据，安装官方模型目录，再分别核对一个真实工具结果和一次原生网页搜索。已经可用的配置会被保留，不会因为安装流程无法看到某个特定凭据后端而重建。OpenCode Go 暂不接入；等它直接支持 Codex Responses 与工具合同后再重新评估，而不是继续维护 Chat Completions 转换层。
 
-配置文件存在、文本请求成功或 provider 自述都不能单独替代子代理验收。当前 Codex 已有一个[公开问题](https://github.com/openai/codex/issues/35932)：非 OpenAI custom-provider 子代理可能启动成功却丢失动态任务包。Skill 会在确认这个症状后改走官方直连的前台 fallback，让同一个 DeepSeek V4 Flash 以 `max` 推理完成任务；它不需要 LiteLLM 或常驻后台进程。原生子代理卡片仍然是客户端 blocker，fallback 的成功不会被写成原生 handoff 已修复。
+### 当前的原生子代理边界
+
+DeepSeek 仍然是 **Codex 原生子代理**，不是 API runner、`codex exec` 进程或单独开的任务。当前 Codex 的跨 provider 动态任务交接存在已公开的问题：子代理能够启动，但 OpenAI 父代理发出的加密任务包可能在非 OpenAI 子代理中丢失（见 [#36586](https://github.com/openai/codex/issues/36586)、[#36376](https://github.com/openai/codex/issues/36376) 和 [#35932](https://github.com/openai/codex/issues/35932)）。
+
+本项目采用经过实测的临时方案：只有当**当前用户请求本身就是完整的 DeepSeek 任务**时，Sol 才以 `fork_turns="1"` 创建 `deepseek_worker`。子代理会继承当前轮次和上下文，拥有真实的 Codex 子代理生命周期、官方 DeepSeek 模型以及原生工具和联网能力。它目前不能可靠接收 `spawn_agent.message` 中更窄的私有任务包，也不能依赖后续 `send_message` 或 `followup_task`。需要重新拆分、改变目标、限定写入范围或补充后续指令时，任务留给 Sol 或 Luna。
+
+这不是对上游缺陷的修复，而是保住原生子代理语义的条件式可用路径。验收记录见[官方直连验收](benchmarks/official-deepseek-acceptance-2026-08-10.md)。
 
 安装流程会自动完成这些工作：
 
-1. 安装 `deepseek_worker`、`luna_worker`、`sol-worker-routing` Skill 和 DeepSeek 官方直连 fallback。
+1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
 2. 检查官方 DeepSeek 上游、模型目录和凭据，并用一个答案明确的有界任务验证真实路由。
 3. 路由可用时完整保留现有配置，不因为某个环境变量或凭据后端不可见而重装。
 4. 只有真实调用失败时，才根据当前 Codex 客户端与操作系统支持的方式修复 provider 和认证。
@@ -140,19 +146,19 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 查清这个固定提交里配置项的默认值和调用位置，每条结论给出行号。
 ```
 
-来源和验收都固定时，适合交给 DeepSeek。
+这条用户请求本身已经包含来源边界和验收，适合由 DeepSeek 原生继承。
 
 ```text
 让 DeepSeek 搜索这次研究真正相关的一组网页，优先一手来源，返回精确 URL、观点、数据、日期和证据限制；最后复核决定性来源并给我结论。
 ```
 
-这是高上下文联网任务的标准分工：Sol 规定研究合同，DeepSeek 原生搜索、阅读与压缩，Sol 复核与综合。
+这条请求本身就是完整研究合同，DeepSeek 可以原生继承、搜索、阅读与压缩，再由 Sol 复核与综合。
 
 ```text
 读取整个服务目录和迁移说明，找出所有旧配置调用点，在指定文件内完成迁移，并运行目标测试。
 ```
 
-材料很多，但范围、写入所有权和验收明确时，适合交给 DeepSeek。
+材料很多，而且用户请求已经写清范围、写入所有权和验收时，适合由 DeepSeek 原生继承。
 
 ```text
 排查这个偶发并发泄漏。它跨越调度、取消和资源释放路径，需要解释隐藏耦合，完成最小修复并证明不会破坏重入语义。
@@ -181,19 +187,18 @@ State-based stop condition:
 Return format:
 ```
 
-这不是额外的用户流程，而是 Sol 在后台给 Worker 的最小上下文。任务信息不足时，Worker 应返回明确的 blocker，而不是自行扩大范围。
+这不是额外的用户流程，而是 Sol 给 Luna 以及未来修复动态交接后的 DeepSeek 使用的最小上下文。当前 DeepSeek 不能可靠接收这份私有任务包，只能继承用户当前请求；信息不足时由 Sol 补齐或改走 Luna，而不是让 Worker 自行扩大范围。
 
 </details>
 
 ## 安装边界与项目文件
 
-仓库安装器只写入两个 Agent 配置、一个 Skill 和它的 DeepSeek 前台 runner；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
+仓库安装器只写入两个 Agent 配置和一个 Skill；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
-~/.agents/skills/sol-worker-routing/scripts/run-deepseek-worker.sh
 ```
 
 | 文件 | 用途 |
@@ -202,10 +207,11 @@ Return format:
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
 | [`agents/`](agents/) | DeepSeek 官方 API 与 Luna Max 的 Worker 配置 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
-| [`skills/sol-worker-routing/scripts/run-deepseek-worker.sh`](skills/sol-worker-routing/scripts/run-deepseek-worker.sh) | 原生任务交接失效时的官方直连前台 fallback |
 | [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
 Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理。凭据不得写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
+
+如果本机曾安装过开发分支中的前台 DeepSeek runner，安装器只会在文件与该已知预发布版本完全一致时移除它；任何自行修改或符号链接都会在写入前停止，不会盲删。
 
 这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
 
@@ -215,4 +221,5 @@ Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实�
 - [Codex Skills 与发现路径](https://developers.openai.com/codex/skills)
 - [Codex 指令发现顺序](https://developers.openai.com/codex/guides/agents-md)
 - [DeepSeek 官方 Codex 集成](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/)
+- [Codex 跨 provider 子代理任务丢失 #36586](https://github.com/openai/codex/issues/36586)
 - [Oh My OpenAgent 编排参考](https://github.com/code-yeongyu/oh-my-openagent)

@@ -2,7 +2,7 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
-## Unreleased
+## 0.7.0 - 2026-08-10
 
 1. 增加状态驱动的 Worker 租约：单次等待结束、沉默、耗时较长或尚未写入文件均不得作为中断理由，并禁止对同一 turn 重复中断
 2. 将 DeepSeek V4 Flash 从只读证据通道扩展为快速 1M 上下文通用 Worker，可承担有界语义分析、排障和多文件实现
@@ -12,7 +12,9 @@
 6. 记录当前 Codex custom-provider 子代理会丢失动态任务包的真实 blocker，禁止用直连成功冒充命名 Worker 可用
 7. 第三方 MCP namespace 在官方 DeepSeek 路径下未通过控制验收；原生联网不依赖 MCP，不为无关工具恢复新增桥接层
 8. DeepSeek Worker 默认推理档位调整为 `max`
-9. 为 Codex custom-provider 子代理任务丢失增加官方直连前台 fallback；不使用 LiteLLM 或常驻后台进程，并保留原生子代理卡片仍未修复的边界
+9. 在 Codex 修复跨 provider 加密任务交接前，DeepSeek 仅使用 `fork_turns="1"` 的原生继承模式；只接受当前用户请求本身就是完整任务的场景
+10. 明确禁止把 API 请求、`codex exec`、桥接进程或独立任务描述为 DeepSeek 子代理
+11. 删除预发布的前台 DeepSeek runner；安装器仅按已知摘要安全清理其精确副本，并把符号链接冲突提前到任何写入之前
 
 ## 0.6.0 - 2026-08-09
 

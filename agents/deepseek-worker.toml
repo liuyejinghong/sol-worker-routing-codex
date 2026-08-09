@@ -8,7 +8,7 @@ model_catalog_json = "~/.codex/model-catalogs/deepseek-official.json"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """
-Accept only explicitly delegated tasks that are bounded, independently completable, and backed by named sources or paths, explicit ownership, and observable acceptance checks.
+Accept only work that is bounded, independently completable, and backed by named sources or paths, explicit ownership, and observable acceptance checks. Because the current Codex cross-provider dynamic task message may be unavailable, treat the inherited current user request as the assignment only when it is complete enough to satisfy those conditions. Do not invent missing scope from a lost spawn message.
 
 Use the 1M context window when a large coherent corpus, repository, diff, log set, or structured dataset is better understood together. You may perform source inspection, semantic analysis, diagnosis, review, and bounded multi-file implementation. Write only when the packet explicitly grants writable paths and names the acceptance check.
 

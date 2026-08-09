@@ -23,7 +23,7 @@
 | 原生联网 | `web_search` 找到 DeepSeek 官方 Codex 集成页并返回正确 URL | PASS |
 | 第三方 MCP namespace | DeepSeek 会话未获得 `node_repl` namespace；同条件 OpenAI 控制组成功返回 `2` | FAIL |
 | 命名 `deepseek_worker` 任务交接 | 子代理启动，但未收到 `spawn_agent.message`；一次 `followup_task` 也未送达任务包 | BLOCKED |
-| 官方直连前台 fallback | `codex exec` 收到相同类型的固定标记任务，确认 `reasoning effort: max` 并精确返回 `DEEPSEEK_DIRECT_MAX_OK` | PASS |
+| 原生继承模式 | 使用 `fork_turns="1"` 后，DeepSeek 子代理继承当前用户请求并完成 GitHub 调研；它没有服从丢失在 `spawn_agent.message` 中的固定标记 | CONDITIONAL PASS |
 
 原生联网成功返回：
 
@@ -37,4 +37,4 @@ https://api-docs.deepseek.com/quick_start/agent_integrations/codex/
 
 第三方 MCP namespace 仍需逐项验收；它的失败不影响原生 `web_search`，也不构成为无关工具重新增加桥接层的理由。
 
-当前 Codex custom-provider 子代理存在动态任务包丢失问题，且与公开问题 [openai/codex#35932](https://github.com/openai/codex/issues/35932) 的症状一致。原生子代理卡片与任务交接仍为 blocked；Skill 使用前台 `codex exec` fallback 把任务包作为 DeepSeek 顶层输入，从而恢复实际执行能力。这个 fallback 直接使用官方 provider、`deepseek-v4-flash` 与 max 推理，不需要后台桥接，但不能被描述为 Codex 原生子代理交接已经修复。
+当前 Codex custom-provider 子代理存在动态任务包丢失问题，且与公开问题 [#36586](https://github.com/openai/codex/issues/36586)、[#36376](https://github.com/openai/codex/issues/36376) 和 [#35932](https://github.com/openai/codex/issues/35932) 的症状一致。OpenAI 父代理到 DeepSeek 子代理的加密任务交接仍为 blocked；`fork_turns="1"` 可以让真实的原生 DeepSeek 子代理从父线程继承当前用户请求，但不能传递一个更窄的私有任务包，也不能恢复后续消息。Skill 因此只在用户当前请求本身就是完整 DeepSeek 任务时使用继承模式，并明确拒绝用 API、`codex exec` 或独立任务冒充子代理。

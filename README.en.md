@@ -21,7 +21,7 @@
 - **Route by the actual bottleneck**: Sol keeps the objective and final judgment; DeepSeek V4 Flash uses its speed, low cost, and 1M context for large-input and throughput-sensitive bounded work; Luna Max gets the time needed for depth-first reasoning. Simple work stops consuming excess tokens, while deep work is not killed merely because it stays silent for a while.
 - **Less process, more useful evidence**: TDD, spec-first work, fixed review rounds, and extra tooling are never goals by themselves. The default is one focused contract check plus one real-path result check. Add validation only when it protects a concrete risk and failure would change a decision.
 
-Sol stays in the lead to understand the goal, decompose the work, inspect evidence, and deliver the result. Both Workers receive only bounded tasks they can complete and verify independently.
+Sol stays in the lead to understand the goal, decide whether a handoff fits, inspect evidence, and deliver the result. Luna receives independent packets composed by Sol. DeepSeek currently receives the complete user request through native turn inheritance, a temporary boundary explained below.
 
 | Executor | Best fit | Typical examples |
 |---|---|---|
@@ -50,7 +50,7 @@ For the same accepted results, DeepSeek used **147 fewer seconds** and **11,627 
 flowchart LR
     U["User objective"] --> S["Sol<br/>understand, decompose, accept, integrate"]
     S -->|"one focused action"| D["Sol executes directly"]
-    S -->|"large context, throughput"| DS["DeepSeek V4 Flash<br/>fast general Worker"]
+    S -->|"complete user request; large context, throughput"| DS["DeepSeek V4 Flash<br/>native inherited Worker"]
     S -->|"hidden coupling, deep reasoning"| L["Luna Max<br/>depth-first Worker"]
     D --> O["Final result"]
     DS --> S
@@ -78,9 +78,9 @@ The official DeepSeek model catalog declares a **1,048,576-token** context windo
 | Localization and dependency data | Missing keys, placeholder differences, version matches, and affected-file candidates |
 | Clearly bounded multi-file work | Semantic analysis, implementation changes, and named acceptance results |
 
-Web research can go directly through DeepSeek's native `web_search`: **Sol defines the question, date range, source-quality bar, and acceptance; DeepSeek performs bounded discovery, reads many pages, and returns exact URLs, facts, and evidence limits; Sol rechecks the decisive primary sources, resolves conflicts, and writes the conclusion.** Fixed-source work may still provide URLs or local artifacts directly, but Sol no longer has to materialize every page before delegation. This is where Flash's speed, price, and 1M context can absorb high webpage throughput.
+Web research can go directly through DeepSeek's native `web_search` when **the current user turn already contains the complete question, date range, source requirements, and deliverable**. DeepSeek inherits that turn, performs bounded discovery, reads many pages, and returns exact URLs, facts, and evidence limits; Sol rechecks decisive primary sources, resolves conflicts, and writes the conclusion. If Sol must first discover sources, narrow the scope, or add a private packet, Sol keeps the work or uses Luna rather than pretending those new instructions reached DeepSeek.
 
-Concurrency is adaptive rather than permanently capped at two. Sol starts with two Workers to validate the packet contract. If the first results pass and the remaining material is genuinely independent and read-only, Sol may expand DeepSeek to **four active Workers**. Write-bearing DeepSeek and Luna work stays at two or fewer with fully disjoint ownership; work touching the same write surface remains sequential.
+Concurrency is not a permanent fixed number, but the current client cannot secretly split one user request into four DeepSeek packets because cross-provider dynamic payloads are still lost. A normal user turn therefore uses at most one inherited DeepSeek Worker. Luna may run in parallel when packets and write ownership are genuinely independent; any shared write surface stays sequential. Hidden DeepSeek sharding can return after Codex repairs dynamic handoff.
 
 ## Let deep reasoning finish
 
@@ -120,11 +120,17 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 The installation Agent checks the existing official provider and credential, installs the official model catalog, then verifies one real tool result and one native web-search result. A working configuration is preserved instead of being rebuilt because the installer cannot see one particular credential backend. OpenCode Go is intentionally unsupported until it exposes the Codex Responses and tool contract directly; the project no longer maintains a Chat Completions conversion layer.
 
-A profile file, text response, or provider self-report does not replace subagent acceptance. Codex currently has a [public issue](https://github.com/openai/codex/issues/35932) in which non-OpenAI custom-provider children may start but lose their dynamic task payload. After confirming that symptom, the Skill uses a foreground direct-official fallback so the same DeepSeek V4 Flash model can complete the packet at `max` reasoning without LiteLLM or a resident process. The native subagent card remains a client blocker; fallback success is not presented as a native handoff fix.
+### Current native-subagent boundary
+
+DeepSeek remains a **native Codex subagent**, not an API runner, a `codex exec` process, or a separate first-class task. Codex currently has public cross-provider handoff bugs: a child can start while the encrypted dynamic task payload from an OpenAI parent is lost in a non-OpenAI child (see [#36586](https://github.com/openai/codex/issues/36586), [#36376](https://github.com/openai/codex/issues/36376), and [#35932](https://github.com/openai/codex/issues/35932)).
+
+This project uses a tested conditional workaround. Sol creates `deepseek_worker` with `fork_turns="1"` only when **the current user request is already the complete DeepSeek assignment**. The child inherits the current turn and context and retains a real Codex subagent lifecycle, the official DeepSeek model, native tools, and native web search. It cannot yet reliably receive a narrower private packet in `spawn_agent.message`, nor can the workflow depend on later `send_message` or `followup_task` calls. Work that needs decomposition, a changed objective, restricted write ownership, or later instructions stays with Sol or goes to Luna.
+
+This does not claim to repair the upstream bug. It preserves native-subagent semantics within a clearly conditional route. See the [official-route acceptance record](benchmarks/official-deepseek-acceptance-2026-08-10.md).
 
 The installation flow handles all of the following:
 
-1. Install `deepseek_worker`, `luna_worker`, the `sol-worker-routing` Skill, and its direct-official DeepSeek fallback.
+1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
 2. Inspect the official DeepSeek upstream, model catalog, and credential, then verify them with an obvious bounded task.
 3. Preserve a working setup instead of reinstalling it because one environment variable or credential backend is not visible.
 4. Only after a real invocation fails, repair the provider and authentication using mechanisms supported by the current Codex client and operating system.
@@ -141,7 +147,7 @@ You do not need to select a Worker manually. Describe the objective normally and
 At this pinned commit, find the setting's default and every call site. Cite a line for each claim.
 ```
 
-With fixed sources and acceptance, this fits DeepSeek.
+This user request itself contains the source boundary and acceptance, so DeepSeek can inherit it natively.
 
 ```text
 Have DeepSeek search for the small set of webpages that actually matters, prefer primary sources,
@@ -149,14 +155,14 @@ and return exact URLs, claims, figures, dates, and evidence limitations;
 then verify the decisive original sources and give me the conclusion.
 ```
 
-That is the standard split for context-heavy web work: Sol defines the research contract, DeepSeek searches, reads, and reduces natively, and Sol verifies and synthesizes.
+This request is already a complete research contract. DeepSeek can inherit, search, read, and reduce it natively; Sol then verifies and synthesizes.
 
 ```text
 Read the full service directory and migration note, find every legacy configuration call site,
 complete the migration inside the assigned files, and run the target tests.
 ```
 
-This fits DeepSeek when the material is large but scope, write ownership, and acceptance are explicit.
+This fits native DeepSeek inheritance when the user request itself makes scope, write ownership, and acceptance explicit.
 
 ```text
 Diagnose this intermittent concurrency leak across scheduling, cancellation, and cleanup.
@@ -186,19 +192,18 @@ State-based stop condition:
 Return format:
 ```
 
-This is not another user-facing process. It is the minimum context Sol provides behind the scenes. When the packet is insufficient, a Worker returns an exact blocker instead of widening its own scope.
+This is not another user-facing process. It is the minimum packet for Luna and for DeepSeek after dynamic handoff is repaired. Current DeepSeek cannot reliably receive this private packet and inherits only the current user request; Sol fills gaps or selects Luna instead of letting a Worker widen scope.
 
 </details>
 
 ## Installation boundaries and project files
 
-The repository installer writes only two Agent profiles, one Skill, and its foreground DeepSeek runner. It can safely upgrade the known previous Skill release; any other different content stops the install before it is overwritten:
+The repository installer writes only two Agent profiles and one Skill. It can safely upgrade the known previous Skill release; any other different content stops the install before it is overwritten:
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
-~/.agents/skills/sol-worker-routing/scripts/run-deepseek-worker.sh
 ```
 
 | File | Purpose |
@@ -207,10 +212,11 @@ The repository installer writes only two Agent profiles, one Skill, and its fore
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
 | [`agents/`](agents/) | Official DeepSeek API and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |
-| [`skills/sol-worker-routing/scripts/run-deepseek-worker.sh`](skills/sol-worker-routing/scripts/run-deepseek-worker.sh) | Foreground direct-official fallback when native task handoff fails |
 | [`benchmarks/`](benchmarks/) | Benchmark cases, raw data, and the full report |
 
 The provider is not a fixed repository-installer output. The installation Agent judges the existing setup by a real route first and only repairs a confirmed failure using mechanisms supported by the current client and host. Credentials are never written to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.
+
+If a development-branch foreground DeepSeek runner was installed previously, the installer removes it only when it exactly matches that known pre-release file. Modified content or a symbolic link stops the installation before any write.
 
 This is a community workflow, not an OpenAI preset. A profile file or Worker self-report is not route proof by itself; use client-exposed subagent information and the accepted task result.
 
@@ -220,4 +226,5 @@ This is a community workflow, not an OpenAI preset. A profile file or Worker sel
 - [Codex Skills and discovery paths](https://developers.openai.com/codex/skills)
 - [Codex instruction discovery](https://developers.openai.com/codex/guides/agents-md)
 - [Official DeepSeek Codex integration](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/)
+- [Codex cross-provider subagent task loss #36586](https://github.com/openai/codex/issues/36586)
 - [Oh My OpenAgent orchestration reference](https://github.com/code-yeongyu/oh-my-openagent)
