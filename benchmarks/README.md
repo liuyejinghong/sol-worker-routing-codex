@@ -32,3 +32,5 @@ B1 和 B3 有意使用 DeepSeek 与 Luna 的同合同对照；B2 和 B4 用来�
 5. 对照只在路由决策会改变时运行。出现共享状态、歧义、或写入重叠时，不并行。
 
 当前首轮结果见 [`report-2026-08-09.md`](report-2026-08-09.md)，原始汇总行见 [`pilot-2026-08-09.csv`](pilot-2026-08-09.csv)。
+
+OpenCode Go 的超过 256K 真实上下文验证见 [`long-context-acceptance-2026-08-10.md`](long-context-acceptance-2026-08-10.md)。

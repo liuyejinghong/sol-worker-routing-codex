@@ -72,7 +72,10 @@ installer_legacy_skill_dirs=(
 )
 
 if [[ "${installer_requested_deepseek_provider}" == "opencode-go" ]] || \
-   { [[ "${installer_requested_deepseek_provider}" == "auto" ]] && [[ -f "${installer_deepseek_agent_target}" ]] && cmp -s "${installer_opencode_go_agent_source}" "${installer_deepseek_agent_target}"; }; then
+   { [[ "${installer_requested_deepseek_provider}" == "auto" ]] && \
+     [[ -f "${installer_deepseek_agent_target}" ]] && \
+     { cmp -s "${installer_opencode_go_agent_source}" "${installer_deepseek_agent_target}" || \
+       grep -Fqx 'model_provider = "opencode-go"' "${installer_deepseek_agent_target}"; }; }; then
   installer_deepseek_agent_source="${installer_opencode_go_agent_source}"
   installer_effective_deepseek_provider="opencode-go"
 else
@@ -91,9 +94,12 @@ installer_known_current_skill_digests=(
   "b1eb8288545514c4fcaeb74b37f9a69ea129e5f3bb2fb91eaadee97ac85baec5"
   "468a66d39f195d736e087bd5a93b3dc596bc9196a7b847cc0681a8dcf9c8b864"
   "1565fc570b2f211f78fb76fe2b17bd2f8bb6a6ad9ac71827479681c3208e41f2"
+  "87394123a55ec8d592b6626529f7fc38ca9065fdd8d7a10b2a02451e91f17cda"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
+  "e295a298df1fa9b1e3edfea0fd85f64d41ec72c0c7239b518aee93a72ced9dbb"
+  "d6425cc47e1b68ea3074b8b9c3e22066a53b9bc300dcc6c80e0acdf940af0cc9"
 )
 installer_conflict=0
 

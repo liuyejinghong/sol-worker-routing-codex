@@ -4,7 +4,9 @@ This repository is designed to be handed directly to a Codex Agent for installat
 
 ## Objective
 
-Install the checked-in `deepseek_worker` and `luna_worker` custom agents plus the `sol-worker-routing` skill, configure the selected DeepSeek upstream and credential, and preserve every unrelated Codex setting. The supported DeepSeek upstreams are the official API and OpenCode Go; OpenCode Go is limited to `deepseek-v4-flash`.
+Install the checked-in `deepseek_worker` and `luna_worker` custom agents plus the `sol-worker-routing` skill, configure the selected DeepSeek upstream and credential, and preserve every unrelated Codex setting. The supported DeepSeek upstreams are the official API and OpenCode Go; both are limited to `deepseek-v4-flash` with a 1,000,000-token model context window.
+
+Installation, implementation, and verification authorization do not authorize commit, push, merge, tag, release, deployment, or another external mutation. Obtain separate explicit user authorization for each publishing or deployment step.
 
 ## Authorized changes
 
@@ -36,6 +38,6 @@ After installation, confirm that all three installed files exactly match the sel
 
 Tell the user that `personalization.md` does not activate itself. They must manually copy one complete language block into Codex App Settings → Personalization → Custom Instructions when they want App-level personalization. Provider setup is still the installing Agent's responsibility: inspect the effective route, preserve a working setup, and repair only a proven failure using the current environment's supported mechanism. Do not send the user away to discover the TOML format or installation procedure.
 
-After installation, run one bounded, read-only DeepSeek task with an obvious answer and inspect the client-exposed subagent result plus task acceptance. If the current task cannot discover a newly added custom agent, ask the user only to start a new task; the `sol-worker-routing` Skill must then perform the route probe before treating the lane as available. A full App restart is a fallback only when a new task still cannot discover the agent.
+After installation, run one bounded DeepSeek task with an obvious answer and inspect the client-exposed subagent result plus task acceptance. Confirm that the selected Worker profile declares the 1,000,000-token model context window. After a new provider setup or major Codex client change, use one proportionate long-context probe to confirm the effective route rather than treating TOML as proof. If the current task cannot discover a newly added custom agent, ask the user only to start a new task; the `sol-worker-routing` Skill must then perform the route probe before treating the lane as available. A full App restart is a fallback only when a new task still cannot discover the agent.
 
 Report installed paths, provider and credential status without secret material, the route-probe result, conflicts if any, and the remaining manual personalization step.

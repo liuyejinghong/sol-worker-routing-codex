@@ -18,7 +18,7 @@
 `Sol Worker Routing` does more than add two subagents to Codex. It combines three ideas in one working method:
 
 - **First principles**: establish the final objective, invariant facts, minimum acceptance, and authorization boundary first. When patches, abstractions, or unrelated process accumulate, return to the root cause and simplify.
-- **Route by work shape**: Sol keeps the objective and final judgment; DeepSeek handles source-pinned, mechanically checkable work; Luna Max handles bounded tasks that need semantic understanding. Simple tasks stop consuming excess time and tokens, while ambiguous problems are not scattered across subagents too early.
+- **Route by the actual bottleneck**: Sol keeps the objective and final judgment; DeepSeek V4 Flash uses its speed, low cost, and 1M context for large-input and throughput-sensitive bounded work; Luna Max gets the time needed for depth-first reasoning. Simple work stops consuming excess tokens, while deep work is not killed merely because it stays silent for a while.
 - **Less process, more useful evidence**: TDD, spec-first work, fixed review rounds, and extra tooling are never goals by themselves. The default is one focused contract check plus one real-path result check. Add validation only when it protects a concrete risk and failure would change a decision.
 
 Sol stays in the lead to understand the goal, decompose the work, inspect evidence, and deliver the result. Both Workers receive only bounded tasks they can complete and verify independently.
@@ -26,8 +26,8 @@ Sol stays in the lead to understand the goal, decompose the work, inspect eviden
 | Executor | Best fit | Typical examples |
 |---|---|---|
 | **Sol** | Tiny tasks, ambiguity, architecture, and final decisions | Decide whether to change something, integrate results, make a one-step edit |
-| **DeepSeek** | Fixed sources, large inputs, mechanically checkable results | Read fixed webpages or papers, find code facts, organize logs and structured data |
-| **Luna Max** | Bounded work that still needs semantic understanding | Code review, module analysis, isolated implementation, focused diagnosis |
+| **DeepSeek V4 Flash** | Large context and bounded work where speed or throughput matters | Repository-wide analysis, long documents, bulk diagnosis, medium-complexity implementation, structured data |
+| **Luna Max** | Hidden coupling, subtle semantics, and long-horizon deep reasoning | Difficult code review, complex diagnosis, critical implementation, cross-module semantic judgment |
 
 ## What does the same work cost?
 
@@ -40,7 +40,7 @@ We gave DeepSeek and Luna Max the same two evidence/mechanical tasks. Objectives
 | **DeepSeek** | 2 / 2 | **88 seconds** | **5,081** |
 | Luna Max | 2 / 2 | 235 seconds | 16,708 |
 
-For the same accepted results, DeepSeek used **147 fewer seconds** and **11,627 fewer generated tokens** - a **62.6%** reduction in time and a **69.6%** reduction in generated tokens. That is the practical benefit of routing source-pinned, mechanically checkable work away from Luna Max.
+For the same accepted results, DeepSeek used **147 fewer seconds** and **11,627 fewer generated tokens** - a **62.6%** reduction in time and a **69.6%** reduction in generated tokens. This shows that DeepSeek should not be treated as a cheap search utility: with a clear contract, it can finish real code work faster. It does not prove that both models are interchangeable on every long-horizon task, so routing still follows context, throughput, and reasoning depth.
 
 > This is a measured result from two paired tasks, not a general model ranking. Generated tokens are `output tokens + reasoning tokens`, a workload comparison within the same client rather than a dollar bill or total-token count. See the [full report](benchmarks/report-2026-08-09.md) for methods, task-level results, and limitations, or inspect the raw [CSV](benchmarks/pilot-2026-08-09.csv). [`render_readme_chart.py`](benchmarks/render_readme_chart.py) generates the chart directly from that CSV.
 
@@ -50,8 +50,8 @@ For the same accepted results, DeepSeek used **147 fewer seconds** and **11,627 
 flowchart LR
     U["User objective"] --> S["Sol<br/>understand, decompose, accept, integrate"]
     S -->|"one focused action"| D["Sol executes directly"]
-    S -->|"fixed material, reducible evidence"| DS["DeepSeek"]
-    S -->|"bounded semantic understanding"| L["Luna Max"]
+    S -->|"large context, throughput"| DS["DeepSeek V4 Flash<br/>fast general Worker"]
+    S -->|"hidden coupling, deep reasoning"| L["Luna Max<br/>depth-first Worker"]
     D --> O["Final result"]
     DS --> S
     L --> S
@@ -62,22 +62,31 @@ DeepSeek and Luna Max are peer leaf Workers, not stages in a hierarchy. Sol owns
 
 The workflow also follows one deliberately simple rule: if Sol can finish the task in one focused action, it does not delegate merely to use a subagent. Handoffs cost time and tokens too.
 
-## Where routing pays off most
+## Where DeepSeek's 1M context pays off
 
-DeepSeek's biggest advantage is not merely finding one line of code cheaply. It is reducing **a large body of fixed material into a small, checkable evidence set**:
+DeepSeek V4 Flash is a fast, low-cost general Worker rather than an evidence-only extractor. Its 1M context can keep a large repository, long document set, or batch of records coherent instead of fragmenting the material early to fit a smaller window.
 
-| Input material | What DeepSeek returns to Sol |
+The OpenCode Go route has passed a real request beyond 256K: the direct bridge reported **260,093 input tokens**, and the same input returned both boundary markers through Codex end to end. This proves that the current route crosses 256K, not that the full 1M limit has been saturated. See the [long-context acceptance record](benchmarks/long-context-acceptance-2026-08-10.md) for the method and limitation.
+
+| Input or task | What DeepSeek can return to Sol |
 |---|---|
 | Fixed webpages, papers, or long documents | Evidence table with source, date, core fact, support, and limitations |
-| Large repositories or diffs | Call sites, configuration references, repeated patterns, and mechanical contract checks |
+| Large repositories or diffs | Architecture relationships, call sites, configuration references, repeated patterns, and review candidates |
 | CI output, runtime logs, or incident records | Error classes, frequency, and timeline |
 | Issues, pull requests, or release records | Deduplicated items, module groups, and status lists |
 | CSV, JSON, or API snapshots | Reconciliation results, missing records, and anomaly candidates |
 | Localization and dependency data | Missing keys, placeholder differences, version matches, and affected-file candidates |
+| Clearly bounded multi-file work | Semantic analysis, implementation changes, and named acceptance results |
 
 Web research uses one clear handoff: **Sol performs the minimum useful search and source judgment, then fixes a URL list or saves page text; DeepSeek reads only that fixed material and compresses the evidence; Sol checks the primary sources, resolves conflicts, and writes the conclusion.** This keeps large webpage contexts out of repeated premium-model passes without outsourcing open-ended discovery or source credibility.
 
-Concurrency is adaptive rather than permanently capped at two. Sol starts with two Workers to validate the packet contract. If the first results pass and the remaining material is genuinely independent and read-only, Sol may expand DeepSeek to **four active Workers**. Luna Max stays at two or fewer with fully disjoint ownership; work touching the same write surface remains sequential and normally uses one Luna Worker.
+Concurrency is adaptive rather than permanently capped at two. Sol starts with two Workers to validate the packet contract. If the first results pass and the remaining material is genuinely independent and read-only, Sol may expand DeepSeek to **four active Workers**. Write-bearing DeepSeek and Luna work stays at two or fewer with fully disjoint ownership; work touching the same write surface remains sequential.
+
+## Let deep reasoning finish
+
+A completed wait poll means only that no final result arrived during that polling window. It does not mean the Worker failed. Sol must not interrupt Luna because it is silent, slower than expected, has not written files yet, or because the packet looks larger after dispatch. When progress matters, Sol asks for a non-terminating checkpoint and keeps waiting.
+
+Interruption is reserved for user cancellation, obsolete work, observed scope or authorization violations, repeated concrete execution errors, or resource deadlock that blocks the parent task. Packet sizing happens before dispatch; a deep Worker must not spend reasoning tokens only to be killed and repackaged as a cost-control reaction.
 
 ## Install
 
@@ -87,7 +96,7 @@ The easiest path is to give this prompt directly to Codex:
 Install https://github.com/liuyejinghong/sol-worker-routing-codex for my Codex user profile.
 Read and follow the repository AGENTS.md first. Preserve my existing Codex configuration
 and do not overwrite conflicts. Have the installer inspect the existing DeepSeek provider
-and run a real read-only route first. Preserve it when it works; only repair a proven failure
+and run a real route first. Preserve it when it works; only repair a proven failure
 with a mechanism supported by the current Codex client and host. Do not send me away to discover the schema.
 ```
 
@@ -101,7 +110,7 @@ bash scripts/install.sh
 
 ### Choose a DeepSeek upstream
 
-DeepSeek Worker supports two configurations. Both use the same `deepseek_worker` name and routing rules, and both currently expose only **DeepSeek V4 Flash**. The difference is where usage is billed and whether a local protocol bridge is required.
+DeepSeek Worker supports two configurations. Both use the same `deepseek_worker` name, **1M model context**, and routing rules, and both currently expose only **DeepSeek V4 Flash**. The difference is where usage is billed and whether a local protocol bridge is required.
 
 | Configuration | Best for | Request path | Runtime requirement |
 |---|---|---|---|
@@ -132,7 +141,7 @@ For either configuration, the installation Agent owns the matching provider setu
 The installation flow handles all of the following:
 
 1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
-2. Inspect the selected DeepSeek upstream and verify it with an obvious read-only task.
+2. Inspect the selected DeepSeek upstream and verify it with an obvious bounded task.
 3. Preserve a working setup instead of reinstalling it because one environment variable or credential backend is not visible.
 4. Only after a real invocation fails, repair the provider and authentication using mechanisms supported by the current Codex client and operating system.
 
@@ -158,10 +167,18 @@ and evidence limitations from those pages; then verify the primary sources and g
 That is the standard split for context-heavy web work: Sol searches and selects, DeepSeek reads and reduces, and Sol verifies and synthesizes.
 
 ```text
-Review cancellation and resource cleanup in this module. Report only issues you can locate and reproduce.
+Read the full service directory and migration note, find every legacy configuration call site,
+complete the migration inside the assigned files, and run the target tests.
 ```
 
-This fits Luna Max when the scope is clear but cross-file semantic understanding is required.
+This fits DeepSeek when the material is large but scope, write ownership, and acceptance are explicit.
+
+```text
+Diagnose this intermittent concurrency leak across scheduling, cancellation, and cleanup.
+Explain the hidden coupling, make the smallest fix, and prove re-entry semantics remain intact.
+```
+
+This fits Luna Max because depth and subtle semantics matter more than latency. Once dispatched, it should be allowed to finish instead of being interrupted for a quiet period.
 
 ```text
 Decide whether this requirement justifies changing the architecture, then recommend the final approach.
@@ -180,7 +197,7 @@ Relevant facts / source pins:
 Non-goals:
 Acceptance criteria:
 Verification:
-Stop condition:
+State-based stop condition:
 Return format:
 ```
 
