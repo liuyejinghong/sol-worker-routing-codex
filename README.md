@@ -1,147 +1,196 @@
 <div align="center">
-  <h1>Sol + Luna Codex Workflow</h1>
-  <p><strong>Sol 管理目标与判断，Luna Max 执行边界清晰的子任务。</strong></p>
-  <p>一套可直接交给 Codex 安装的主从代理工作流，并用第一性原理限制过度编程和过度测试。</p>
+  <h1>Sol Worker Routing for Codex</h1>
+  <p><strong>把合适的任务，交给合适的 Worker。</strong></p>
+  <p>先从第一性原理收敛问题，再按任务分流，只保留足够完成判断的流程与证据。</p>
   <p>
     <strong>简体中文</strong> ·
     <a href="README.en.md">English</a> ·
     <a href="CHANGELOG.md">更新日志</a>
   </p>
   <p>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-luna-codex-workflow?label=version" alt="版本"></a>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-luna-codex-workflow?style=flat" alt="GitHub Stars"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-worker-routing-codex?label=version" alt="版本"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-worker-routing-codex?style=flat" alt="GitHub Stars"></a>
   </p>
 </div>
 
-## 快速开始
+## 它解决什么问题
 
-推荐把仓库地址直接交给 Codex。仓库中的 `AGENTS.md` 会限制安装范围，安装器遇到不同内容时不会覆盖。
+`Sol Worker Routing` 不只是给 Codex 增加两个子代理。它把三件事放进同一套工作方式里：
 
-```text
-请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-luna-codex-workflow 。
-先读取并遵守仓库里的 AGENTS.md，保留现有 Codex 配置，遇到冲突不要覆盖。
-安装后验证 luna_worker 和 sol-luna-workflow Skill，并告诉我还需要完成哪些人工步骤。
-```
+- **第一性原理**：先明确最终目标、不可变事实、最小验收标准和授权边界，出现重复补丁、额外抽象或无关流程时，回到根因重新简化。
+- **按任务分流**：Sol 保留目标和最终判断；DeepSeek 处理来源固定、可机械验收的工作；Luna Max 处理需要语义理解的有界任务。简单任务不再消耗过多时间和 token，模糊问题也不会被过早分散给多个子代理。
+- **少一些流程，多一些有效证据**：不把 TDD、spec-first、固定审查轮次或更多工具当成目标。默认只做一次聚焦合同检查和一次真实链路结果核对；新增验证之前，先确认它保护了什么具体风险，以及失败是否真的会改变决策。
 
-也可以自己安装：
+Sol 始终留在主线程，负责理解目标、拆分任务、检查证据和交付结果。两个 Worker 只接收边界明确、能够独立完成并验收的任务。
 
-```bash
-git clone https://github.com/liuyejinghong/sol-luna-codex-workflow.git
-cd sol-luna-codex-workflow
-bash scripts/install.sh
-```
+| 执行者 | 最适合的工作 | 典型例子 |
+|---|---|---|
+| **Sol** | 极小任务、模糊问题、架构与最终决策 | 判断是否该改、整合多个结果、直接完成一步修改 |
+| **DeepSeek** | 来源固定、偏阅读、可机械验收 | 查找代码事实、整理证据、完成单文件机械补丁 |
+| **Luna Max** | 有明确边界、但需要语义理解 | 代码审查、模块分析、独立实现、聚焦排障 |
 
-安装器会写入：
+## 同类任务，成本差多少
 
-```text
-~/.codex/agents/luna-worker.toml
-~/.agents/skills/sol-luna-workflow/SKILL.md
-```
+我们把相同的两项证据/机械任务分别交给 DeepSeek 和 Luna Max。任务目标、范围、验收命令和停止条件完全一致，两个 Worker 都通过了 **2/2** 项验收。
 
-最后打开 Codex App 的“设置 → 个性化 → 自定义指令”，从 [`personalization.md`](personalization.md) 复制一个完整语言块。这个步骤需要人工完成；GitHub 文件和 `AGENTS.md` 不能替代 App 的账号级个性化设置。通常不需要重启，建议新建一个任务验证工作流。
+[![同类任务成本对比](docs/assets/benchmark-cost-comparison-zh-2026-08-09.png)](benchmarks/report-2026-08-09.md)
 
-## 工作方式
+| Worker | 通过任务 | 总耗时 | 生成 token |
+|---|---:|---:|---:|
+| **DeepSeek** | 2 / 2 | **88 秒** | **5,081** |
+| Luna Max | 2 / 2 | 235 秒 | 16,708 |
+
+在相同验收结果下，DeepSeek 少用了 **147 秒**和 **11,627 个生成 token**，对应耗时减少 **62.6%**、生成 token 减少 **69.6%**。这说明把来源固定、可机械验收的工作从 Luna Max 分流出去，能够显著降低这一类任务的 Worker 成本。
+
+> 这是两项配对任务的实测结果，不是通用模型排名。生成 token 为 `output token + reasoning token`，用于比较同一客户端内的工作量，不等同于美元账单或总 token。复现方法、逐项结果和样本限制见[完整报告](benchmarks/report-2026-08-09.md)，原始数据见 [CSV](benchmarks/pilot-2026-08-09.csv)。图表由 [`render_readme_chart.py`](benchmarks/render_readme_chart.py) 直接从 CSV 生成。
+
+## 路由是怎样工作的
 
 ```mermaid
 flowchart LR
-    U["用户目标"] --> S["Sol<br/>理解目标、划定边界、拆分任务"]
-    S -->|"边界清晰的执行包"| L["Luna Max<br/>审查、分析、实现、排查"]
-    L -->|"结果与验证证据"| S
-    S --> O["检查、整合、最终交付"]
+    U["用户目标"] --> S["Sol<br/>理解、拆分、验收、整合"]
+    S -->|"一步即可完成"| D["Sol 直接完成"]
+    S -->|"证据固定、机械可验收"| DS["DeepSeek"]
+    S -->|"需要有界语义理解"| L["Luna Max"]
+    D --> O["最终结果"]
+    DS --> S
+    L --> S
+    S --> O
 ```
 
-Sol 始终留在主线程，保留完整目标和跨任务上下文。它负责处理模糊性、权衡、架构判断、任务拆分和最终验收。Luna Max 只接收能够独立完成、客观检查、写入范围明确的执行包，不重新定义整体目标，也不自行扩大范围。
+DeepSeek 与 Luna Max 是并列的叶子 Worker，不是前后级关系。Sol 只在任务可以独立完成、范围不重叠时才并行；存在共享状态、顺序依赖或同一写入面时，任务会按顺序执行。
 
-用户不需要每次显式要求“使用子代理”。任务满足委派合同时，Sol 可以直接调用 `luna_worker`；任务很小、交接成本更高时，则由 Sol 直接完成。
+这个分工还有一个简单但重要的原则：如果 Sol 一步就能完成，就不为“使用子代理”而交接。交接本身也会消耗时间和 token。
 
-| 适合交给 Luna Max | 应留在 Sol |
-|---|---|
-| 只读代码审查 | 模糊或持续变化的需求 |
-| 单个模块分析 | 全局架构和优先级判断 |
-| 写入范围独立的实现 | 共享状态或重叠写入 |
-| 聚焦测试排查 | 跨任务整合与最终结论 |
-| 结构化信息整理 | 发版、账号和外部副作用 |
+## 安装
 
-并行只是可选手段。只有子任务相互独立、上下文可以压缩、写入范围不重叠时才并行；否则按顺序执行。
-
-## Luna 收到什么
-
-任务拆分由 Sol 完成，Luna 不负责发现自己的工作范围。一个执行包至少包含：
+最简单的方式，是把下面这段话直接交给 Codex：
 
 ```text
-目标：
-范围和拥有的路径：
-必要事实：
-不做事项：
-验收标准：
-验证方式：
-停止条件：
-回传格式：
+请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-worker-routing-codex 。
+先读取并遵守仓库里的 AGENTS.md，保留现有 Codex 配置，遇到冲突不要覆盖。
+由安装流程检查现有 DeepSeek provider，并先执行一次真实的只读路由。
+能用就完整保留；真实调用失败时再按当前 Codex 和系统支持的方式修复，不要让我自己研究配置格式。
 ```
 
-如果执行包不足以完成任务，Luna 应返回准确的阻塞点。Sol 根据整体目标检查证据、解决冲突并整合输出。
+也可以在终端安装：
 
-## 为什么选择 Sol + Luna Max
+```bash
+git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
+cd sol-worker-routing-codex
+bash scripts/install.sh
+```
 
-主线程和 worker 承担的是两类工作。Sol 的上下文用于保存目标、约束和判断；Luna 的上下文只包含当前执行包。这样可以减少主线程污染，也能避免小模型在模糊任务中重新解释需求。
+### 选择 DeepSeek 的接入方式
 
-[DeepSWE v1.1 成本榜](https://deepswe.datacurve.ai/)提供了一份选择 Luna Max 的公开参考。在 2026-07-25 的榜单快照中，Luna Max 得分 67%，单任务平均报告成本为 0.61 美元，呈现了较好的成本与效果平衡。这只是单项基准证据，不代表 Luna Max 在所有任务上都绝对最优。
+DeepSeek Worker 支持两种配置。两种配置使用同一个 `deepseek_worker` 名称和相同的路由规则，当前都只接入 **DeepSeek V4 Flash**；区别只在于请求从哪里计费，以及是否需要本机协议桥接。
 
-[![DeepSWE v1.1 成本榜中的 Luna Max](docs/assets/deepswe-v1.1-cost-leaderboard.png)](https://deepswe.datacurve.ai/)
+| 配置 | 适合谁 | 请求路径 | 运行要求 |
+|---|---|---|---|
+| **DeepSeek 官方 API（默认）** | 有 DeepSeek 官方 API 凭据，希望直接调用官方服务 | Codex → DeepSeek API | 不需要本机桥接 |
+| **OpenCode Go** | 已订阅 OpenCode Go，希望使用订阅内的 V4 Flash 额度 | Codex → 本机 LiteLLM → OpenCode Go | 使用期间桥接进程必须保持运行 |
 
-这套组合的前提不是“Luna 什么都能做”，而是 Sol 先消化模糊性，再把完整、可验收的结果单元交给 Luna。满足委派合同时，Sol 直接使用具名的 `luna_worker`，不需要每次重新比较模型档位。
+如果把安装任务直接交给 Codex，在上面的安装提示末尾补充“使用 DeepSeek 官方 API”或“使用 OpenCode Go”即可；没有指定时使用官方 API。
 
-## 不规定流程，只约束工作方式
+不确定选哪一种时，使用默认的 DeepSeek 官方 API。显式安装命令如下；直接运行 `bash scripts/install.sh` 与这一配置等价：
 
-许多工程 Skill 通过 spec-first、TDD 或固定审查轮次提高一致性。这些方法本身没有问题，但当模型的抽象、推理和工具能力增强时，过重的流程也可能反过来成为任务目标：模型为了满足流程继续生成抽象、测试、审查器和工具，工作量逐渐离开原始问题。
+```bash
+bash scripts/install.sh --deepseek-provider deepseek-api
+```
 
-这个仓库不规定必须采用哪种开发流程。它要求先明确最终目标、不可变事实、最小验收标准和授权边界，再选择最短、最直接、可验证的方案。TDD、spec 和额外工具仍然可以使用，但要先回答：
+安装 Agent 会检查现有官方 provider 和凭据，再通过一个答案明确的只读任务验证真实路由。已经可用的配置会被保留，不会因为安装流程无法看到某个特定凭据后端而重建。
+
+如果使用 OpenCode Go，先选择 Go 版 Worker，再启动本机桥接：
+
+```bash
+bash scripts/install.sh --deepseek-provider opencode-go
+bash scripts/run-opencode-go-bridge.sh
+```
+
+这里使用的是 OpenCode Go 订阅提供的 API，不会安装或配置 OpenCode 软件。Go 为 V4 Flash 提供 `chat/completions`，而 Codex provider 使用 Responses API；本机 LiteLLM 负责协议转换，并把工具历史整理成 Go 接受的相邻 `tool_calls → tool results` 顺序。API key 通过启动时的隐藏输入或 `OPENCODE_API_KEY` 提供，不写进仓库或 Codex TOML。桥接进程停止或电脑重启后，需要重新启动桥接。
+
+无论选择哪一种配置，安装 Agent 都负责写入对应 provider 并完成一次真实 Worker 验证。配置文件存在、健康检查通过或文本请求成功，都不能代替工具任务的最终验收。
+
+安装流程会自动完成这些工作：
+
+1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
+2. 检查选择的 DeepSeek 上游，并用一个答案明确的只读任务验证真实路由。
+3. 路由可用时完整保留现有配置，不因为某个环境变量或凭据后端不可见而重装。
+4. 只有真实调用失败时，才根据当前 Codex 客户端与操作系统支持的方式修复 provider 和认证。
+
+使用者不需要研究 provider 格式或手动修改 TOML。确实缺少服务凭据时，安装 Agent 只负责引导当前环境支持的安全输入方式，不会预设 Keychain、环境变量或其他平台专属方案。安装 Agent 如果在当前任务中还看不到新 Worker，只会请你新建一个任务，随后由 Skill 自动完成路由探针。
+
+唯一无法由仓库自动完成的是账号级个性化：从 [`personalization.md`](personalization.md) 复制一个完整语言块，粘贴到 Codex App 的“设置 → 个性化 → 自定义指令”。
+
+## 实际使用方式
+
+安装后不需要手动指定每个 Worker。正常描述目标即可，Sol 会先判断是否值得交接：
 
 ```text
-它保护什么具体且不可逆的风险？
-如果失败，会改变什么决策？
-为什么现有的更便宜证据不足？
+查清这个固定提交里配置项的默认值和调用位置，每条结论给出行号。
 ```
 
-这条约束来自一次真实复盘：一个小任务持续了五个多小时，真正改变目标行为的工作约四十分钟，其余时间主要用于扩建测试和验证工具，再修复这些工具产生的新问题。默认验证因此保持为“一次聚焦合同检查 + 一次真实链路结果核对”；如果验证开始只为验证工具本身服务，就回到原始目标。
+来源和验收都固定时，适合交给 DeepSeek。
 
-## 实际使用情况
+```text
+审查这个模块的取消与资源清理路径，只报告能够定位和复现的问题。
+```
 
-下面是我的 Codex 实时模型用量，可以观察采用这套工作方式后 Sol 与 Luna 的 token 分布。它统计的是账号总体使用记录，不能证明每一个 Luna token 都由本仓库触发。
+需要跨文件语义理解，但范围清楚时，适合交给 Luna Max。
 
-[![liuyejinghong 的 Codex token 使用情况](https://tokens.ci/api/embed/liuyejinghong/svg?tokens=compact&cost=compact)](https://tokens.ci/u/liuyejinghong)
+```text
+判断这次需求是否值得改变现有架构，并给出最终方案。
+```
 
-## 配置分工
+这类问题保留给 Sol，因为 Worker 不应替主线程改变目标或做最终决策。
 
-任务拆解逻辑属于 Skill，不属于 worker 配置。每一层只保留一种职责：
+<details>
+<summary>查看 Sol 交给 Worker 的任务合同</summary>
 
-| 文件 | 职责 |
+```text
+Worker and mode:
+Objective:
+Scope and owned paths:
+Relevant facts / source pins:
+Non-goals:
+Acceptance criteria:
+Verification:
+Stop condition:
+Return format:
+```
+
+这不是额外的用户流程，而是 Sol 在后台给 Worker 的最小上下文。任务信息不足时，Worker 应返回明确的 blocker，而不是自行扩大范围。
+
+</details>
+
+## 安装边界与项目文件
+
+仓库安装器只写入两个 Agent 配置和一个 Skill；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
+
+```text
+~/.codex/agents/deepseek-worker.toml
+~/.codex/agents/luna-worker.toml
+~/.agents/skills/sol-worker-routing/SKILL.md
+```
+
+| 文件 | 用途 |
 |---|---|
-| [`personalization.md`](personalization.md) | 告诉 Codex 何时采用这套工作方式 |
-| [`skills/sol-luna-workflow/SKILL.md`](skills/sol-luna-workflow/SKILL.md) | 定义 Sol 的拆分、委派、隔离、验收和整合 |
-| [`agents/luna-worker.toml`](agents/luna-worker.toml) | 固定 Luna Max worker，并限制执行边界 |
-| [`scripts/install.sh`](scripts/install.sh) | 安全安装与旧路径迁移 |
-| [`AGENTS.md`](AGENTS.md) | Agent 部署仓库时的授权合同 |
-| [`VERSION`](VERSION) | 当前语义化版本 |
-| [`CHANGELOG.md`](CHANGELOG.md) | 简明版本记录 |
+| [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
+| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
+| [`agents/`](agents/) | DeepSeek 官方 API、OpenCode Go 与 Luna Max 的 Worker 配置 |
+| [`providers/`](providers/) | OpenCode Go 的单模型桥接与 Codex provider 模板 |
+| [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
+| [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
-`SKILL.md` 保持英文，作为唯一的模型侧执行合同，避免维护两份规则造成漂移。Skill 的语言不会决定对话语言，Agent 仍然遵循用户和项目 `AGENTS.md` 的语言要求。
+Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理。OpenCode Go 模式只增加本机 Responses 桥接和对应 provider，不会改动 OpenCode 软件，也不会把密钥写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
 
-## 安装边界与兼容性
-
-安装器会先检查 Agent、新 Skill 路径和旧 Skill 路径。任一位置存在不同内容时，它会在写入前退出，不修改 `config.toml`、其他 Agent、其他 Skill、全局 `~/.codex/AGENTS.md` 或 Codex App 设置。
-
-旧路径 `~/.codex/skills/sol-luna-workflow/SKILL.md` 只有在内容与仓库完全一致且不是符号链接时才会迁移。设置 `CODEX_HOME` 时，Agent 使用该目录；Skill 仍安装到官方用户目录 `~/.agents/skills`。
-
-这是一套社区工作流，不是 OpenAI 官方预设。模型可用性、实际路由和权限取决于 Codex 版本与账号。安装后选择一个答案明确、只读的小任务，确认子代理元数据为 `gpt-5.6-luna`、推理强度为 `max`，并检查结果没有越界。模型在文本中自称“我是 Luna”不能证明实际路由。
+这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
 
 ## 参考资料
 
-| 主题 | 来源 |
-|---|---|
-| Codex 子代理和自定义 Agent | [OpenAI Developers](https://developers.openai.com/codex/agent-configuration/subagents) |
-| Codex Skills 与发现路径 | [OpenAI Developers](https://developers.openai.com/codex/skills) |
-| Codex 指令发现顺序 | [OpenAI Developers](https://developers.openai.com/codex/guides/agents-md) |
-| Custom Instructions | [OpenAI Help Center](https://help.openai.com/en/articles/8096356-chat-preferences-for-chatgpt) |
-| Codex 配置 Schema | [OpenAI Developers](https://developers.openai.com/codex/config-schema.json) |
-| DeepSWE v1.1 榜单 | [DataCurve](https://deepswe.datacurve.ai/) |
+- [Codex 子代理和自定义 Agent](https://developers.openai.com/codex/agent-configuration/subagents)
+- [Codex Skills 与发现路径](https://developers.openai.com/codex/skills)
+- [Codex 指令发现顺序](https://developers.openai.com/codex/guides/agents-md)
+- [OpenCode Go 模型与 API 端点](https://opencode.ai/docs/zh-cn/go/)
+- [LiteLLM Responses API 桥接](https://docs.litellm.ai/docs/response_api)
+- [Oh My OpenAgent 编排参考](https://github.com/code-yeongyu/oh-my-openagent)

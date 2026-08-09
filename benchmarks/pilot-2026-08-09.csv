@@ -1,0 +1,6 @@
+case,worker,acceptance,wall_seconds,output_tokens,reasoning_tokens,generated_tokens,notes
+p-map-evidence,deepseek_worker,pass,50,2894,1275,4169,Read-only source-pinned evidence task
+p-map-evidence,luna_worker,pass,176,8128,6334,14462,Same acceptance contract
+click-mechanical-patch,deepseek_worker,pass,38,814,98,912,One-file mechanical patch and target test
+click-mechanical-patch,luna_worker,pass,59,1565,681,2246,Same acceptance contract
+httpx-bounded-review,luna_worker,not-graded,346,16979,14201,31180,Read-only semantic review; findings not independently confirmed

@@ -2,6 +2,39 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.5.3 - 2026-08-09
+
+1. 修复 Codex Responses 历史转换为 OpenCode Go Chat 历史时，assistant 状态消息插入 `tool_calls` 与对应 `tool` 结果之间导致的 400
+2. 在实际发往 OpenCode Go 前，仅按 `tool_call_id` 重排完整工具结果组；消息内容、工具参数与结果保持不变，不完整历史仍由上游明确拒绝
+3. 真实 DeepSeek Worker 工具链已越过原 400，并连续获得 `/v1/responses` 200 响应
+4. README 分开展示 DeepSeek 官方 API 与 OpenCode Go 两种配置，并说明选择方式、请求路径和运行要求
+
+## 0.5.2 - 2026-08-09
+
+1. 根据 OpenCode Go 真实请求修正 V4 Flash 的 Chat Completions 转发，确保上游模型 ID 保持为 `deepseek-v4-flash`
+2. 移除 Go Worker 未受支持的固定 reasoning effort，并由桥接层丢弃上游明确不支持的 Responses 参数
+3. 固定已通过启动与 Codex 实际请求验证的 LiteLLM、FastAPI 和 SOCKS 依赖组合
+4. 安装器允许从已知的上一版 OpenCode Go Worker 安全升级
+
+## 0.5.1 - 2026-08-09
+
+1. 为 DeepSeek Worker 增加 OpenCode Go 上游选项，仅开放 `deepseek-v4-flash`
+2. 增加本机 LiteLLM Responses-to-Chat 协议桥接，不要求安装或配置 OpenCode 软件
+3. 安装器支持在 DeepSeek 官方 API 与 OpenCode Go 配置间安全选择
+4. 更新中英文 README、安装合同和 Skill 的自动配置职责
+
+## 0.5.0 - 2026-08-09
+
+1. 新增 DeepSeek worker
+2. 支持双 Worker 分流
+3. 将 Skill 与仓库命名为 `sol-worker-routing`，避免把具体 Worker 供应商固化为公共接口
+4. 增加可复现基准；README 用同类任务的耗时与生成 token 柱状图展示对照结果，详细方法与原始数据保留在独立报告
+5. 增加探针决策说明
+6. 更新安装、旧名安全迁移与个性化
+7. 将 README 重写为项目介绍型结构，把任务合同、复现口径和安装边界下沉
+8. 将第一性原理、最小流程与分流价值合并到 README 开篇总览
+9. 由安装流程完成 DeepSeek provider 与真实路由验证，不绑定操作系统或凭据后端
+
 ## 0.4.1 - 2026-08-04
 
 1. 重构 README 信息架构

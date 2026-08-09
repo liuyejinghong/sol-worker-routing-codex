@@ -1,78 +1,158 @@
 <div align="center">
-  <h1>Sol + Luna Codex Workflow</h1>
-  <p><strong>Sol owns objectives and judgment. Luna Max executes bounded subtasks.</strong></p>
-  <p>An agent-deployable Codex orchestration package with first-principles limits on over-programming and over-testing.</p>
+  <h1>Sol Worker Routing for Codex</h1>
+  <p><strong>Send each task to the Worker that fits it.</strong></p>
+  <p>Reduce the problem from first principles, route by work shape, and keep only the process and evidence needed to decide.</p>
   <p>
     <a href="README.md">简体中文</a> ·
     <strong>English</strong> ·
     <a href="CHANGELOG.md">Changelog</a>
   </p>
   <p>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-luna-codex-workflow?label=version" alt="Version"></a>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-luna-codex-workflow?style=flat" alt="GitHub Stars"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-worker-routing-codex?label=version" alt="Version"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-worker-routing-codex?style=flat" alt="GitHub Stars"></a>
   </p>
 </div>
 
-## Quickstart
+## What problem does it solve?
 
-The recommended path is to give the repository directly to Codex. Its `AGENTS.md` limits the installation scope, and the installer refuses to overwrite different content.
+`Sol Worker Routing` does more than add two subagents to Codex. It combines three ideas in one working method:
 
-```text
-Install https://github.com/liuyejinghong/sol-luna-codex-workflow for my Codex user profile.
-Read and follow the repository AGENTS.md first. Preserve my existing Codex configuration
-and do not overwrite conflicts. Verify luna_worker and the sol-luna-workflow Skill after
-installation, then tell me which manual steps remain.
-```
+- **First principles**: establish the final objective, invariant facts, minimum acceptance, and authorization boundary first. When patches, abstractions, or unrelated process accumulate, return to the root cause and simplify.
+- **Route by work shape**: Sol keeps the objective and final judgment; DeepSeek handles source-pinned, mechanically checkable work; Luna Max handles bounded tasks that need semantic understanding. Simple tasks stop consuming excess time and tokens, while ambiguous problems are not scattered across subagents too early.
+- **Less process, more useful evidence**: TDD, spec-first work, fixed review rounds, and extra tooling are never goals by themselves. The default is one focused contract check plus one real-path result check. Add validation only when it protects a concrete risk and failure would change a decision.
 
-You can also install it yourself:
+Sol stays in the lead to understand the goal, decompose the work, inspect evidence, and deliver the result. Both Workers receive only bounded tasks they can complete and verify independently.
 
-```bash
-git clone https://github.com/liuyejinghong/sol-luna-codex-workflow.git
-cd sol-luna-codex-workflow
-bash scripts/install.sh
-```
+| Executor | Best fit | Typical examples |
+|---|---|---|
+| **Sol** | Tiny tasks, ambiguity, architecture, and final decisions | Decide whether to change something, integrate results, make a one-step edit |
+| **DeepSeek** | Source-pinned, read-heavy, mechanically checkable work | Find code facts, collect evidence, make a one-file mechanical patch |
+| **Luna Max** | Bounded work that still needs semantic understanding | Code review, module analysis, isolated implementation, focused diagnosis |
 
-The installer writes:
+## What does the same work cost?
 
-```text
-~/.codex/agents/luna-worker.toml
-~/.agents/skills/sol-luna-workflow/SKILL.md
-```
+We gave DeepSeek and Luna Max the same two evidence/mechanical tasks. Objectives, scope, acceptance commands, and stop conditions were identical. Both Workers passed **2/2** tasks.
 
-Then open Codex App **Settings → Personalization → Custom Instructions** and paste one complete language block from [`personalization.md`](personalization.md). This step is manual: a GitHub file or `AGENTS.md` cannot replace the App's account-level personalization setting. A restart is normally unnecessary; start a new task to verify the workflow.
+[![Same-workload cost comparison](docs/assets/benchmark-cost-comparison-en-2026-08-09.png)](benchmarks/report-2026-08-09.md)
 
-## How it works
+| Worker | Tasks passed | Total time | Generated tokens |
+|---|---:|---:|---:|
+| **DeepSeek** | 2 / 2 | **88 seconds** | **5,081** |
+| Luna Max | 2 / 2 | 235 seconds | 16,708 |
+
+For the same accepted results, DeepSeek used **147 fewer seconds** and **11,627 fewer generated tokens** - a **62.6%** reduction in time and a **69.6%** reduction in generated tokens. That is the practical benefit of routing source-pinned, mechanically checkable work away from Luna Max.
+
+> This is a measured result from two paired tasks, not a general model ranking. Generated tokens are `output tokens + reasoning tokens`, a workload comparison within the same client rather than a dollar bill or total-token count. See the [full report](benchmarks/report-2026-08-09.md) for methods, task-level results, and limitations, or inspect the raw [CSV](benchmarks/pilot-2026-08-09.csv). [`render_readme_chart.py`](benchmarks/render_readme_chart.py) generates the chart directly from that CSV.
+
+## How routing works
 
 ```mermaid
 flowchart LR
-    U["User objective"] --> S["Sol<br/>understand, bound, decompose"]
-    S -->|"bounded task packet"| L["Luna Max<br/>review, analyze, implement, diagnose"]
-    L -->|"result and evidence"| S
-    S --> O["review, integrate, deliver"]
+    U["User objective"] --> S["Sol<br/>understand, decompose, accept, integrate"]
+    S -->|"one focused action"| D["Sol executes directly"]
+    S -->|"source-pinned and mechanical"| DS["DeepSeek"]
+    S -->|"bounded semantic understanding"| L["Luna Max"]
+    D --> O["Final result"]
+    DS --> S
+    L --> S
+    S --> O
 ```
 
-Sol stays in the main thread with the full objective and cross-task context. It owns ambiguity, tradeoffs, architecture, decomposition, and final acceptance. Luna Max receives only independently completable, objectively reviewable packets with explicit write ownership. It cannot redefine the parent objective or expand its own scope.
+DeepSeek and Luna Max are peer leaf Workers, not stages in a hierarchy. Sol runs tasks in parallel only when they are independent and have non-overlapping scope. Shared state, ordered dependencies, or overlapping writes stay sequential.
 
-The user does not need to request a subagent every time. Sol may dispatch `luna_worker` when the task satisfies the delegation contract; for tiny tasks where handoff costs more than execution, Sol completes the work directly.
+The workflow also follows one deliberately simple rule: if Sol can finish the task in one focused action, it does not delegate merely to use a subagent. Handoffs cost time and tokens too.
 
-| Delegate to Luna Max | Keep with Sol |
-|---|---|
-| Read-only code review | Ambiguous or changing requirements |
-| Single-module analysis | Architecture and priority decisions |
-| Implementation with isolated ownership | Shared state or overlapping writes |
-| Focused test diagnosis | Cross-task integration and final judgment |
-| Structured information extraction | Releases, accounts, and external side effects |
+## Install
 
-Parallelism is optional. Use it only when subtasks are independent, context can be compressed, and write ownership does not overlap. Otherwise run the work sequentially.
-
-## What Luna receives
-
-Sol performs the decomposition; Luna does not discover its own assignment. A worker packet contains:
+The easiest path is to give this prompt directly to Codex:
 
 ```text
+Install https://github.com/liuyejinghong/sol-worker-routing-codex for my Codex user profile.
+Read and follow the repository AGENTS.md first. Preserve my existing Codex configuration
+and do not overwrite conflicts. Have the installer inspect the existing DeepSeek provider
+and run a real read-only route first. Preserve it when it works; only repair a proven failure
+with a mechanism supported by the current Codex client and host. Do not send me away to discover the schema.
+```
+
+Or install from a terminal:
+
+```bash
+git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
+cd sol-worker-routing-codex
+bash scripts/install.sh
+```
+
+### Choose a DeepSeek upstream
+
+DeepSeek Worker supports two configurations. Both use the same `deepseek_worker` name and routing rules, and both currently expose only **DeepSeek V4 Flash**. The difference is where usage is billed and whether a local protocol bridge is required.
+
+| Configuration | Best for | Request path | Runtime requirement |
+|---|---|---|---|
+| **Official DeepSeek API (default)** | Users with official DeepSeek API credentials who want a direct connection | Codex → DeepSeek API | No local bridge |
+| **OpenCode Go** | OpenCode Go subscribers who want to use the subscription's V4 Flash allowance | Codex → local LiteLLM → OpenCode Go | The bridge must stay running while in use |
+
+When handing installation to Codex, append either “use the official DeepSeek API” or “use OpenCode Go” to the installation prompt above. The official API is selected when no preference is stated.
+
+Use the official DeepSeek API when you do not have a reason to choose Go. The explicit command below is equivalent to running `bash scripts/install.sh` without an option:
+
+```bash
+bash scripts/install.sh --deepseek-provider deepseek-api
+```
+
+The installation Agent checks the existing official provider and credentials, then verifies the route with an obvious read-only task. A working configuration is preserved instead of being rebuilt because the installer cannot see one particular credential backend.
+
+For OpenCode Go, select the Go Worker and then start the local bridge:
+
+```bash
+bash scripts/install.sh --deepseek-provider opencode-go
+bash scripts/run-opencode-go-bridge.sh
+```
+
+This uses the API included with the OpenCode Go subscription and does not install or configure the OpenCode application. Go exposes V4 Flash through `chat/completions`, while the Codex provider uses the Responses API. Local LiteLLM translates the protocol and normalizes tool history into the adjacent `tool_calls → tool results` order Go accepts. Supply the API key through the hidden startup prompt or `OPENCODE_API_KEY`; it is not written to the repository or Codex TOML. Restart the bridge after its process stops or the computer reboots.
+
+For either configuration, the installation Agent owns the matching provider setup and one real Worker verification. A profile file, health check, or successful text request does not replace acceptance of a tool-using task.
+
+The installation flow handles all of the following:
+
+1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
+2. Inspect the selected DeepSeek upstream and verify it with an obvious read-only task.
+3. Preserve a working setup instead of reinstalling it because one environment variable or credential backend is not visible.
+4. Only after a real invocation fails, repair the provider and authentication using mechanisms supported by the current Codex client and operating system.
+
+Users do not need to learn the provider schema or edit TOML. If a service credential is truly missing, the installation Agent guides the secure input supported by the current environment instead of prescribing Keychain, an environment variable, or another platform-specific backend. If the current task cannot see a newly installed Worker, the Agent asks only for a new task; the Skill then runs the route probe automatically.
+
+Account-level personalization is the one step the repository cannot perform: paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**.
+
+## What using it looks like
+
+You do not need to select a Worker manually. Describe the objective normally and Sol first decides whether a handoff is worthwhile:
+
+```text
+At this pinned commit, find the setting's default and every call site. Cite a line for each claim.
+```
+
+With fixed sources and acceptance, this fits DeepSeek.
+
+```text
+Review cancellation and resource cleanup in this module. Report only issues you can locate and reproduce.
+```
+
+This fits Luna Max when the scope is clear but cross-file semantic understanding is required.
+
+```text
+Decide whether this requirement justifies changing the architecture, then recommend the final approach.
+```
+
+This stays with Sol because a Worker must not redefine the parent objective or own the final decision.
+
+<details>
+<summary>See the task contract Sol gives a Worker</summary>
+
+```text
+Worker and mode:
 Objective:
 Scope and owned paths:
-Relevant facts:
+Relevant facts / source pins:
 Non-goals:
 Acceptance criteria:
 Verification:
@@ -80,69 +160,38 @@ Stop condition:
 Return format:
 ```
 
-If the packet is insufficient, Luna reports the exact blocker. Sol checks the evidence against the parent objective, resolves conflicts, and integrates the output.
+This is not another user-facing process. It is the minimum context Sol provides behind the scenes. When the packet is insufficient, a Worker returns an exact blocker instead of widening its own scope.
 
-## Why Sol + Luna Max
+</details>
 
-The lead and worker carry different kinds of context. Sol retains goals, constraints, and judgment. Luna receives only the current execution packet. This reduces main-thread context pollution and prevents a smaller model from reinterpreting an ambiguous assignment.
+## Installation boundaries and project files
 
-The [DeepSWE v1.1 cost leaderboard](https://deepswe.datacurve.ai/) provides one public reference for choosing Luna Max. In the snapshot updated July 25, 2026, Luna Max scored 67% at an average reported cost of $0.61 per task, showing a strong cost/result balance on that benchmark. This is one benchmark, not proof that Luna Max is universally best.
-
-[![Luna Max on the DeepSWE v1.1 cost leaderboard](docs/assets/deepswe-v1.1-cost-leaderboard.png)](https://deepswe.datacurve.ai/)
-
-The topology does not assume that Luna can handle every task. Sol first absorbs ambiguity, then hands over a complete and reviewable outcome unit. Once a task meets that delegation contract, Sol uses the named `luna_worker` without repeating model-tier selection.
-
-## Constrain decisions, not the workflow
-
-Many engineering Skills improve consistency through spec-first development, TDD, or fixed review sequences. Those methods are not inherently wrong. As model abstraction, reasoning, and tool use improve, however, a heavy process can become the task itself: the model creates more abstractions, tests, reviewers, and tools to satisfy the workflow while moving away from the original problem.
-
-This repository does not mandate a development process. It requires the agent to establish the final objective, invariant facts, minimum acceptance criteria, and authorization boundary, then choose the shortest direct path that can be verified. TDD, specs, and extra tools remain available, but they must first answer:
+The repository installer writes only two Agent profiles and one Skill. It can safely upgrade the known previous Skill release; any other different content stops the install before it is overwritten:
 
 ```text
-What concrete irreversible risk does this protect?
-What decision changes if it fails?
-Why is the existing cheaper evidence insufficient?
+~/.codex/agents/deepseek-worker.toml
+~/.codex/agents/luna-worker.toml
+~/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
-The constraint came from a real retrospective: a small task ran for more than five hours, while roughly forty minutes changed the intended behavior. Most of the remaining time expanded tests and validation tools, then repaired problems created by those tools. The default is therefore one focused contract check plus one real-path result check. If verification starts serving only the verification layer, return to the original objective.
-
-## Observed usage
-
-This is my live Codex model usage. It shows the token split between Sol and Luna after adopting this working pattern. The feed covers my account-wide activity, so it does not prove that every Luna token was triggered by this repository.
-
-[![liuyejinghong Codex token usage](https://tokens.ci/api/embed/liuyejinghong/svg?tokens=compact&cost=compact)](https://tokens.ci/u/liuyejinghong)
-
-## Configuration map
-
-Decomposition belongs to the Skill, not the worker profile. Each layer has one responsibility:
-
-| File | Responsibility |
+| File | Purpose |
 |---|---|
-| [`personalization.md`](personalization.md) | Tells Codex when to use this working pattern |
-| [`skills/sol-luna-workflow/SKILL.md`](skills/sol-luna-workflow/SKILL.md) | Defines Sol's decomposition, delegation, isolation, review, and integration |
-| [`agents/luna-worker.toml`](agents/luna-worker.toml) | Pins the Luna Max worker and bounds its execution |
-| [`scripts/install.sh`](scripts/install.sh) | Performs safe installation and legacy-path migration |
-| [`AGENTS.md`](AGENTS.md) | Defines the installing Agent's authorization contract |
-| [`VERSION`](VERSION) | Records the current semantic version |
-| [`CHANGELOG.md`](CHANGELOG.md) | Records concise release history |
+| [`personalization.md`](personalization.md) | Global routing preference that you paste manually |
+| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
+| [`agents/`](agents/) | DeepSeek API, OpenCode Go, and Luna Max Worker profiles |
+| [`providers/`](providers/) | Single-model OpenCode Go bridge and Codex provider template |
+| [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |
+| [`benchmarks/`](benchmarks/) | Benchmark cases, raw data, and the full report |
 
-`SKILL.md` remains in English as the single model-facing execution contract, avoiding drift between translated rule sets. Its language does not determine the conversation language; the Agent still follows the user and project `AGENTS.md`.
+The provider is not a fixed repository-installer output. The installation Agent judges the existing setup by a real route first and only repairs a confirmed failure using mechanisms supported by the current client and host. OpenCode Go mode adds only a local Responses bridge and its provider; it does not modify the OpenCode application or write the key to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.
 
-## Installation safety and compatibility
-
-The installer preflights the Agent target, current Skill path, and legacy Skill path. If any location contains different content, it exits before writing. It does not modify `config.toml`, other agents or Skills, global `~/.codex/AGENTS.md`, or Codex App settings.
-
-The legacy `~/.codex/skills/sol-luna-workflow/SKILL.md` is migrated only when it exactly matches the repository and neither it nor its directory is a symbolic link. When `CODEX_HOME` is set, the Agent uses that directory; the Skill still installs to the official user path at `~/.agents/skills`.
-
-This is a community workflow, not an official OpenAI preset. Model availability, routing, and permissions depend on the Codex version and account. After installation, delegate one small read-only task with an obvious answer. Confirm that subagent metadata reports `gpt-5.6-luna` with `max` effort and that the result stays in scope. Textual self-identification is not routing evidence.
+This is a community workflow, not an OpenAI preset. A profile file or Worker self-report is not route proof by itself; use client-exposed subagent information and the accepted task result.
 
 ## References
 
-| Topic | Source |
-|---|---|
-| Codex subagents and custom agents | [OpenAI Developers](https://developers.openai.com/codex/agent-configuration/subagents) |
-| Codex Skills and discovery paths | [OpenAI Developers](https://developers.openai.com/codex/skills) |
-| Codex instruction discovery | [OpenAI Developers](https://developers.openai.com/codex/guides/agents-md) |
-| Custom Instructions | [OpenAI Help Center](https://help.openai.com/en/articles/8096356-chat-preferences-for-chatgpt) |
-| Codex configuration schema | [OpenAI Developers](https://developers.openai.com/codex/config-schema.json) |
-| DeepSWE v1.1 leaderboard | [DataCurve](https://deepswe.datacurve.ai/) |
+- [Codex subagents and custom agents](https://developers.openai.com/codex/agent-configuration/subagents)
+- [Codex Skills and discovery paths](https://developers.openai.com/codex/skills)
+- [Codex instruction discovery](https://developers.openai.com/codex/guides/agents-md)
+- [OpenCode Go models and API endpoints](https://opencode.ai/docs/zh-cn/go/)
+- [LiteLLM Responses API bridge](https://docs.litellm.ai/docs/response_api)
+- [Oh My OpenAgent orchestration reference](https://github.com/code-yeongyu/oh-my-openagent)
