@@ -101,33 +101,23 @@ Stop condition: Return a blocker if the commit or fact is absent locally.
 Return format: Facts; command result; files changed; risks.
 ```
 
-## Why not send every task to the cheaper model?
+## Route by work shape
 
-The [DeepSeek update from July 31, 2026](https://api-docs.deepseek.com/updates/) states that `deepseek-v4-flash` supports the Responses API and is adapted for Codex. That supports an evidence lane only after Sol has reduced the task to fixed sources and mechanical acceptance; it does not make an ambiguous request safe to delegate.
+This workflow does not make a fixed assignment based on “the cheaper model” or “the stronger model.” DeepSeek receives evidence or mechanical work only when sources, scope, and acceptance are fixed. Luna receives bounded work that needs cross-file semantic understanding. Ambiguity, coupling, shared state, and final judgment remain with Sol.
 
-The [DeepSWE v1.1 cost leaderboard](https://deepswe.datacurve.ai/) page updated August 7, 2026 reports `deepseek-v4-flash[max]` at 53%±4% and $0.10/task, versus `gpt-5.6-luna[max]` at 67%±4% and $0.61/task. The first is about 83.6% cheaper in that benchmark; the second has a higher success rate on its long-horizon engineering tasks. This is not a universal winner/loser claim. It is the reason to separate mechanical evidence from semantic execution.
+Tiny tasks do not need a Worker merely to use one. The task contract decides whether routing is appropriate - not a one-off comparison, personal-account usage, or an external price leaderboard.
 
-[![DeepSeek and Luna on the DeepSWE v1.1 cost leaderboard](docs/assets/deepswe-v1.1-cost-leaderboard.png)](https://deepswe.datacurve.ai/)
+## Benchmark and cost boundaries
 
-The image is a historical snapshot; use the linked live page for current figures and update date.
+[`benchmarks/`](benchmarks/) contains the separate case catalog, rerun protocol, raw [CSV](benchmarks/pilot-2026-08-09.csv), and [benchmark report](benchmarks/report-2026-08-09.md). Those materials make one specific routing hypothesis reviewable. The README does not repeat an individual run's result or treat it as a performance or price promise.
 
-The topology does not require a worker for every task. Tiny tasks remain with Sol, so model-price savings do not create more handoff cost. Bounded work that needs semantic judgment remains with Luna Max, so a low-cost route does not create avoidable rework from an incomplete task.
+| Record | Definition | Does not represent |
+|---|---|---|
+| Acceptance | Whether a fixed task contract passed | A general quality ranking |
+| Worker wall time | Time from sending a packet to its terminal state | End-to-end project duration |
+| Generated tokens | Native `output_tokens + reasoning_tokens`, when the client provides them | Input or total tokens, or a dollar bill |
 
-## Reproducible pilot benchmark
-
-The repository includes four common open-source task shapes: source fact finding, failure diagnosis, narrow mechanical patching, and bounded code review. Each uses a fixed GitHub commit, PR, or discussion and runs only in a disposable public worktree. The case catalog, commands, raw aggregate data, chart, and limitations are in [`benchmarks/README.md`](benchmarks/README.md) and [`benchmarks/report-2026-08-09.md`](benchmarks/report-2026-08-09.md).
-
-[![Dual-worker pilot benchmark](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
-
-### Repository-verifiable cost record
-
-| Route | Same-contract cases | Acceptance | Worker wall time | Generated tokens |
-|---|---|---:|---:|---:|
-| Previous policy: Luna Max for both | B1 read-only evidence + B3 mechanical patch | 2 / 2 | 235s | 16,708 |
-| New policy: DeepSeek evidence lane | The same B1 + B3 contracts | 2 / 2 | 88s | 5,081 |
-| Difference | Same acceptance | — | −147s (−62.6%) | −11,627 (−69.6%) |
-
-The rows are in [`pilot-2026-08-09.csv`](benchmarks/pilot-2026-08-09.csv); per-case acceptance, commands, and limits are in the [full report](benchmarks/report-2026-08-09.md). `Generated tokens = output_tokens + reasoning_tokens`; it is only a workload proxy inside the same client and identical task contract. It is **not** input/total-token accounting or an actual dollar bill. These are two single-run pairs, not a general quality ranking; they validate only the evidence/mechanical lane boundary.
+Normal delegation does not continuously record token usage or estimate a price. Only when a user explicitly asks for a cost assessment or a benchmark rerun does Sol record the worker, model and effort, start/end time, terminal state, and acceptance. Missing native usage remains unknown; do not infer a bill or retain full conversations, source code, or secrets.
 
 ## Constrain the working method, not the development process
 
@@ -136,12 +126,6 @@ TDD, spec-first work, and fixed review rounds can be useful, but they should not
 This repository does not prescribe a development process. It requires a final objective, invariant facts, minimum acceptance criteria, and authorization boundary before choosing the shortest direct path that can be verified. Before adding any test, gate, dry run, review, or tool, the agent must answer what irreversible risk it protects, what decision changes on failure, and why cheaper existing evidence is insufficient.
 
 The default is one focused contract check plus one real-path result check. Do not repeat validation when the candidate and facts have not changed. If verification costs more than implementation, or two consecutive steps repair only the validation layer without adding facts about the original objective, stop expanding the toolchain and return to the root problem.
-
-## No always-on cost probe
-
-A Skill cannot reliably intercept every invocation. Instrumenting each task would add context, I/O, and privacy surface, and could make measurement itself into a process burden. This repository therefore does not count tokens or estimate dollars during normal delegation.
-
-Use an optional diagnostic only when the user explicitly asks for cost analysis or a benchmark rerun. Sol can record the worker, model/effort, start/end time, terminal status, and acceptance result; it records usage only when the client exposes native data and marks it unknown otherwise. It never stores full conversations, source code, secrets, or a fabricated bill.
 
 ## Configuration and safety boundaries
 
@@ -157,15 +141,7 @@ Use an optional diagnostic only when the user explicitly asks for cost analysis 
 
 The installer does not edit `config.toml`, other agents, other Skills, global or project `AGENTS.md`, or Codex App settings. It moves `sol-luna-workflow` from `~/.agents/skills/` or the legacy `~/.codex/skills/` path only when its content is verified as a known prior release and no path is a symbolic link. Unknown legacy content stops the install rather than being overwritten or removed. Agents use `${CODEX_HOME:-~/.codex}`; the Skill uses the official user path `~/.agents/skills`.
 
-This is a community workflow, not an OpenAI preset. After installation, delegate one obvious read-only task and inspect client-exposed subagent metadata. A Worker saying its model name in text is not evidence of effective routing.
-
-The author environment used `codex-cli 0.147.0-alpha.6.5` for a DeepSeek read-only and minimal-patch smoke test and parsed both TOML files. This client may still show metadata-fallback or model-list warnings for the custom DeepSeek model. That does not imply every task fails, but a call or routing error makes the DeepSeek lane unavailable; do not silently attribute another route to it.
-
-## Usage observation
-
-The embed below is the author's aggregate Codex usage. It can show the overall Sol, Luna, and DeepSeek distribution, but it does not prove that every token was caused by this repository and does not replace task-level acceptance.
-
-[![liuyejinghong Codex token usage](https://tokens.ci/api/embed/liuyejinghong/svg?tokens=compact&cost=compact)](https://tokens.ci/u/liuyejinghong)
+This is a community workflow, not an OpenAI preset. After installation, delegate one obvious read-only task and use the client-exposed subagent data plus acceptance evidence to determine whether a route is available. A configuration file or a Worker's self-reported model name is not route proof. Treat a provider or invocation error as an unavailable lane.
 
 ## References
 
@@ -174,6 +150,4 @@ The embed below is the author's aggregate Codex usage. It can show the overall S
 | Codex subagents and custom agents | [OpenAI Developers](https://developers.openai.com/codex/agent-configuration/subagents) |
 | Codex Skills and discovery paths | [OpenAI Developers](https://developers.openai.com/codex/skills) |
 | Codex instruction discovery | [OpenAI Developers](https://developers.openai.com/codex/guides/agents-md) |
-| DeepSeek V4-Flash update | [DeepSeek API Docs](https://api-docs.deepseek.com/updates/) |
-| DeepSWE v1.1 leaderboard | [DataCurve](https://deepswe.datacurve.ai/) |
 | Orchestration reference | [code-yeongyu/oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) |

@@ -101,33 +101,23 @@ Stop condition: 目标提交或事实不在本地时返回 blocker。
 Return format: Facts; command result; files changed; risks.
 ```
 
-## 为什么不是“所有任务都交给更便宜的模型”
+## 按工作形态分流
 
-[DeepSeek 官方 2026-07-31 更新](https://api-docs.deepseek.com/updates/)说明 `deepseek-v4-flash` 支持 Responses API，并针对 Codex 做了适配。它适合作为低成本证据 lane 的前提是任务已经被 Sol 收敛到固定来源和可机械验收，而不是让它自行解释模糊需求。
+这个工作流不按“哪个模型更便宜”或“哪个模型更强”做固定分配。只有当来源、范围和验收都已固定时，才把证据或机械任务交给 DeepSeek；需要跨文件语义理解的有界执行交给 Luna；任何模糊、耦合、共享状态或最终判断都留在 Sol。
 
-[DeepSWE v1.1 成本榜](https://deepswe.datacurve.ai/) 在 2026-08-07 的页面快照中报告：`deepseek-v4-flash[max]` 为 53%±4%、平均 $0.10/任务；`gpt-5.6-luna[max]` 为 67%±4%、平均 $0.61/任务。前者便宜约 83.6%，后者在该长程工程基准上成功率更高。它们不是“谁更强”的通用结论，而是把证据任务与语义执行拆开的理由。
+因此，极小任务也不必为了使用 Worker 而交接。路由是否合适由任务合同决定，而不是一次模型比较、个人账户用量或外部价格榜。
 
-[![DeepSWE v1.1 成本榜中的 DeepSeek 与 Luna](docs/assets/deepswe-v1.1-cost-leaderboard.png)](https://deepswe.datacurve.ai/)
+## 基准与成本边界
 
-图为历史快照；模型数字和榜单更新时间应以链接中的实时页面为准。
+[`benchmarks/`](benchmarks/) 保存独立的案例目录、重跑协议、原始 [CSV](benchmarks/pilot-2026-08-09.csv) 和[基准报告](benchmarks/report-2026-08-09.md)。这些材料用于复核一项具体路由假设；README 不复述其中某次执行的结果，也不把它们当作性能或价格承诺。
 
-这套路由并不要求每个任务都使用 Worker。极小任务保留在 Sol，避免为了节省模型价格反而支付更多交接时间；需要语义判断的有界工作由 Luna Max 处理，避免低成本模型在不完整任务上引入返工。
+| 记录项 | 口径 | 不代表 |
+|---|---|---|
+| 验收结果 | 固定任务合同是否通过 | 通用质量排名 |
+| Worker 墙钟 | 发出任务包到终态的时间 | 整个项目的端到端耗时 |
+| 生成 token | 客户端原生提供时的 `output_tokens + reasoning_tokens` | 输入或总 token，也不是美元账单 |
 
-## 首轮可复现基准
-
-仓库提供了四类常见开源场景：代码事实查找、失败诊断、窄机械补丁和有界代码审查。它们均来自固定 GitHub 提交、PR 或讨论，且只在临时公开工作树运行。完整的案例、命令、原始聚合数据、图表和限制见 [`benchmarks/README.md`](benchmarks/README.md) 与 [`benchmarks/report-2026-08-09.md`](benchmarks/report-2026-08-09.md)。
-
-[![双 Worker 首轮配对基准](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
-
-### 本仓库可复核的成本记录
-
-| 路由 | 同合同案例 | 验收 | Worker 墙钟 | 生成 token |
-|---|---|---:|---:|---:|
-| 旧策略：全部交给 Luna Max | B1 只读证据 + B3 机械补丁 | 2 / 2 | 235s | 16,708 |
-| 新策略：交给 DeepSeek evidence lane | 同一 B1 + B3 合同 | 2 / 2 | 88s | 5,081 |
-| 差异 | 验收相同 | — | −147s（−62.6%） | −11,627（−69.6%） |
-
-数据来自 [`pilot-2026-08-09.csv`](benchmarks/pilot-2026-08-09.csv)，逐例验收、命令和限制在[`完整报告`](benchmarks/report-2026-08-09.md)。`生成 token = output_tokens + reasoning_tokens`，只是在同一客户端和相同任务合同下的工作量代理；它**不是**输入/总 token 统计，也不是实际美元账单。样本只有两组、每组一次，不能外推为通用质量排名；它只验证了该 evidence / 机械 lane 的边界。
+正常委派不常驻统计 token 或估算价格。只有用户明确要求成本评估或重跑基准时，Sol 才记录 worker、模型与推理强度、开始与结束时间、终态和验收；原生 usage 缺失时标为未知，不从自述推断账单，也不保存完整对话、源码或密钥。
 
 ## 不规定流程，只约束工作方式
 
@@ -136,12 +126,6 @@ TDD、spec-first 和固定审查轮次可以有用，但它们不应成为模型
 这里不强制某个开发流程。它要求先明确最终目标、不可变事实、最小验收标准和授权边界，再选最短、最直接、可验证的路径。每增加一个测试、gate、dry-run、审查或工具，都必须能回答：它保护什么具体且不可逆的风险；失败会改变什么决策；为什么现有更便宜的证据不足。
 
 默认验证是“一次聚焦合同检查 + 一次真实链路结果核对”。候选和事实未变化时不重复验证；如果验证比实现更贵，或连续两步只是在修复验证层而没有增加原始目标的事实，就停止扩张工具链并回到根问题。
-
-## 不做常驻成本探针
-
-Skill 不具备可靠的全局调用截获能力；给每个任务额外埋点也会增加上下文、I/O 和隐私面，容易把测量本身变成流程负担。因此本仓库不在正常委派中统计 token 或估算美元成本。
-
-只有用户明确要求成本评估或重跑基准时，才建议由 Sol 启用可选诊断：记录 Worker、模型/推理强度、起止时间、终态和验收结果；客户端原生提供 usage 时才记录它，缺失就标为未知。它不记录完整对话、源码或密钥，也不从 Worker 自述推断账单。
 
 ## 配置与安全边界
 
@@ -157,15 +141,7 @@ Skill 不具备可靠的全局调用截获能力；给每个任务额外埋点�
 
 安装器不会编辑 `config.toml`、其他 Agent、其他 Skill、全局或项目 `AGENTS.md`、以及 Codex App 设置。它只会把内容可验证为已知旧版本、且没有符号链接的 `sol-luna-workflow` 从 `~/.agents/skills/` 或旧的 `~/.codex/skills/` 迁移到 `~/.agents/skills/sol-worker-routing/`；任何未知旧内容都会停止，不会覆盖或删除。Agent 使用 `${CODEX_HOME:-~/.codex}`，Skill 使用官方用户路径 `~/.agents/skills`。
 
-这是社区工作流，不是 OpenAI 官方预设。安装后应该先委派一个答案明确、只读的小任务，并查看客户端实际暴露的子代理元数据；Worker 文本自称某个模型不能证明有效路由。
-
-作者环境使用 `codex-cli 0.147.0-alpha.6.5` 完成了 DeepSeek 的只读与最小补丁 smoke test，并解析了两个 TOML。该客户端仍可能对自定义 DeepSeek 模型显示 metadata fallback 或模型列表警告；这不等于任务必然失败，但出现调用或路由异常时应把 DeepSeek lane 视为不可用，而不是静默改写结果归属。
-
-## 使用观测
-
-下面是作者账号的 Codex 汇总用量。它可用于观察 Sol、Luna 与 DeepSeek 的总体分布，但不证明每个 token 都由本仓库触发，也不能替代每个任务的验收。
-
-[![liuyejinghong 的 Codex token 使用情况](https://tokens.ci/api/embed/liuyejinghong/svg?tokens=compact&cost=compact)](https://tokens.ci/u/liuyejinghong)
+这是社区工作流，不是 OpenAI 官方预设。安装后先委派一个答案明确、只读的小任务，并根据客户端实际返回的子代理信息和验收结果判断路由是否可用。配置文件或 Worker 的文字自述都不能证明有效路由；provider 或调用异常时，应将对应 lane 视为不可用。
 
 ## 参考资料
 
@@ -174,6 +150,4 @@ Skill 不具备可靠的全局调用截获能力；给每个任务额外埋点�
 | Codex 子代理和自定义 Agent | [OpenAI Developers](https://developers.openai.com/codex/agent-configuration/subagents) |
 | Codex Skills 与发现路径 | [OpenAI Developers](https://developers.openai.com/codex/skills) |
 | Codex 指令发现顺序 | [OpenAI Developers](https://developers.openai.com/codex/guides/agents-md) |
-| DeepSeek V4-Flash 更新 | [DeepSeek API Docs](https://api-docs.deepseek.com/updates/) |
-| DeepSWE v1.1 榜单 | [DataCurve](https://deepswe.datacurve.ai/) |
 | Oh My OpenAgent 编排参考 | [code-yeongyu/oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) |

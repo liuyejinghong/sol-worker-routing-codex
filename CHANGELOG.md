@@ -7,7 +7,7 @@
 1. 新增 DeepSeek worker
 2. 支持双 Worker 分流
 3. 将 Skill 与仓库命名为 `sol-worker-routing`，避免把具体 Worker 供应商固化为公共接口
-4. 增加可复现基准，并在 README 明确公布两组同合同的 token / 墙钟记录及账单边界
+4. 增加可复现基准；README 只说明测量口径与边界，具体结果保留在独立报告
 5. 增加探针决策说明
 6. 更新安装、旧名安全迁移与个性化
 
