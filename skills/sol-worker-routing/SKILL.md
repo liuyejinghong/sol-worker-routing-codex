@@ -84,10 +84,10 @@ Default to one focused contract check plus one real-path result check. Do not re
 
 When this workflow is being installed or the DeepSeek lane is unavailable, Sol owns the setup instead of sending the user away to edit Codex configuration:
 
-1. Inspect the current `deepseek_worker`, `[model_providers.deepseek]`, and credential availability without printing secret material.
-2. If the provider is absent or its credential is missing, run this Skill's `scripts/configure_deepseek_provider.py`. It may add only the known provider block and store the key through the hidden macOS Keychain prompt. Never request a key in chat or place it directly in `config.toml`.
-3. If a different provider block already exists, stop and report the exact conflict. Do not overwrite a working custom setup.
-4. Verify availability with one bounded, read-only task whose answer and acceptance are obvious. A profile file, config parse, or worker self-report is not enough.
+1. Inspect the current `deepseek_worker` and `[model_providers.deepseek]` without printing secret material, then run one bounded, read-only task whose answer and acceptance are obvious.
+2. Treat a successful real invocation as authoritative. Preserve the existing provider and credential mechanism exactly as it is; the absence of one environment variable, keychain item, command, or platform-specific backend is not failure evidence.
+3. Only if the provider is absent or the invocation fails, inspect the current Codex client's supported provider and authentication interfaces. Configure only the DeepSeek provider and its credential reference using a mechanism native to that client and host environment. Never hard-code one operating system's credential store as the public workflow.
+4. If a different provider block already exists, diagnose the actual invocation before proposing a change. Do not overwrite a working custom setup. Never request a key in chat or place it directly in `config.toml`.
 5. If the current task cannot discover a newly installed agent, ask the user only to start a new task, then run the probe automatically. Reopen the App only if discovery still fails.
 
 Outside a repository installation, configuration mutation still requires explicit user authorization. The user may need to approve the change and enter a credential through a secure prompt, but must not be asked to discover the provider schema or installation steps.

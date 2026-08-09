@@ -69,8 +69,8 @@ DeepSeek 与 Luna Max 是并列的叶子 Worker，不是前后级关系。Sol �
 ```text
 请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-worker-routing-codex 。
 先读取并遵守仓库里的 AGENTS.md，保留现有 Codex 配置，遇到冲突不要覆盖。
-由安装流程检查并配置 DeepSeek provider，通过安全提示录入缺失的凭据，
-不要让我自己编辑 config.toml。安装后验证两个 Worker、Skill 和一次真实的只读路由。
+由安装流程检查现有 DeepSeek provider，并先执行一次真实的只读路由。
+能用就完整保留；真实调用失败时再按当前 Codex 和系统支持的方式修复，不要让我自己研究配置格式。
 ```
 
 也可以在终端安装：
@@ -84,11 +84,11 @@ bash scripts/install.sh
 安装流程会自动完成这些工作：
 
 1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
-2. 检查 `deepseek` provider；缺失时只添加预期的配置段。
-3. 检查 DeepSeek 凭据；缺失时打开隐藏输入，并把密钥保存到 macOS Keychain。
-4. 用一个答案明确的只读任务验证真实路由，而不是只检查配置文件。
+2. 检查现有 `deepseek` provider，并用一个答案明确的只读任务验证真实路由。
+3. 路由可用时完整保留现有配置，不因为某个环境变量或凭据后端不可见而重装。
+4. 只有真实调用失败时，才根据当前 Codex 客户端与操作系统支持的方式修复 provider 和认证。
 
-使用者不需要研究 provider 格式或手动修改 TOML，只需在安全提示出现时输入自己的 DeepSeek API key。安装 Agent 如果在当前任务中还看不到新 Worker，只会请你新建一个任务，随后由 Skill 自动完成路由探针。
+使用者不需要研究 provider 格式或手动修改 TOML。确实缺少服务凭据时，安装 Agent 只负责引导当前环境支持的安全输入方式，不会预设 Keychain、环境变量或其他平台专属方案。安装 Agent 如果在当前任务中还看不到新 Worker，只会请你新建一个任务，随后由 Skill 自动完成路由探针。
 
 唯一无法由仓库自动完成的是账号级个性化：从 [`personalization.md`](personalization.md) 复制一个完整语言块，粘贴到 Codex App 的“设置 → 个性化 → 自定义指令”。
 
@@ -135,15 +135,12 @@ Return format:
 
 ## 安装边界与项目文件
 
-安装器写入两个 Agent 配置、一个 Skill、预期的 DeepSeek provider 配置段和一项 macOS Keychain 凭据；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
+仓库安装器只写入两个 Agent 配置和一个 Skill；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
-~/.agents/skills/sol-worker-routing/scripts/configure_deepseek_provider.py
-[model_providers.deepseek] in ~/.codex/config.toml
-com.openai.codex.deepseek-api-key in macOS Keychain
 ```
 
 | 文件 | 用途 |
@@ -151,11 +148,10 @@ com.openai.codex.deepseek-api-key in macOS Keychain
 | [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
 | [`agents/`](agents/) | DeepSeek 与 Luna Max 的 Worker 配置 |
-| [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装、provider 配置和旧名称迁移 |
-| [`skills/sol-worker-routing/scripts/configure_deepseek_provider.py`](skills/sol-worker-routing/scripts/configure_deepseek_provider.py) | 随 Skill 安装的 provider 与 Keychain 配置脚本 |
+| [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
 | [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
-provider 脚本只会在配置缺失时添加已知段落；不同的现有 `[model_providers.deepseek]` 会被视为冲突。密钥不会写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
+Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理，而且不会把密钥写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
 
 这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
 
