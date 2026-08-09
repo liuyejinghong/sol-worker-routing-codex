@@ -4,7 +4,7 @@ This repository is designed to be handed directly to a Codex Agent for installat
 
 ## Objective
 
-Install the checked-in `deepseek_worker` and `luna_worker` custom agents plus the `sol-worker-routing` skill, configure the DeepSeek provider and credential, and preserve every unrelated Codex setting.
+Install the checked-in `deepseek_worker` and `luna_worker` custom agents plus the `sol-worker-routing` skill, configure the selected DeepSeek upstream and credential, and preserve every unrelated Codex setting. The supported DeepSeek upstreams are the official API and OpenCode Go; OpenCode Go is limited to `deepseek-v4-flash`.
 
 ## Authorized changes
 
@@ -18,7 +18,7 @@ $HOME/.agents/skills/sol-worker-routing/SKILL.md
 
 Provider setup is owned by the installing Agent, not by `scripts/install.sh`. First inspect the existing `deepseek_worker` and run a real bounded route probe. If it succeeds, preserve the provider and credential configuration exactly as it is; do not infer failure from the absence of one environment variable, keychain item, command, or platform-specific backend.
 
-Only when the provider is absent or the real invocation fails may the Agent add or repair `[model_providers.deepseek]`. Use a provider and credential mechanism supported by the current Codex client and host environment. Limit changes to that provider section and its required credential reference, preserve all unrelated settings, back up `config.toml`, and never hard-code an operating-system credential store in this repository.
+Only when the provider is absent or the real invocation fails may the Agent add or repair the selected provider. Use a provider and credential mechanism supported by the current Codex client and host environment. For OpenCode Go, do not configure the OpenCode application: select the alternate Worker profile, use the repository's local LiteLLM bridge, and add only the `opencode-go` Codex provider represented by `providers/opencode-go.codex.toml`. Limit changes to that provider section and its required bridge process, preserve all unrelated settings, back up `config.toml`, and never hard-code an operating-system credential store in this repository.
 
 The installer may remove an old `sol-luna-workflow` Skill from either `$HOME/.agents/skills/sol-luna-workflow/SKILL.md` or `$CODEX_HOME/skills/sol-luna-workflow/SKILL.md` (or `$HOME/.codex/skills/...` when `CODEX_HOME` is unset) only when it exactly matches a documented prior release and neither the file nor its directories are symbolic links. This is a path migration, not authorization to delete other legacy Skills.
 
@@ -32,7 +32,7 @@ If an Agent target or the legacy Skill exists with unknown different content, st
 
 ## Verification and handoff
 
-After installation, confirm that all three installed files exactly match the repository sources. When a standard TOML parser is available, parse the two repository TOML sources before any write; the exact-match check then proves the installed copies are valid too. Do not create a larger validation toolchain for this three-file copy.
+After installation, confirm that all three installed files exactly match the selected repository sources. When a standard TOML parser is available, parse the three repository TOML profiles before any write; the exact-match check then proves the installed copies are valid too. Do not create a larger validation toolchain for this three-file copy.
 
 Tell the user that `personalization.md` does not activate itself. They must manually copy one complete language block into Codex App Settings → Personalization → Custom Instructions when they want App-level personalization. Provider setup is still the installing Agent's responsibility: inspect the effective route, preserve a working setup, and repair only a proven failure using the current environment's supported mechanism. Do not send the user away to discover the TOML format or installation procedure.
 

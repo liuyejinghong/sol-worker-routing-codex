@@ -2,6 +2,13 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.5.1 - 2026-08-09
+
+1. 为 DeepSeek Worker 增加 OpenCode Go 上游选项，仅开放 `deepseek-v4-flash`
+2. 增加本机 LiteLLM Responses-to-Chat 协议桥接，不要求安装或配置 OpenCode 软件
+3. 安装器支持在 DeepSeek 官方 API 与 OpenCode Go 配置间安全选择
+4. 更新中英文 README、安装合同和 Skill 的自动配置职责
+
 ## 0.5.0 - 2026-08-09
 
 1. 新增 DeepSeek worker

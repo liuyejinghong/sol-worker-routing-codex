@@ -81,10 +81,19 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
+DeepSeek Worker 支持两种上游：默认使用 DeepSeek 官方 API；如果你订阅了 OpenCode Go，也可以让安装 Agent 只把其中的 **DeepSeek V4 Flash** 接入。下面两个命令分别选择 Go 版 Worker、启动本机桥接；对应 Codex provider 仍由安装 Agent 安全写入并验证：
+
+```bash
+bash scripts/install.sh --deepseek-provider opencode-go
+bash scripts/run-opencode-go-bridge.sh
+```
+
+这里使用的是 OpenCode Go 订阅提供的 API，不需要安装或配置 OpenCode 软件。OpenCode Go 为 V4 Flash 提供的是 `chat/completions`，而当前 Codex 自定义 provider 只接受 Responses API，因此仓库通过本机 LiteLLM 做一次协议转换：Codex 仍调用标准 `/v1/responses`，桥接层只把 `deepseek-v4-flash` 转发到 Go。API key 通过当前进程的安全输入或 `OPENCODE_API_KEY` 提供，不写进仓库或 Codex TOML。桥接脚本固定 LiteLLM 版本，避免依赖漂移。安装 Agent 会负责选择 Worker 配置、启动桥接、写入对应 provider 并完成一次真实路由验证；使用者不需要研究 OpenCode 配置格式。
+
 安装流程会自动完成这些工作：
 
 1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
-2. 检查现有 `deepseek` provider，并用一个答案明确的只读任务验证真实路由。
+2. 检查选择的 DeepSeek 上游，并用一个答案明确的只读任务验证真实路由。
 3. 路由可用时完整保留现有配置，不因为某个环境变量或凭据后端不可见而重装。
 4. 只有真实调用失败时，才根据当前 Codex 客户端与操作系统支持的方式修复 provider 和认证。
 
@@ -147,11 +156,12 @@ Return format:
 |---|---|
 | [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
-| [`agents/`](agents/) | DeepSeek 与 Luna Max 的 Worker 配置 |
+| [`agents/`](agents/) | DeepSeek 官方 API、OpenCode Go 与 Luna Max 的 Worker 配置 |
+| [`providers/`](providers/) | OpenCode Go 的单模型桥接与 Codex provider 模板 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
 | [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
-Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理，而且不会把密钥写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
+Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理。OpenCode Go 模式只增加本机 Responses 桥接和对应 provider，不会改动 OpenCode 软件，也不会把密钥写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
 
 这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
 
@@ -160,4 +170,6 @@ Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实�
 - [Codex 子代理和自定义 Agent](https://developers.openai.com/codex/agent-configuration/subagents)
 - [Codex Skills 与发现路径](https://developers.openai.com/codex/skills)
 - [Codex 指令发现顺序](https://developers.openai.com/codex/guides/agents-md)
+- [OpenCode Go 模型与 API 端点](https://opencode.ai/docs/zh-cn/go/)
+- [LiteLLM Responses API 桥接](https://docs.litellm.ai/docs/response_api)
 - [Oh My OpenAgent 编排参考](https://github.com/code-yeongyu/oh-my-openagent)

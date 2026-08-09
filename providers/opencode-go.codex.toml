@@ -1,0 +1,4 @@
+[model_providers.opencode-go]
+name = "OpenCode Go DeepSeek via local Responses bridge"
+base_url = "http://127.0.0.1:4141/v1"
+wire_api = "responses"

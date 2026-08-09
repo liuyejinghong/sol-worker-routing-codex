@@ -4,6 +4,37 @@ set -euo pipefail
 installer_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 installer_repo_root="$(cd -- "${installer_script_dir}/.." && pwd)"
 installer_home_dir="${HOME:?HOME is not set}"
+installer_requested_deepseek_provider="auto"
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --deepseek-provider)
+      [[ "$#" -ge 2 ]] || { echo "Error: --deepseek-provider requires deepseek-api or opencode-go." >&2; exit 64; }
+      installer_requested_deepseek_provider="$2"
+      shift 2
+      ;;
+    --deepseek-provider=*)
+      installer_requested_deepseek_provider="${1#*=}"
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: bash scripts/install.sh [--deepseek-provider deepseek-api|opencode-go]"
+      exit 0
+      ;;
+    *)
+      echo "Error: unknown argument: $1" >&2
+      exit 64
+      ;;
+  esac
+done
+
+case "${installer_requested_deepseek_provider}" in
+  auto|deepseek-api|opencode-go) ;;
+  *)
+    echo "Error: --deepseek-provider must be deepseek-api or opencode-go." >&2
+    exit 64
+    ;;
+esac
 
 if [[ "${installer_home_dir}" != /* ]]; then
   echo "Error: HOME must be an absolute path: ${installer_home_dir}" >&2
@@ -22,7 +53,8 @@ if [[ "${installer_codex_dir}" != /* ]]; then
 fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
-installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
+installer_deepseek_api_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
+installer_opencode_go_agent_source="${installer_repo_root}/agents/deepseek-worker.opencode-go.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
@@ -38,6 +70,15 @@ installer_legacy_skill_dirs=(
   "${installer_legacy_user_skill_dir}"
   "${installer_legacy_codex_skill_dir}"
 )
+
+if [[ "${installer_requested_deepseek_provider}" == "opencode-go" ]] || \
+   { [[ "${installer_requested_deepseek_provider}" == "auto" ]] && [[ -f "${installer_deepseek_agent_target}" ]] && cmp -s "${installer_opencode_go_agent_source}" "${installer_deepseek_agent_target}"; }; then
+  installer_deepseek_agent_source="${installer_opencode_go_agent_source}"
+  installer_effective_deepseek_provider="opencode-go"
+else
+  installer_deepseek_agent_source="${installer_deepseek_api_agent_source}"
+  installer_effective_deepseek_provider="deepseek-api"
+fi
 # Exact Skill contents from v0.4.1 and the pre-release v0.5.0 source. These
 # digests are only deletion proofs for the renamed legacy path.
 installer_known_legacy_skill_digests=(
@@ -48,6 +89,7 @@ installer_known_legacy_skill_digests=(
 # the only in-place upgrade source accepted for the current Skill path.
 installer_known_current_skill_digests=(
   "b1eb8288545514c4fcaeb74b37f9a69ea129e5f3bb2fb91eaadee97ac85baec5"
+  "468a66d39f195d736e087bd5a93b3dc596bc9196a7b847cc0681a8dcf9c8b864"
 )
 installer_conflict=0
 
@@ -85,6 +127,10 @@ installer_target_is_accepted() {
   local installer_source="$1"
   local installer_target="$2"
   cmp -s "${installer_source}" "${installer_target}" && return 0
+  if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && \
+     { cmp -s "${installer_deepseek_api_agent_source}" "${installer_target}" || cmp -s "${installer_opencode_go_agent_source}" "${installer_target}"; }; then
+    return 0
+  fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
     return 0
   fi
@@ -151,7 +197,7 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_luna_agent_source}" "${installer_deepseek_agent_source}"
+    "${installer_luna_agent_source}" "${installer_deepseek_api_agent_source}" "${installer_opencode_go_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
@@ -191,4 +237,5 @@ for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
 done
 
 echo "Verified: installed files match the repository sources."
+echo "DeepSeek provider profile: ${installer_effective_deepseek_provider}"
 echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."

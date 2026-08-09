@@ -82,10 +82,19 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
+DeepSeek Worker supports two upstreams. The default is the official DeepSeek API. OpenCode Go subscribers can have the installation Agent connect only **DeepSeek V4 Flash**. The two commands below select the Go Worker and start the local bridge; the installation Agent still owns safe Codex provider setup and verification:
+
+```bash
+bash scripts/install.sh --deepseek-provider opencode-go
+bash scripts/run-opencode-go-bridge.sh
+```
+
+This uses the API included with the OpenCode Go subscription; it does not install or configure the OpenCode application. Go exposes V4 Flash through `chat/completions`, while current Codex custom providers accept only the Responses API. The repository therefore uses a local LiteLLM protocol bridge: Codex keeps calling `/v1/responses`, and the bridge forwards only `deepseek-v4-flash` to Go. The API key is supplied through a secure process prompt or `OPENCODE_API_KEY`, never written to the repository or Codex TOML. The bridge script pins its LiteLLM version instead of accepting dependency drift. The installation Agent owns profile selection, bridge startup, provider setup, and one real route probe, so users do not need to discover the OpenCode schema.
+
 The installation flow handles all of the following:
 
 1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
-2. Inspect the existing `deepseek` provider and verify it with an obvious read-only task.
+2. Inspect the selected DeepSeek upstream and verify it with an obvious read-only task.
 3. Preserve a working setup instead of reinstalling it because one environment variable or credential backend is not visible.
 4. Only after a real invocation fails, repair the provider and authentication using mechanisms supported by the current Codex client and operating system.
 
@@ -148,11 +157,12 @@ The repository installer writes only two Agent profiles and one Skill. It can sa
 |---|---|
 | [`personalization.md`](personalization.md) | Global routing preference that you paste manually |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
-| [`agents/`](agents/) | DeepSeek and Luna Max Worker profiles |
+| [`agents/`](agents/) | DeepSeek API, OpenCode Go, and Luna Max Worker profiles |
+| [`providers/`](providers/) | Single-model OpenCode Go bridge and Codex provider template |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |
 | [`benchmarks/`](benchmarks/) | Benchmark cases, raw data, and the full report |
 
-The provider is not a fixed repository-installer output. The installation Agent judges the existing setup by a real route first and only repairs a confirmed failure using mechanisms supported by the current client and host. It never writes the key to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.
+The provider is not a fixed repository-installer output. The installation Agent judges the existing setup by a real route first and only repairs a confirmed failure using mechanisms supported by the current client and host. OpenCode Go mode adds only a local Responses bridge and its provider; it does not modify the OpenCode application or write the key to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.
 
 This is a community workflow, not an OpenAI preset. A profile file or Worker self-report is not route proof by itself; use client-exposed subagent information and the accepted task result.
 
@@ -161,4 +171,6 @@ This is a community workflow, not an OpenAI preset. A profile file or Worker sel
 - [Codex subagents and custom agents](https://developers.openai.com/codex/agent-configuration/subagents)
 - [Codex Skills and discovery paths](https://developers.openai.com/codex/skills)
 - [Codex instruction discovery](https://developers.openai.com/codex/guides/agents-md)
+- [OpenCode Go models and API endpoints](https://opencode.ai/docs/zh-cn/go/)
+- [LiteLLM Responses API bridge](https://docs.litellm.ai/docs/response_api)
 - [Oh My OpenAgent orchestration reference](https://github.com/code-yeongyu/oh-my-openagent)
