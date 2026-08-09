@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Sol Worker Routing for Codex</h1>
-  <p><strong>Sol 保留目标与判断；DeepSeek 处理可机械验收的证据；Luna Max 完成有界的语义执行。</strong></p>
-  <p>可直接交给 Codex 安装的双 Worker 工作流，用第一性原理限制过度编程、过度测试与无意义并行。</p>
+  <p><strong>把合适的任务，交给合适的 Worker。</strong></p>
+  <p>Sol 负责目标与判断，DeepSeek 处理证据和机械任务，Luna Max 完成需要语义理解的有界工作。</p>
   <p>
     <strong>简体中文</strong> ·
     <a href="README.en.md">English</a> ·
@@ -13,9 +13,54 @@
   </p>
 </div>
 
-## 交给 Codex 的三步安装
+## 它解决什么问题
 
-这个仓库既供人阅读，也可以直接交给 Agent 部署。仓库内的 [`AGENTS.md`](AGENTS.md) 把写入权限限制为两个 Agent 配置和一个 Skill；安装器先检测冲突，任何目标存在不同内容都会在写入前停止。
+让同一个模型包办所有工作，通常会遇到两个问题：简单任务消耗了不必要的时间和 token，复杂任务又可能被过早交给只适合机械执行的 Worker。
+
+Sol Worker Routing 按“任务需要怎样的理解和验收”来分流，而不是简单地按模型价格或能力排名。Sol 始终留在主线程，保留完整目标、授权边界和最终判断；两个 Worker 只接收已经收敛、能够独立验收的任务。
+
+| 执行者 | 最适合的工作 | 典型例子 |
+|---|---|---|
+| **Sol** | 极小任务、模糊问题、架构与最终决策 | 判断是否该改、整合多个结果、直接完成一步修改 |
+| **DeepSeek** | 来源固定、偏阅读、可机械验收 | 查找代码事实、整理证据、完成单文件机械补丁 |
+| **Luna Max** | 有明确边界、但需要语义理解 | 代码审查、模块分析、独立实现、聚焦排障 |
+
+## 同类任务，成本差多少
+
+我们把相同的两项证据/机械任务分别交给 DeepSeek 和 Luna Max。任务目标、范围、验收命令和停止条件完全一致，两个 Worker 都通过了 **2/2** 项验收。
+
+[![同类任务成本对比](docs/assets/benchmark-cost-comparison-zh-2026-08-09.png)](benchmarks/report-2026-08-09.md)
+
+| Worker | 通过任务 | 总耗时 | 生成 token |
+|---|---:|---:|---:|
+| **DeepSeek** | 2 / 2 | **88 秒** | **5,081** |
+| Luna Max | 2 / 2 | 235 秒 | 16,708 |
+
+在相同验收结果下，DeepSeek 少用了 **147 秒**和 **11,627 个生成 token**，对应耗时减少 **62.6%**、生成 token 减少 **69.6%**。这说明把来源固定、可机械验收的工作从 Luna Max 分流出去，能够显著降低这一类任务的 Worker 成本。
+
+> 这是两项配对任务的实测结果，不是通用模型排名。生成 token 为 `output token + reasoning token`，用于比较同一客户端内的工作量，不等同于美元账单或总 token。复现方法、逐项结果和样本限制见[完整报告](benchmarks/report-2026-08-09.md)，原始数据见 [CSV](benchmarks/pilot-2026-08-09.csv)。图表由 [`render_readme_chart.py`](benchmarks/render_readme_chart.py) 直接从 CSV 生成。
+
+## 路由是怎样工作的
+
+```mermaid
+flowchart LR
+    U["用户目标"] --> S["Sol<br/>理解、拆分、验收、整合"]
+    S -->|"一步即可完成"| D["Sol 直接完成"]
+    S -->|"证据固定、机械可验收"| DS["DeepSeek"]
+    S -->|"需要有界语义理解"| L["Luna Max"]
+    D --> O["最终结果"]
+    DS --> S
+    L --> S
+    S --> O
+```
+
+DeepSeek 与 Luna Max 是并列的叶子 Worker，不是前后级关系。Sol 只在任务可以独立完成、范围不重叠时才并行；存在共享状态、顺序依赖或同一写入面时，任务会按顺序执行。
+
+这个分工还有一个简单但重要的原则：如果 Sol 一步就能完成，就不为“使用子代理”而交接。交接本身也会消耗时间和 token。
+
+## 安装
+
+最简单的方式，是把下面这段话直接交给 Codex：
 
 ```text
 请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-worker-routing-codex 。
@@ -24,7 +69,7 @@
 并说明我还需要完成的人工步骤。
 ```
 
-也可以在本地执行：
+也可以在终端安装：
 
 ```bash
 git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
@@ -32,46 +77,37 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-安装器只会写入以下文件：
+安装完成后还需要两步：
+
+1. 从 [`personalization.md`](personalization.md) 复制一个完整语言块，粘贴到 Codex App 的“设置 → 个性化 → 自定义指令”。
+2. 确认 Codex 已配置名为 `deepseek` 的 provider 和可用凭据，然后新建一个任务验证路由。
+
+安装器不会编辑 `config.toml`、导入密钥或修改 App 设置。DeepSeek provider 不可用时，这条 lane 应明确返回不可用，不能假装已经调用成功。
+
+## 实际使用方式
+
+安装后不需要手动指定每个 Worker。正常描述目标即可，Sol 会先判断是否值得交接：
 
 ```text
-~/.codex/agents/deepseek-worker.toml
-~/.codex/agents/luna-worker.toml
-~/.agents/skills/sol-worker-routing/SKILL.md
+查清这个固定提交里配置项的默认值和调用位置，每条结论给出行号。
 ```
 
-接着在 Codex App 的“设置 → 个性化 → 自定义指令”中，从 [`personalization.md`](personalization.md) 复制一个完整语言块。GitHub 文件和 `AGENTS.md` 不能代替账号级个性化设置；通常无需重启，建议新建一个任务验证路由。
+来源和验收都固定时，适合交给 DeepSeek。
 
-DeepSeek lane 还需要你已经在 Codex 中配置名为 `deepseek` 的 provider 与凭据。安装器不会写入 `config.toml`、导入密钥或替你开通服务；provider 不可用时，Sol 不应假装 DeepSeek 已运行。
-
-## 一个主线程，三条执行路径
-
-这个 Skill 的任务卡不是 Codex UI 功能，而是 Sol 写给 Worker 的最小执行合同。Sol 先把模糊性收敛为一个可验收结果，再决定是否需要交接。
-
-```mermaid
-flowchart LR
-    U["用户目标"] --> S["Sol<br/>目标、边界、拆分、整合"]
-    S -->|"一步即可完成"| D["Sol 直接执行"]
-    S -->|"来源固定、可机械验收"| DS["DeepSeek worker<br/>证据与机械任务"]
-    S -->|"有界但需语义理解"| L["Luna Max worker<br/>审查、分析、实现、诊断"]
-    D --> O["Sol 验收并交付"]
-    DS -->|"事实与检查结果"| S
-    L -->|"变更、验证、风险"| S
-    S --> O
+```text
+审查这个模块的取消与资源清理路径，只报告能够定位和复现的问题。
 ```
 
-| 任务性质 | 路由 | 原因 |
-|---|---|---|
-| 极小、一步即可完成 | Sol 直接完成 | 子代理交接会增加 token 和等待 |
-| 固定来源、偏阅读、可机械验证 | `deepseek_worker` | 证据链短，验收可由命令或固定事实决定 |
-| 代码审查、模块分析、独立实现、聚焦排障 | `luna_worker` | 需要跨文件理解或局部语义判断 |
-| 模糊、耦合、共享状态、架构、最终决策 | Sol | 不能把整体判断外包给 Worker |
+需要跨文件语义理解，但范围清楚时，适合交给 Luna Max。
 
-DeepSeek 与 Luna 是同一层级的叶子 Worker，不是前后级。只有“先查证据、再做实现”时才按 `DeepSeek → Sol → Luna` 顺序衔接；同一状态、同一写入面或存在顺序依赖时不并行。默认最多两个 Worker、深度一层，Worker 不再委派。
+```text
+判断这次需求是否值得改变现有架构，并给出最终方案。
+```
 
-## Worker 收到什么
+这类问题保留给 Sol，因为 Worker 不应替主线程改变目标或做最终决策。
 
-Sol 负责拆分，Worker 不负责发现自己的范围。每个包只带必要事实，并固定为：
+<details>
+<summary>查看 Sol 交给 Worker 的任务合同</summary>
 
 ```text
 Worker and mode:
@@ -85,73 +121,39 @@ Stop condition:
 Return format:
 ```
 
-DeepSeek 默认只读；只有明确列出可写路径、机械验收和授权时才允许做最小补丁。Luna 可以处理独立实现与诊断，但同样不能改变父目标、架构、优先级或授权边界。包不足时，正确结果是返回精确 blocker，而不是自行扩大调查范围。
+这不是额外的用户流程，而是 Sol 在后台给 Worker 的最小上下文。任务信息不足时，Worker 应返回明确的 blocker，而不是自行扩大范围。
 
-一个适合 DeepSeek 的完整包可以是：
+</details>
+
+## 少一些流程，多一些有效证据
+
+这个工作流不强制 TDD、spec-first 或固定审查轮次。它先明确最终目标、不可变事实、最小验收标准和授权边界，再选择最短、最直接、可验证的路径。
+
+默认只做“一次聚焦合同检查 + 一次真实链路结果核对”。新增测试、gate、dry-run 或工具之前，先确认它保护了什么具体风险，以及失败是否真的会改变决策。如果验证层开始比实现本身更复杂，就回到原始目标重新简化。
+
+## 安装边界与项目文件
+
+安装器只写入两个 Agent 配置和一个 Skill；遇到不同内容会在覆盖前停止：
 
 ```text
-Worker and mode: deepseek_worker | read-only evidence
-Objective: 说明指定提交中某个开关的默认值和实际调用点。
-Scope and owned paths: README.md, src/options.ts；不写文件。
-Relevant facts / source pins: repository@<immutable-sha>。
-Non-goals: 不提出架构建议，不安装依赖，不搜索其他分支。
-Acceptance criteria: 每条结论附 file:line；运行指定只读命令。
-Verification: git status --short 与给定断言命令。
-Stop condition: 目标提交或事实不在本地时返回 blocker。
-Return format: Facts; command result; files changed; risks.
+~/.codex/agents/deepseek-worker.toml
+~/.codex/agents/luna-worker.toml
+~/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
-## 按工作形态分流
-
-这个工作流不按“哪个模型更便宜”或“哪个模型更强”做固定分配。只有当来源、范围和验收都已固定时，才把证据或机械任务交给 DeepSeek；需要跨文件语义理解的有界执行交给 Luna；任何模糊、耦合、共享状态或最终判断都留在 Sol。
-
-因此，极小任务也不必为了使用 Worker 而交接。路由是否合适由任务合同决定，而不是一次模型比较、个人账户用量或外部价格榜。
-
-## 基准结果
-
-在两组同合同对照中，DeepSeek 与 Luna Max 都通过验收。两组任务分别是固定来源的只读证据查找和单文件机械补丁；目标、范围、验收和验证完全相同。
-
-| 指标 | DeepSeek evidence lane | Luna Max |
-|---|---:|---:|
-| 通过的同合同任务 | 2 / 2 | 2 / 2 |
-| Worker 墙钟 | **88 秒** | 235 秒 |
-| 生成 token | **5,081** | 16,708 |
-
-在这两个任务上，DeepSeek 的 Worker 墙钟减少 **62.6%**，生成 token 减少 **69.6%**。这正是工作流把固定证据和机械任务与语义执行分开的实际收益。
-
-[![双 Worker 首轮配对基准](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
-
-结果只覆盖这两组固定来源、可机械验收的任务。`生成 token = output_tokens + reasoning_tokens`，用于同一客户端内的工作量与成本代理，不是美元账单、输入或总 token，也不是通用质量排名。案例、重跑协议、原始 [CSV](benchmarks/pilot-2026-08-09.csv) 和[完整报告](benchmarks/report-2026-08-09.md)都在 [`benchmarks/`](benchmarks/)。
-
-## 不规定流程，只约束工作方式
-
-TDD、spec-first 和固定审查轮次可以有用，但它们不应成为模型工作的目标。能力增强后，重流程可能驱动模型继续生成抽象、测试、审查器和工具，直到工作量脱离原始问题。
-
-这里不强制某个开发流程。它要求先明确最终目标、不可变事实、最小验收标准和授权边界，再选最短、最直接、可验证的路径。每增加一个测试、gate、dry-run、审查或工具，都必须能回答：它保护什么具体且不可逆的风险；失败会改变什么决策；为什么现有更便宜的证据不足。
-
-默认验证是“一次聚焦合同检查 + 一次真实链路结果核对”。候选和事实未变化时不重复验证；如果验证比实现更贵，或连续两步只是在修复验证层而没有增加原始目标的事实，就停止扩张工具链并回到根问题。
-
-## 配置与安全边界
-
-| 文件 | 职责 |
+| 文件 | 用途 |
 |---|---|
-| [`personalization.md`](personalization.md) | App 级路由偏好，需人工粘贴 |
-| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的直接门槛、分流、任务包、验收与整合 |
-| [`agents/deepseek-worker.toml`](agents/deepseek-worker.toml) | DeepSeek 证据/机械 Worker 的模型与边界 |
-| [`agents/luna-worker.toml`](agents/luna-worker.toml) | Luna Max 语义执行 Worker 的模型与边界 |
-| [`scripts/install.sh`](scripts/install.sh) | 冲突前置、最小写入、旧 Skill 路径迁移 |
-| [`AGENTS.md`](AGENTS.md) | Agent 部署本仓库时的授权合同 |
-| [`benchmarks/`](benchmarks/) | 可复现案例、数据和首轮报告 |
+| [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
+| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
+| [`agents/`](agents/) | DeepSeek 与 Luna Max 的 Worker 配置 |
+| [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
+| [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
-安装器不会编辑 `config.toml`、其他 Agent、其他 Skill、全局或项目 `AGENTS.md`、以及 Codex App 设置。它只会把内容可验证为已知旧版本、且没有符号链接的 `sol-luna-workflow` 从 `~/.agents/skills/` 或旧的 `~/.codex/skills/` 迁移到 `~/.agents/skills/sol-worker-routing/`；任何未知旧内容都会停止，不会覆盖或删除。Agent 使用 `${CODEX_HOME:-~/.codex}`，Skill 使用官方用户路径 `~/.agents/skills`。
-
-这是社区工作流，不是 OpenAI 官方预设。安装后先委派一个答案明确、只读的小任务，并根据客户端实际返回的子代理信息和验收结果判断路由是否可用。配置文件或 Worker 的文字自述都不能证明有效路由；provider 或调用异常时，应将对应 lane 视为不可用。
+已知旧版 `sol-luna-workflow` 只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述也不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
 
 ## 参考资料
 
-| 主题 | 来源 |
-|---|---|
-| Codex 子代理和自定义 Agent | [OpenAI Developers](https://developers.openai.com/codex/agent-configuration/subagents) |
-| Codex Skills 与发现路径 | [OpenAI Developers](https://developers.openai.com/codex/skills) |
-| Codex 指令发现顺序 | [OpenAI Developers](https://developers.openai.com/codex/guides/agents-md) |
-| Oh My OpenAgent 编排参考 | [code-yeongyu/oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) |
+- [Codex 子代理和自定义 Agent](https://developers.openai.com/codex/agent-configuration/subagents)
+- [Codex Skills 与发现路径](https://developers.openai.com/codex/skills)
+- [Codex 指令发现顺序](https://developers.openai.com/codex/guides/agents-md)
+- [Oh My OpenAgent 编排参考](https://github.com/code-yeongyu/oh-my-openagent)
