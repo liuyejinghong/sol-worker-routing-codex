@@ -1,70 +1,52 @@
 ---
 name: sol-luna-workflow
-description: Use when a Sol main thread can delegate a clearly bounded, independently completable task to the named Luna Max worker. Defines the handoff, ownership, verification, and stop boundaries without re-running general model-tier selection.
+description: Use when Sol must keep the parent goal while routing a bounded task directly, to the named DeepSeek evidence worker, or to the named Luna Max execution worker.
 ---
 
-# Sol lead, Luna Max workers
+# Sol lead, two bounded worker lanes
 
-Use this skill as a small orchestration overlay. Explicit user instructions, permissions, project `AGENTS.md` files, and current verified facts remain authoritative.
+Use this as a small routing overlay. Explicit user instructions, permissions, project `AGENTS.md` files, and verified facts remain authoritative. Sol owns the parent objective, decomposition, cross-task decisions, acceptance, and final answer. Workers only return evidence for Sol to inspect.
 
-This workflow is a user-chosen routing policy, not a per-task model benchmark. Do not invoke another tier-routing skill, compare Luna Medium or Terra, or request fresh approval for the default topology each time an eligible task appears.
+This is a user-chosen topology, not a claim that one model is best at every task. Do not re-run general model-tier comparisons for an eligible packet. Do not use Luna Medium as a silent substitute for `luna_worker`.
 
-## Default topology
+## 0. Direct-execution gate
 
-- Keep Sol in the main thread.
-- Sol understands the goal, defines boundaries, splits work, reviews results, resolves conflicts, and owns the final answer.
-- Prefer the named `luna_worker` for clearly scoped code review, module analysis, independent implementation, focused test diagnosis, and other objectively checkable work.
-- Luna Max is the preferred worker lane for this workflow. Do not silently replace it with Luna Medium or another model.
-- Treat the observed cost/performance of Luna Max as a routing policy for bounded execution, not as a universal model-quality guarantee. Keep ambiguous judgment with Sol.
-- When the packet meets the delegation contract, dispatch `luna_worker` directly. Do not pause for a new model comparison or cost justification.
-- A worker handoff is evidence for Sol to inspect, not the final project decision.
+Before making a packet, ask whether Sol can finish and verify the work in one focused action with no useful independent outcome. If yes, do it directly. Do not delegate tiny lookup, edit, or command tasks merely because workers exist.
 
-## Sol task decomposition
-
-Sol owns decomposition. Split work at independently verifiable outcome boundaries, not by arbitrary file counts, module names, or a desire to create workers.
-
-1. Lock the parent contract: final objective, invariant facts, minimum acceptance criteria, and authorization boundary.
-2. Separate global decisions from execution. Keep ambiguity, architecture, priorities, tradeoffs, and cross-task integration with Sol.
-3. Form a candidate worker unit around one observable outcome. It must be completable from compact context, have explicit and non-overlapping ownership, and be reviewable without redefining the parent goal.
-4. Apply the independence test: can `luna_worker` finish, verify, or return a precise blocker without discovering its own scope or changing another task's state? If not, keep the work with Sol, refine the boundary, or run it sequentially.
-5. Write one worker packet for each accepted unit and dispatch the named worker. Do not ask Luna to perform the decomposition that Sol has not completed.
-6. On return, compare the evidence with the parent acceptance criteria, resolve conflicts across units, and integrate the result. Luna's report never replaces Sol's final judgment.
-
-The decomposition rule is therefore:
+## 1. Route by the work, not by model names
 
 ```text
-ambiguous, coupled, shared-state, or decision-heavy -> Sol
-bounded, independent, objectively checkable execution -> luna_worker (Luna Max)
+tiny / one focused action                              -> Sol directly
+ambiguous, coupled, shared-state, decision-heavy       -> Sol
+read-heavy, source-pinned, mechanically checkable      -> deepseek_worker
+bounded semantic review / analysis / implementation    -> luna_worker
 ```
 
-## Delegate only when the work package has
+Use `deepseek_worker` when the conclusion is determined by compact, named evidence and a fixed check: inventories, source fact extraction, static inspection, command results, structured extraction, or an explicitly authorized minimal mechanical patch.
 
-- one bounded objective;
-- compact, task-specific context;
-- explicit scope and owned paths;
-- clear non-goals and authorization boundaries;
-- observable acceptance criteria;
-- proportionate verification and a stop condition;
-- a concise return contract.
+Use `luna_worker` when the bounded outcome needs non-trivial code understanding: focused code review, module analysis, isolated implementation, or test-failure diagnosis. It still needs explicit ownership and objective acceptance.
 
-Do not delegate a tiny task when the handoff costs more than doing it directly.
+If evidence precedes implementation, use the sequence `DeepSeek -> Sol decision -> Luna`; do not make the workers vote on the same task. If the named worker is unavailable or its effective route is unverified, keep the task with Sol or use another explicitly authorized lane. A profile on disk or a worker's self-report is not route proof.
 
-## Keep with Sol
+## 2. Sol decomposes before dispatch
 
-- changing the overall objective, architecture, or priorities;
-- ambiguous tradeoffs and final semantic judgment;
-- sequential work or work that depends on shared mutable state;
-- release, production, account, permission, or other external mutations unless the user explicitly delegates and authorizes that exact action;
-- integration and final reporting.
+Split only at independently verifiable outcome boundaries, not by file count or a desire to fan out.
 
-## Worker packet
+1. Lock the parent contract: final objective, invariant facts, minimum acceptance criteria, and authorization boundary.
+2. Keep ambiguity, architecture, priorities, tradeoffs, external mutations, and final semantic judgment with Sol.
+3. Form one observable worker outcome with compact context and explicit, non-overlapping ownership.
+4. Apply the independence test: can the chosen worker finish, verify, or return a precise blocker without redefining scope or changing another task's state?
+5. Send one packet. On return, compare evidence with the parent contract and integrate it yourself.
 
-Send only the necessary facts in this shape:
+## 3. Worker packet
+
+Send only necessary context in this shape:
 
 ```text
+Worker and mode: deepseek_worker | read-only evidence
 Objective:
 Scope and owned paths:
-Relevant facts:
+Relevant facts / source pins:
 Non-goals:
 Acceptance criteria:
 Verification:
@@ -72,28 +54,28 @@ Stop condition:
 Return format:
 ```
 
-For read-only work, say so explicitly. For implementation, identify writable paths. If the task cannot be completed inside the packet, the worker returns the exact blocker instead of widening scope.
+For a Luna implementation packet, name writable paths. For DeepSeek, default to read-only; allow a patch only when writable paths, a mechanical acceptance check, and approval are explicit. An incomplete packet must produce an exact blocker, never a wider investigation.
 
-## First-principles verification
+## 4. Worker boundaries
 
-Code, tests, and toolchains must all serve the delegated outcome. Before adding a test, gate, dry run, reviewer, or tool, answer:
+- `deepseek_worker`: low-cost evidence lane. No architecture, policy, release, account, or broad semantic decision. No write by default.
+- `luna_worker`: bounded semantic execution lane. No parent-goal, architecture, priority, or authorization changes.
+- Neither worker delegates further, changes external state, or performs unrelated cleanup.
+- Pass later workers only a concise handoff of facts, changes, verification, risks, and blockers—not a full transcript.
+
+## 5. First-principles verification
+
+Before adding a test, gate, dry run, review, or tool, answer:
 
 1. What concrete irreversible risk does it protect?
 2. What decision changes if it fails?
 3. Why is the existing cheaper evidence insufficient?
 
-Default to one focused contract check plus one real-path result check. Do not repeat the same validation when the candidate and relevant facts have not changed.
+Default to one focused contract check plus one real-path result check. Do not repeat unchanged validation. If verification exceeds implementation, or two consecutive steps only repair validation/tooling without adding facts about the objective, stop expanding the toolchain and report the remaining risk.
 
-If verification costs more than implementation, or two consecutive steps only repair validation or tooling without adding facts about the original objective, stop expanding the toolchain and return to the root problem. Report any remaining risk instead of manufacturing a new validation system.
+## 6. Parallelism and integrity
 
-## Parallelism
-
-- Parallelism is optional, not a target.
-- Use it only for independent scopes with disjoint write ownership.
-- Start with at most two workers unless the user explicitly requests a larger fan-out.
-- Never let workers delegate further.
-- If two tasks need the same mutable files or state, run them sequentially.
-
-## Route integrity
-
-Dispatch the named `luna_worker`, not a generic worker. Its custom-agent file pins `gpt-5.6-luna` with `max` effort. Verify that route once after installation and again only after a major Codex client change or observed routing mismatch. Prompt steering or a textual self-report is not proof of the effective route.
+- Parallelism is optional. Use it only for independent scopes with disjoint write ownership.
+- Start with at most two workers and depth one unless the user explicitly requests more.
+- Shared mutable state, ordered dependencies, or overlapping writes are sequential.
+- Dispatch the named `deepseek_worker` or `luna_worker`, never a generic substitute. Re-check effective routing only after installation, a major client change, or observed mismatch.

@@ -1,7 +1,7 @@
 <div align="center">
-  <h1>Sol + Luna Codex Workflow</h1>
-  <p><strong>Sol 管理目标与判断，Luna Max 执行边界清晰的子任务。</strong></p>
-  <p>一套可直接交给 Codex 安装的主从代理工作流，并用第一性原理限制过度编程和过度测试。</p>
+  <h1>Sol + DeepSeek + Luna Codex Workflow</h1>
+  <p><strong>Sol 保留目标与判断；DeepSeek 处理可机械验收的证据；Luna Max 完成有界的语义执行。</strong></p>
+  <p>可直接交给 Codex 安装的双 Worker 工作流，用第一性原理限制过度编程、过度测试与无意义并行。</p>
   <p>
     <strong>简体中文</strong> ·
     <a href="README.en.md">English</a> ·
@@ -13,17 +13,18 @@
   </p>
 </div>
 
-## 快速开始
+## 交给 Codex 的三步安装
 
-推荐把仓库地址直接交给 Codex。仓库中的 `AGENTS.md` 会限制安装范围，安装器遇到不同内容时不会覆盖。
+这个仓库既供人阅读，也可以直接交给 Agent 部署。仓库内的 [`AGENTS.md`](AGENTS.md) 把写入权限限制为两个 Agent 配置和一个 Skill；安装器先检测冲突，任何目标存在不同内容都会在写入前停止。
 
 ```text
 请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-luna-codex-workflow 。
 先读取并遵守仓库里的 AGENTS.md，保留现有 Codex 配置，遇到冲突不要覆盖。
-安装后验证 luna_worker 和 sol-luna-workflow Skill，并告诉我还需要完成哪些人工步骤。
+安装后验证 deepseek_worker、luna_worker 和 sol-luna-workflow Skill，
+并说明我还需要完成的人工步骤。
 ```
 
-也可以自己安装：
+也可以在本地执行：
 
 ```bash
 git clone https://github.com/liuyejinghong/sol-luna-codex-workflow.git
@@ -31,109 +32,132 @@ cd sol-luna-codex-workflow
 bash scripts/install.sh
 ```
 
-安装器会写入：
+安装器只会写入以下文件：
 
 ```text
+~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-luna-workflow/SKILL.md
 ```
 
-最后打开 Codex App 的“设置 → 个性化 → 自定义指令”，从 [`personalization.md`](personalization.md) 复制一个完整语言块。这个步骤需要人工完成；GitHub 文件和 `AGENTS.md` 不能替代 App 的账号级个性化设置。通常不需要重启，建议新建一个任务验证工作流。
+接着在 Codex App 的“设置 → 个性化 → 自定义指令”中，从 [`personalization.md`](personalization.md) 复制一个完整语言块。GitHub 文件和 `AGENTS.md` 不能代替账号级个性化设置；通常无需重启，建议新建一个任务验证路由。
 
-## 工作方式
+DeepSeek lane 还需要你已经在 Codex 中配置名为 `deepseek` 的 provider 与凭据。安装器不会写入 `config.toml`、导入密钥或替你开通服务；provider 不可用时，Sol 不应假装 DeepSeek 已运行。
+
+## 一个主线程，三条执行路径
+
+这个 Skill 的任务卡不是 Codex UI 功能，而是 Sol 写给 Worker 的最小执行合同。Sol 先把模糊性收敛为一个可验收结果，再决定是否需要交接。
 
 ```mermaid
 flowchart LR
-    U["用户目标"] --> S["Sol<br/>理解目标、划定边界、拆分任务"]
-    S -->|"边界清晰的执行包"| L["Luna Max<br/>审查、分析、实现、排查"]
-    L -->|"结果与验证证据"| S
-    S --> O["检查、整合、最终交付"]
+    U["用户目标"] --> S["Sol<br/>目标、边界、拆分、整合"]
+    S -->|"一步即可完成"| D["Sol 直接执行"]
+    S -->|"来源固定、可机械验收"| DS["DeepSeek worker<br/>证据与机械任务"]
+    S -->|"有界但需语义理解"| L["Luna Max worker<br/>审查、分析、实现、诊断"]
+    D --> O["Sol 验收并交付"]
+    DS -->|"事实与检查结果"| S
+    L -->|"变更、验证、风险"| S
+    S --> O
 ```
 
-Sol 始终留在主线程，保留完整目标和跨任务上下文。它负责处理模糊性、权衡、架构判断、任务拆分和最终验收。Luna Max 只接收能够独立完成、客观检查、写入范围明确的执行包，不重新定义整体目标，也不自行扩大范围。
+| 任务性质 | 路由 | 原因 |
+|---|---|---|
+| 极小、一步即可完成 | Sol 直接完成 | 子代理交接会增加 token 和等待 |
+| 固定来源、偏阅读、可机械验证 | `deepseek_worker` | 证据链短，验收可由命令或固定事实决定 |
+| 代码审查、模块分析、独立实现、聚焦排障 | `luna_worker` | 需要跨文件理解或局部语义判断 |
+| 模糊、耦合、共享状态、架构、最终决策 | Sol | 不能把整体判断外包给 Worker |
 
-用户不需要每次显式要求“使用子代理”。任务满足委派合同时，Sol 可以直接调用 `luna_worker`；任务很小、交接成本更高时，则由 Sol 直接完成。
+DeepSeek 与 Luna 是同一层级的叶子 Worker，不是前后级。只有“先查证据、再做实现”时才按 `DeepSeek → Sol → Luna` 顺序衔接；同一状态、同一写入面或存在顺序依赖时不并行。默认最多两个 Worker、深度一层，Worker 不再委派。
 
-| 适合交给 Luna Max | 应留在 Sol |
-|---|---|
-| 只读代码审查 | 模糊或持续变化的需求 |
-| 单个模块分析 | 全局架构和优先级判断 |
-| 写入范围独立的实现 | 共享状态或重叠写入 |
-| 聚焦测试排查 | 跨任务整合与最终结论 |
-| 结构化信息整理 | 发版、账号和外部副作用 |
+## Worker 收到什么
 
-并行只是可选手段。只有子任务相互独立、上下文可以压缩、写入范围不重叠时才并行；否则按顺序执行。
-
-## Luna 收到什么
-
-任务拆分由 Sol 完成，Luna 不负责发现自己的工作范围。一个执行包至少包含：
+Sol 负责拆分，Worker 不负责发现自己的范围。每个包只带必要事实，并固定为：
 
 ```text
-目标：
-范围和拥有的路径：
-必要事实：
-不做事项：
-验收标准：
-验证方式：
-停止条件：
-回传格式：
+Worker and mode:
+Objective:
+Scope and owned paths:
+Relevant facts / source pins:
+Non-goals:
+Acceptance criteria:
+Verification:
+Stop condition:
+Return format:
 ```
 
-如果执行包不足以完成任务，Luna 应返回准确的阻塞点。Sol 根据整体目标检查证据、解决冲突并整合输出。
+DeepSeek 默认只读；只有明确列出可写路径、机械验收和授权时才允许做最小补丁。Luna 可以处理独立实现与诊断，但同样不能改变父目标、架构、优先级或授权边界。包不足时，正确结果是返回精确 blocker，而不是自行扩大调查范围。
 
-## 为什么选择 Sol + Luna Max
+一个适合 DeepSeek 的完整包可以是：
 
-主线程和 worker 承担的是两类工作。Sol 的上下文用于保存目标、约束和判断；Luna 的上下文只包含当前执行包。这样可以减少主线程污染，也能避免小模型在模糊任务中重新解释需求。
+```text
+Worker and mode: deepseek_worker | read-only evidence
+Objective: 说明指定提交中某个开关的默认值和实际调用点。
+Scope and owned paths: README.md, src/options.ts；不写文件。
+Relevant facts / source pins: repository@<immutable-sha>。
+Non-goals: 不提出架构建议，不安装依赖，不搜索其他分支。
+Acceptance criteria: 每条结论附 file:line；运行指定只读命令。
+Verification: git status --short 与给定断言命令。
+Stop condition: 目标提交或事实不在本地时返回 blocker。
+Return format: Facts; command result; files changed; risks.
+```
 
-[DeepSWE v1.1 成本榜](https://deepswe.datacurve.ai/)提供了一份选择 Luna Max 的公开参考。在 2026-07-25 的榜单快照中，Luna Max 得分 67%，单任务平均报告成本为 0.61 美元，呈现了较好的成本与效果平衡。这只是单项基准证据，不代表 Luna Max 在所有任务上都绝对最优。
+## 为什么不是“所有任务都交给更便宜的模型”
 
-[![DeepSWE v1.1 成本榜中的 Luna Max](docs/assets/deepswe-v1.1-cost-leaderboard.png)](https://deepswe.datacurve.ai/)
+[DeepSeek 官方 2026-07-31 更新](https://api-docs.deepseek.com/updates/)说明 `deepseek-v4-flash` 支持 Responses API，并针对 Codex 做了适配。它适合作为低成本证据 lane 的前提是任务已经被 Sol 收敛到固定来源和可机械验收，而不是让它自行解释模糊需求。
 
-这套组合的前提不是“Luna 什么都能做”，而是 Sol 先消化模糊性，再把完整、可验收的结果单元交给 Luna。满足委派合同时，Sol 直接使用具名的 `luna_worker`，不需要每次重新比较模型档位。
+[DeepSWE v1.1 成本榜](https://deepswe.datacurve.ai/) 在 2026-08-07 的页面快照中报告：`deepseek-v4-flash[max]` 为 53%±4%、平均 $0.10/任务；`gpt-5.6-luna[max]` 为 67%±4%、平均 $0.61/任务。前者便宜约 83.6%，后者在该长程工程基准上成功率更高。它们不是“谁更强”的通用结论，而是把证据任务与语义执行拆开的理由。
+
+[![DeepSWE v1.1 成本榜中的 DeepSeek 与 Luna](docs/assets/deepswe-v1.1-cost-leaderboard.png)](https://deepswe.datacurve.ai/)
+
+图为历史快照；模型数字和榜单更新时间应以链接中的实时页面为准。
+
+这套路由并不要求每个任务都使用 Worker。极小任务保留在 Sol，避免为了节省模型价格反而支付更多交接时间；需要语义判断的有界工作由 Luna Max 处理，避免低成本模型在不完整任务上引入返工。
+
+## 首轮可复现基准
+
+仓库提供了四类常见开源场景：代码事实查找、失败诊断、窄机械补丁和有界代码审查。它们均来自固定 GitHub 提交、PR 或讨论，且只在临时公开工作树运行。完整的案例、命令、原始聚合数据、图表和限制见 [`benchmarks/README.md`](benchmarks/README.md) 与 [`benchmarks/report-2026-08-09.md`](benchmarks/report-2026-08-09.md)。
+
+[![双 Worker 首轮配对基准](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
+
+在两组同合同对照中，DeepSeek 与 Luna 都通过了验收；将“固定证据 + 机械补丁”从全 Luna 路由切换到 DeepSeek，Worker 墙钟从 235 秒降至 88 秒，生成 token 从 16,708 降至 5,081。样本只有两组、每组一次，不能外推为真实账单或通用质量排名；它只验证了该 lane 的目标边界。
 
 ## 不规定流程，只约束工作方式
 
-许多工程 Skill 通过 spec-first、TDD 或固定审查轮次提高一致性。这些方法本身没有问题，但当模型的抽象、推理和工具能力增强时，过重的流程也可能反过来成为任务目标：模型为了满足流程继续生成抽象、测试、审查器和工具，工作量逐渐离开原始问题。
+TDD、spec-first 和固定审查轮次可以有用，但它们不应成为模型工作的目标。能力增强后，重流程可能驱动模型继续生成抽象、测试、审查器和工具，直到工作量脱离原始问题。
 
-这个仓库不规定必须采用哪种开发流程。它要求先明确最终目标、不可变事实、最小验收标准和授权边界，再选择最短、最直接、可验证的方案。TDD、spec 和额外工具仍然可以使用，但要先回答：
+这里不强制某个开发流程。它要求先明确最终目标、不可变事实、最小验收标准和授权边界，再选最短、最直接、可验证的路径。每增加一个测试、gate、dry-run、审查或工具，都必须能回答：它保护什么具体且不可逆的风险；失败会改变什么决策；为什么现有更便宜的证据不足。
 
-```text
-它保护什么具体且不可逆的风险？
-如果失败，会改变什么决策？
-为什么现有的更便宜证据不足？
-```
+默认验证是“一次聚焦合同检查 + 一次真实链路结果核对”。候选和事实未变化时不重复验证；如果验证比实现更贵，或连续两步只是在修复验证层而没有增加原始目标的事实，就停止扩张工具链并回到根问题。
 
-这条约束来自一次真实复盘：一个小任务持续了五个多小时，真正改变目标行为的工作约四十分钟，其余时间主要用于扩建测试和验证工具，再修复这些工具产生的新问题。默认验证因此保持为“一次聚焦合同检查 + 一次真实链路结果核对”；如果验证开始只为验证工具本身服务，就回到原始目标。
+## 不做常驻成本探针
 
-## 实际使用情况
+Skill 不具备可靠的全局调用截获能力；给每个任务额外埋点也会增加上下文、I/O 和隐私面，容易把测量本身变成流程负担。因此本仓库不在正常委派中统计 token 或估算美元成本。
 
-下面是我的 Codex 实时模型用量，可以观察采用这套工作方式后 Sol 与 Luna 的 token 分布。它统计的是账号总体使用记录，不能证明每一个 Luna token 都由本仓库触发。
+只有用户明确要求成本评估或重跑基准时，才建议由 Sol 启用可选诊断：记录 Worker、模型/推理强度、起止时间、终态和验收结果；客户端原生提供 usage 时才记录它，缺失就标为未知。它不记录完整对话、源码或密钥，也不从 Worker 自述推断账单。
 
-[![liuyejinghong 的 Codex token 使用情况](https://tokens.ci/api/embed/liuyejinghong/svg?tokens=compact&cost=compact)](https://tokens.ci/u/liuyejinghong)
-
-## 配置分工
-
-任务拆解逻辑属于 Skill，不属于 worker 配置。每一层只保留一种职责：
+## 配置与安全边界
 
 | 文件 | 职责 |
 |---|---|
-| [`personalization.md`](personalization.md) | 告诉 Codex 何时采用这套工作方式 |
-| [`skills/sol-luna-workflow/SKILL.md`](skills/sol-luna-workflow/SKILL.md) | 定义 Sol 的拆分、委派、隔离、验收和整合 |
-| [`agents/luna-worker.toml`](agents/luna-worker.toml) | 固定 Luna Max worker，并限制执行边界 |
-| [`scripts/install.sh`](scripts/install.sh) | 安全安装与旧路径迁移 |
-| [`AGENTS.md`](AGENTS.md) | Agent 部署仓库时的授权合同 |
-| [`VERSION`](VERSION) | 当前语义化版本 |
-| [`CHANGELOG.md`](CHANGELOG.md) | 简明版本记录 |
+| [`personalization.md`](personalization.md) | App 级路由偏好，需人工粘贴 |
+| [`skills/sol-luna-workflow/SKILL.md`](skills/sol-luna-workflow/SKILL.md) | Sol 的直接门槛、分流、任务包、验收与整合 |
+| [`agents/deepseek-worker.toml`](agents/deepseek-worker.toml) | DeepSeek 证据/机械 Worker 的模型与边界 |
+| [`agents/luna-worker.toml`](agents/luna-worker.toml) | Luna Max 语义执行 Worker 的模型与边界 |
+| [`scripts/install.sh`](scripts/install.sh) | 冲突前置、最小写入、旧 Skill 路径迁移 |
+| [`AGENTS.md`](AGENTS.md) | Agent 部署本仓库时的授权合同 |
+| [`benchmarks/`](benchmarks/) | 可复现案例、数据和首轮报告 |
 
-`SKILL.md` 保持英文，作为唯一的模型侧执行合同，避免维护两份规则造成漂移。Skill 的语言不会决定对话语言，Agent 仍然遵循用户和项目 `AGENTS.md` 的语言要求。
+安装器不会编辑 `config.toml`、其他 Agent、其他 Skill、全局或项目 `AGENTS.md`、以及 Codex App 设置。旧路径 `~/.codex/skills/sol-luna-workflow/SKILL.md` 仅在内容完全一致且不是符号链接时才会安全迁移；Agent 使用 `${CODEX_HOME:-~/.codex}`，Skill 使用官方用户路径 `~/.agents/skills`。
 
-## 安装边界与兼容性
+这是社区工作流，不是 OpenAI 官方预设。安装后应该先委派一个答案明确、只读的小任务，并查看客户端实际暴露的子代理元数据；Worker 文本自称某个模型不能证明有效路由。
 
-安装器会先检查 Agent、新 Skill 路径和旧 Skill 路径。任一位置存在不同内容时，它会在写入前退出，不修改 `config.toml`、其他 Agent、其他 Skill、全局 `~/.codex/AGENTS.md` 或 Codex App 设置。
+作者环境使用 `codex-cli 0.147.0-alpha.6.5` 完成了 DeepSeek 的只读与最小补丁 smoke test，并解析了两个 TOML。该客户端仍可能对自定义 DeepSeek 模型显示 metadata fallback 或模型列表警告；这不等于任务必然失败，但出现调用或路由异常时应把 DeepSeek lane 视为不可用，而不是静默改写结果归属。
 
-旧路径 `~/.codex/skills/sol-luna-workflow/SKILL.md` 只有在内容与仓库完全一致且不是符号链接时才会迁移。设置 `CODEX_HOME` 时，Agent 使用该目录；Skill 仍安装到官方用户目录 `~/.agents/skills`。
+## 使用观测
 
-这是一套社区工作流，不是 OpenAI 官方预设。模型可用性、实际路由和权限取决于 Codex 版本与账号。安装后选择一个答案明确、只读的小任务，确认子代理元数据为 `gpt-5.6-luna`、推理强度为 `max`，并检查结果没有越界。模型在文本中自称“我是 Luna”不能证明实际路由。
+下面是作者账号的 Codex 汇总用量。它可用于观察 Sol、Luna 与 DeepSeek 的总体分布，但不证明每个 token 都由本仓库触发，也不能替代每个任务的验收。
+
+[![liuyejinghong 的 Codex token 使用情况](https://tokens.ci/api/embed/liuyejinghong/svg?tokens=compact&cost=compact)](https://tokens.ci/u/liuyejinghong)
 
 ## 参考资料
 
@@ -142,6 +166,6 @@ Sol 始终留在主线程，保留完整目标和跨任务上下文。它负责�
 | Codex 子代理和自定义 Agent | [OpenAI Developers](https://developers.openai.com/codex/agent-configuration/subagents) |
 | Codex Skills 与发现路径 | [OpenAI Developers](https://developers.openai.com/codex/skills) |
 | Codex 指令发现顺序 | [OpenAI Developers](https://developers.openai.com/codex/guides/agents-md) |
-| Custom Instructions | [OpenAI Help Center](https://help.openai.com/en/articles/8096356-chat-preferences-for-chatgpt) |
-| Codex 配置 Schema | [OpenAI Developers](https://developers.openai.com/codex/config-schema.json) |
+| DeepSeek V4-Flash 更新 | [DeepSeek API Docs](https://api-docs.deepseek.com/updates/) |
 | DeepSWE v1.1 榜单 | [DataCurve](https://deepswe.datacurve.ai/) |
+| Oh My OpenAgent 编排参考 | [code-yeongyu/oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) |

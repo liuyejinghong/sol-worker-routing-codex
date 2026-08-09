@@ -4,7 +4,7 @@ This repository is designed to be handed directly to a Codex Agent for installat
 
 ## Objective
 
-Install the checked-in `luna_worker` custom agent and `sol-luna-workflow` skill for the current user while preserving every unrelated Codex setting.
+Install the checked-in `deepseek_worker` and `luna_worker` custom agents plus the `sol-luna-workflow` skill for the current user while preserving every unrelated Codex setting.
 
 ## Authorized changes
 
@@ -12,6 +12,7 @@ The installation may create only these targets:
 
 ```text
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-worker.toml
+${CODEX_HOME:-$HOME/.codex}/agents/deepseek-worker.toml
 $HOME/.agents/skills/sol-luna-workflow/SKILL.md
 ```
 
@@ -27,8 +28,8 @@ If either target or the legacy Skill exists with different content, stop before 
 
 ## Verification and handoff
 
-After installation, confirm that both installed files exactly match the repository sources. Parse the TOML when a standard TOML parser is available. Do not create a larger validation toolchain for this two-file copy.
+After installation, confirm that all three installed files exactly match the repository sources. When a standard TOML parser is available, parse the two repository TOML sources before any write; the exact-match check then proves the installed copies are valid too. Do not create a larger validation toolchain for this three-file copy.
 
-Tell the user that `personalization.md` does not activate itself. They must manually copy one complete language block into Codex App Settings → Personalization → Custom Instructions when they want App-level personalization. Suggest starting a new task. A full restart is normally unnecessary; reopen Codex only if the newly added custom agent is not discovered.
+Tell the user that `personalization.md` does not activate itself. They must manually copy one complete language block into Codex App Settings → Personalization → Custom Instructions when they want App-level personalization. `deepseek_worker` also requires an already configured DeepSeek provider and credentials; this installer must never add them to `config.toml`. Suggest starting a new task. A full restart is normally unnecessary; reopen Codex only if the newly added custom agent is not discovered.
 
 Report installed paths, unchanged paths, verification results, conflicts if any, and the remaining manual personalization step.
