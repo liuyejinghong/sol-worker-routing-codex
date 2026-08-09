@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Sol + DeepSeek + Luna Codex Workflow</h1>
+  <h1>Sol Worker Routing for Codex</h1>
   <p><strong>Sol owns goals and judgment. DeepSeek handles mechanically checkable evidence. Luna Max handles bounded semantic execution.</strong></p>
   <p>An agent-deployable dual-worker workflow for Codex, with first-principles limits on over-programming, over-testing, and performative parallelism.</p>
   <p>
@@ -8,8 +8,8 @@
     <a href="CHANGELOG.md">Changelog</a>
   </p>
   <p>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-luna-codex-workflow?label=version" alt="Version"></a>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-luna-codex-workflow?style=flat" alt="GitHub Stars"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-worker-routing-codex?label=version" alt="Version"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-worker-routing-codex?style=flat" alt="GitHub Stars"></a>
   </p>
 </div>
 
@@ -18,17 +18,17 @@
 This repository is written for both people and agents. Its [`AGENTS.md`](AGENTS.md) grants an installer permission to write only two custom-agent files and one Skill; the installer checks every destination first and stops before overwriting different content.
 
 ```text
-Install https://github.com/liuyejinghong/sol-luna-codex-workflow for my Codex user profile.
+Install https://github.com/liuyejinghong/sol-worker-routing-codex for my Codex user profile.
 Read and follow the repository AGENTS.md first. Preserve my existing Codex configuration
 and do not overwrite conflicts. Verify deepseek_worker, luna_worker, and the
-sol-luna-workflow Skill after installation, then tell me which manual steps remain.
+sol-worker-routing Skill after installation, then tell me which manual steps remain.
 ```
 
 Or install it locally:
 
 ```bash
-git clone https://github.com/liuyejinghong/sol-luna-codex-workflow.git
-cd sol-luna-codex-workflow
+git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
+cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
@@ -37,7 +37,7 @@ The installer writes only:
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
-~/.agents/skills/sol-luna-workflow/SKILL.md
+~/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
 Then paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**. Repository files and `AGENTS.md` cannot replace account-level personalization. A restart is normally unnecessary; start a new task to verify routing.
@@ -119,7 +119,15 @@ The repository includes four common open-source task shapes: source fact finding
 
 [![Dual-worker pilot benchmark](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
 
-In the two paired acceptance tests, both workers passed. Routing source-pinned evidence and mechanical patching to DeepSeek reduced Worker wall time from 235 to 88 seconds and generated tokens from 16,708 to 5,081. This is two single-run pairs, not a billing estimate or general quality ranking; it validates only the intended lane boundary.
+### Repository-verifiable cost record
+
+| Route | Same-contract cases | Acceptance | Worker wall time | Generated tokens |
+|---|---|---:|---:|---:|
+| Previous policy: Luna Max for both | B1 read-only evidence + B3 mechanical patch | 2 / 2 | 235s | 16,708 |
+| New policy: DeepSeek evidence lane | The same B1 + B3 contracts | 2 / 2 | 88s | 5,081 |
+| Difference | Same acceptance | — | −147s (−62.6%) | −11,627 (−69.6%) |
+
+The rows are in [`pilot-2026-08-09.csv`](benchmarks/pilot-2026-08-09.csv); per-case acceptance, commands, and limits are in the [full report](benchmarks/report-2026-08-09.md). `Generated tokens = output_tokens + reasoning_tokens`; it is only a workload proxy inside the same client and identical task contract. It is **not** input/total-token accounting or an actual dollar bill. These are two single-run pairs, not a general quality ranking; they validate only the evidence/mechanical lane boundary.
 
 ## Constrain the working method, not the development process
 
@@ -140,14 +148,14 @@ Use an optional diagnostic only when the user explicitly asks for cost analysis 
 | File | Responsibility |
 |---|---|
 | [`personalization.md`](personalization.md) | App-level routing preference; manually pasted |
-| [`skills/sol-luna-workflow/SKILL.md`](skills/sol-luna-workflow/SKILL.md) | Sol's direct gate, routing, packet, verification, and integration rules |
+| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's direct gate, routing, packet, verification, and integration rules |
 | [`agents/deepseek-worker.toml`](agents/deepseek-worker.toml) | DeepSeek evidence/mechanical worker profile and boundary |
 | [`agents/luna-worker.toml`](agents/luna-worker.toml) | Luna Max semantic-execution worker profile and boundary |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict-first, minimal installation and legacy Skill migration |
 | [`AGENTS.md`](AGENTS.md) | Authorization contract for an Agent installing this repository |
 | [`benchmarks/`](benchmarks/) | Reproducible cases, data, and pilot report |
 
-The installer does not edit `config.toml`, other agents, other Skills, global or project `AGENTS.md`, or Codex App settings. It migrates the old `~/.codex/skills/sol-luna-workflow/SKILL.md` only when content is identical and neither it nor its directory is a symbolic link. Agents use `${CODEX_HOME:-~/.codex}`; the Skill uses the official user path `~/.agents/skills`.
+The installer does not edit `config.toml`, other agents, other Skills, global or project `AGENTS.md`, or Codex App settings. It moves `sol-luna-workflow` from `~/.agents/skills/` or the legacy `~/.codex/skills/` path only when its content is verified as a known prior release and no path is a symbolic link. Unknown legacy content stops the install rather than being overwritten or removed. Agents use `${CODEX_HOME:-~/.codex}`; the Skill uses the official user path `~/.agents/skills`.
 
 This is a community workflow, not an OpenAI preset. After installation, delegate one obvious read-only task and inspect client-exposed subagent metadata. A Worker saying its model name in text is not evidence of effective routing.
 

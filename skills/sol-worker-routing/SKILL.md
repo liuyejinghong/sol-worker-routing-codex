@@ -1,5 +1,5 @@
 ---
-name: sol-luna-workflow
+name: sol-worker-routing
 description: Use when Sol must keep the parent goal while routing a bounded task directly, to the named DeepSeek evidence worker, or to the named Luna Max execution worker.
 ---
 

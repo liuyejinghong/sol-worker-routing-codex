@@ -4,7 +4,7 @@ This repository is designed to be handed directly to a Codex Agent for installat
 
 ## Objective
 
-Install the checked-in `deepseek_worker` and `luna_worker` custom agents plus the `sol-luna-workflow` skill for the current user while preserving every unrelated Codex setting.
+Install the checked-in `deepseek_worker` and `luna_worker` custom agents plus the `sol-worker-routing` skill for the current user while preserving every unrelated Codex setting.
 
 ## Authorized changes
 
@@ -13,10 +13,10 @@ The installation may create only these targets:
 ```text
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-worker.toml
 ${CODEX_HOME:-$HOME/.codex}/agents/deepseek-worker.toml
-$HOME/.agents/skills/sol-luna-workflow/SKILL.md
+$HOME/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
-The installer may remove `$CODEX_HOME/skills/sol-luna-workflow/SKILL.md` (or `$HOME/.codex/skills/...` when `CODEX_HOME` is unset) only when that legacy file exactly matches the repository source and neither the file nor its directory is a symbolic link. This is a path migration, not authorization to delete other legacy Skills.
+The installer may remove an old `sol-luna-workflow` Skill from either `$HOME/.agents/skills/sol-luna-workflow/SKILL.md` or `$CODEX_HOME/skills/sol-luna-workflow/SKILL.md` (or `$HOME/.codex/skills/...` when `CODEX_HOME` is unset) only when it exactly matches a documented prior release and neither the file nor its directories are symbolic links. This is a path migration, not authorization to delete other legacy Skills.
 
 Use `$CODEX_HOME` for the Agent when it is set; otherwise use `$HOME/.codex`. User-authored Skills use `$HOME/.agents/skills`. Run `bash scripts/install.sh` from this repository. Do not reproduce the copy or migration logic with broader commands.
 

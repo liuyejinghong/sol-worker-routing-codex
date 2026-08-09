@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Sol + DeepSeek + Luna Codex Workflow</h1>
+  <h1>Sol Worker Routing for Codex</h1>
   <p><strong>Sol 保留目标与判断；DeepSeek 处理可机械验收的证据；Luna Max 完成有界的语义执行。</strong></p>
   <p>可直接交给 Codex 安装的双 Worker 工作流，用第一性原理限制过度编程、过度测试与无意义并行。</p>
   <p>
@@ -8,8 +8,8 @@
     <a href="CHANGELOG.md">更新日志</a>
   </p>
   <p>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-luna-codex-workflow?label=version" alt="版本"></a>
-    <a href="https://github.com/liuyejinghong/sol-luna-codex-workflow/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-luna-codex-workflow?style=flat" alt="GitHub Stars"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/tags"><img src="https://img.shields.io/github/v/tag/liuyejinghong/sol-worker-routing-codex?label=version" alt="版本"></a>
+    <a href="https://github.com/liuyejinghong/sol-worker-routing-codex/stargazers"><img src="https://img.shields.io/github/stars/liuyejinghong/sol-worker-routing-codex?style=flat" alt="GitHub Stars"></a>
   </p>
 </div>
 
@@ -18,17 +18,17 @@
 这个仓库既供人阅读，也可以直接交给 Agent 部署。仓库内的 [`AGENTS.md`](AGENTS.md) 把写入权限限制为两个 Agent 配置和一个 Skill；安装器先检测冲突，任何目标存在不同内容都会在写入前停止。
 
 ```text
-请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-luna-codex-workflow 。
+请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-worker-routing-codex 。
 先读取并遵守仓库里的 AGENTS.md，保留现有 Codex 配置，遇到冲突不要覆盖。
-安装后验证 deepseek_worker、luna_worker 和 sol-luna-workflow Skill，
+安装后验证 deepseek_worker、luna_worker 和 sol-worker-routing Skill，
 并说明我还需要完成的人工步骤。
 ```
 
 也可以在本地执行：
 
 ```bash
-git clone https://github.com/liuyejinghong/sol-luna-codex-workflow.git
-cd sol-luna-codex-workflow
+git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
+cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
@@ -37,7 +37,7 @@ bash scripts/install.sh
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
-~/.agents/skills/sol-luna-workflow/SKILL.md
+~/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
 接着在 Codex App 的“设置 → 个性化 → 自定义指令”中，从 [`personalization.md`](personalization.md) 复制一个完整语言块。GitHub 文件和 `AGENTS.md` 不能代替账号级个性化设置；通常无需重启，建议新建一个任务验证路由。
@@ -119,7 +119,15 @@ Return format: Facts; command result; files changed; risks.
 
 [![双 Worker 首轮配对基准](docs/assets/benchmark-pilot-2026-08-09.png)](benchmarks/report-2026-08-09.md)
 
-在两组同合同对照中，DeepSeek 与 Luna 都通过了验收；将“固定证据 + 机械补丁”从全 Luna 路由切换到 DeepSeek，Worker 墙钟从 235 秒降至 88 秒，生成 token 从 16,708 降至 5,081。样本只有两组、每组一次，不能外推为真实账单或通用质量排名；它只验证了该 lane 的目标边界。
+### 本仓库可复核的成本记录
+
+| 路由 | 同合同案例 | 验收 | Worker 墙钟 | 生成 token |
+|---|---|---:|---:|---:|
+| 旧策略：全部交给 Luna Max | B1 只读证据 + B3 机械补丁 | 2 / 2 | 235s | 16,708 |
+| 新策略：交给 DeepSeek evidence lane | 同一 B1 + B3 合同 | 2 / 2 | 88s | 5,081 |
+| 差异 | 验收相同 | — | −147s（−62.6%） | −11,627（−69.6%） |
+
+数据来自 [`pilot-2026-08-09.csv`](benchmarks/pilot-2026-08-09.csv)，逐例验收、命令和限制在[`完整报告`](benchmarks/report-2026-08-09.md)。`生成 token = output_tokens + reasoning_tokens`，只是在同一客户端和相同任务合同下的工作量代理；它**不是**输入/总 token 统计，也不是实际美元账单。样本只有两组、每组一次，不能外推为通用质量排名；它只验证了该 evidence / 机械 lane 的边界。
 
 ## 不规定流程，只约束工作方式
 
@@ -140,14 +148,14 @@ Skill 不具备可靠的全局调用截获能力；给每个任务额外埋点�
 | 文件 | 职责 |
 |---|---|
 | [`personalization.md`](personalization.md) | App 级路由偏好，需人工粘贴 |
-| [`skills/sol-luna-workflow/SKILL.md`](skills/sol-luna-workflow/SKILL.md) | Sol 的直接门槛、分流、任务包、验收与整合 |
+| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的直接门槛、分流、任务包、验收与整合 |
 | [`agents/deepseek-worker.toml`](agents/deepseek-worker.toml) | DeepSeek 证据/机械 Worker 的模型与边界 |
 | [`agents/luna-worker.toml`](agents/luna-worker.toml) | Luna Max 语义执行 Worker 的模型与边界 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突前置、最小写入、旧 Skill 路径迁移 |
 | [`AGENTS.md`](AGENTS.md) | Agent 部署本仓库时的授权合同 |
 | [`benchmarks/`](benchmarks/) | 可复现案例、数据和首轮报告 |
 
-安装器不会编辑 `config.toml`、其他 Agent、其他 Skill、全局或项目 `AGENTS.md`、以及 Codex App 设置。旧路径 `~/.codex/skills/sol-luna-workflow/SKILL.md` 仅在内容完全一致且不是符号链接时才会安全迁移；Agent 使用 `${CODEX_HOME:-~/.codex}`，Skill 使用官方用户路径 `~/.agents/skills`。
+安装器不会编辑 `config.toml`、其他 Agent、其他 Skill、全局或项目 `AGENTS.md`、以及 Codex App 设置。它只会把内容可验证为已知旧版本、且没有符号链接的 `sol-luna-workflow` 从 `~/.agents/skills/` 或旧的 `~/.codex/skills/` 迁移到 `~/.agents/skills/sol-worker-routing/`；任何未知旧内容都会停止，不会覆盖或删除。Agent 使用 `${CODEX_HOME:-~/.codex}`，Skill 使用官方用户路径 `~/.agents/skills`。
 
 这是社区工作流，不是 OpenAI 官方预设。安装后应该先委派一个答案明确、只读的小任务，并查看客户端实际暴露的子代理元数据；Worker 文本自称某个模型不能证明有效路由。
 

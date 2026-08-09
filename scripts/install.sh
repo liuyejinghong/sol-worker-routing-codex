@@ -23,18 +23,48 @@ fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
 installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
-installer_skill_source="${installer_repo_root}/skills/sol-luna-workflow/SKILL.md"
+installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
 installer_user_skills_dir="${installer_user_agents_dir}/skills"
-installer_skill_dir="${installer_user_skills_dir}/sol-luna-workflow"
-installer_legacy_skills_dir="${installer_codex_dir}/skills"
+installer_skill_dir="${installer_user_skills_dir}/sol-worker-routing"
+installer_legacy_user_skill_dir="${installer_user_skills_dir}/sol-luna-workflow"
+installer_legacy_codex_skills_dir="${installer_codex_dir}/skills"
+installer_legacy_codex_skill_dir="${installer_legacy_codex_skills_dir}/sol-luna-workflow"
 installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
-installer_legacy_skill_dir="${installer_codex_dir}/skills/sol-luna-workflow"
-installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
+installer_legacy_skill_dirs=(
+  "${installer_legacy_user_skill_dir}"
+  "${installer_legacy_codex_skill_dir}"
+)
+# Exact Skill contents from v0.4.1 and the pre-release v0.5.0 source. These
+# digests are only deletion proofs for the renamed legacy path.
+installer_known_legacy_skill_digests=(
+  "537eadf761d05384773dad3e4729fa84f0e560f1f6abe4e38fb1a15b9e7528b5"
+  "81bfe080ae24ed0e9d365479dbe2b099b904363fc36def9c9154a318e72124fb"
+)
 installer_conflict=0
+
+installer_sha256() {
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 -- "$1" | awk '{print $1}'
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum -- "$1" | awk '{print $1}'
+  else
+    return 1
+  fi
+}
+
+installer_is_known_legacy_skill() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_legacy_skill_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
 
 for installer_dir in \
   "${installer_codex_dir}" \
@@ -42,8 +72,9 @@ for installer_dir in \
   "${installer_user_agents_dir}" \
   "${installer_user_skills_dir}" \
   "${installer_skill_dir}" \
-  "${installer_legacy_skills_dir}" \
-  "${installer_legacy_skill_dir}"
+  "${installer_legacy_user_skill_dir}" \
+  "${installer_legacy_codex_skills_dir}" \
+  "${installer_legacy_codex_skill_dir}"
 do
   if [[ -L "${installer_dir}" ]]; then
     echo "Conflict: installer path uses a symbolic link and requires manual migration: ${installer_dir}" >&2
@@ -54,8 +85,7 @@ done
 for installer_target in \
   "${installer_luna_agent_target}" \
   "${installer_deepseek_agent_target}" \
-  "${installer_skill_target}" \
-  "${installer_legacy_skill_target}"
+  "${installer_skill_target}"
 do
   if [[ -L "${installer_target}" ]]; then
     echo "Conflict: installer target uses a symbolic link and requires manual migration: ${installer_target}" >&2
@@ -76,10 +106,18 @@ do
   fi
 done
 
-if [[ -e "${installer_legacy_skill_target}" ]] && ! cmp -s "${installer_skill_source}" "${installer_legacy_skill_target}"; then
-  echo "Conflict: ${installer_legacy_skill_target} already exists with different content." >&2
-  installer_conflict=1
-fi
+for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
+  installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
+  if [[ -e "${installer_legacy_skill_target}" ]]; then
+    if [[ ! -f "${installer_legacy_skill_target}" ]]; then
+      echo "Conflict: legacy Skill is not a regular file: ${installer_legacy_skill_target}" >&2
+      installer_conflict=1
+    elif ! installer_is_known_legacy_skill "${installer_legacy_skill_target}"; then
+      echo "Conflict: legacy Skill has unknown content and requires manual migration: ${installer_legacy_skill_target}" >&2
+      installer_conflict=1
+    fi
+  fi
+done
 
 if [[ "${installer_conflict}" -ne 0 ]]; then
   echo "No files were changed. Resolve the conflict explicitly, then run the installer again." >&2
@@ -110,15 +148,19 @@ do
   cmp -s "${installer_source}" "${installer_target}"
 done
 
-if [[ -e "${installer_legacy_skill_target}" ]]; then
-  if [[ -L "${installer_legacy_skills_dir}" || -L "${installer_legacy_skill_dir}" || -L "${installer_legacy_skill_target}" || ! -f "${installer_legacy_skill_target}" ]] || ! cmp -s "${installer_skill_source}" "${installer_legacy_skill_target}"; then
-    echo "Error: legacy Skill changed during installation; refusing to remove: ${installer_legacy_skill_target}" >&2
-    exit 3
+for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
+  installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
+  installer_legacy_parent_dir="$(dirname -- "${installer_legacy_skill_dir}")"
+  if [[ -e "${installer_legacy_skill_target}" ]]; then
+    if [[ -L "${installer_legacy_parent_dir}" || -L "${installer_legacy_skill_dir}" || -L "${installer_legacy_skill_target}" || ! -f "${installer_legacy_skill_target}" ]] || ! installer_is_known_legacy_skill "${installer_legacy_skill_target}"; then
+      echo "Error: legacy Skill changed during installation; refusing to remove: ${installer_legacy_skill_target}" >&2
+      exit 3
+    fi
+    rm -- "${installer_legacy_skill_target}"
+    rmdir -- "${installer_legacy_skill_dir}" 2>/dev/null || true
+    echo "Migrated: removed known legacy Skill at ${installer_legacy_skill_target}"
   fi
-  rm -- "${installer_legacy_skill_target}"
-  rmdir -- "${installer_legacy_skill_dir}" 2>/dev/null || true
-  echo "Migrated: removed identical legacy Skill at ${installer_legacy_skill_target}"
-fi
+done
 
 echo "Verified: installed files match the repository sources."
 echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."
