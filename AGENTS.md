@@ -16,6 +16,7 @@ The installation may create only these targets:
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-worker.toml
 ${CODEX_HOME:-$HOME/.codex}/agents/deepseek-worker.toml
 $HOME/.agents/skills/sol-worker-routing/SKILL.md
+$HOME/.agents/skills/sol-worker-routing/scripts/run-deepseek-worker.sh
 ```
 
 Provider setup is owned by the installing Agent, not by `scripts/install.sh`. First inspect the existing `deepseek_worker` and run a real bounded route probe. If it succeeds, preserve the provider and credential configuration exactly as it is; do not infer failure from the absence of one environment variable, keychain item, command, or platform-specific backend.
@@ -34,10 +35,10 @@ If an Agent target or the legacy Skill exists with unknown different content, st
 
 ## Verification and handoff
 
-After installation, confirm that all three installed files exactly match the repository sources. When a standard TOML parser is available, parse the two repository TOML profiles before any write; the exact-match check then proves the installed copies are valid too. Do not create a larger validation toolchain for this three-file copy.
+After installation, confirm that all four installed files exactly match the repository sources. When a standard TOML parser is available, parse the two repository TOML profiles before any write; the exact-match check then proves the installed copies are valid too. Do not create a larger validation toolchain for this four-file copy.
 
 Tell the user that `personalization.md` does not activate itself. They must manually copy one complete language block into Codex App Settings → Personalization → Custom Instructions when they want App-level personalization. Provider setup is still the installing Agent's responsibility: inspect the effective route, preserve a working setup, and repair only a proven failure using the current environment's supported mechanism. Do not send the user away to discover the TOML format or installation procedure.
 
-After installation, run one bounded DeepSeek task with an obvious answer and inspect the client-exposed subagent result plus task acceptance. Confirm that the Worker profile declares the official 1,048,576-token model context and model catalog. After a new provider setup or major Codex client change, use one proportionate long-context probe to confirm the effective route rather than treating TOML as proof. If the provider succeeds directly but a spawned custom-provider child loses its dynamic task payload, report the Codex handoff failure and do not claim the named lane is usable. If the current task cannot discover a newly added custom agent, ask the user only to start a new task; the `sol-worker-routing` Skill must then perform the route probe before treating the lane as available. A full App restart is a fallback only when a new task still cannot discover the agent.
+After installation, run one bounded DeepSeek task with an obvious answer and inspect the client-exposed subagent result plus task acceptance. Confirm that the Worker profile declares the official 1,048,576-token model context and model catalog. After a new provider setup or major Codex client change, use one proportionate long-context probe to confirm the effective route rather than treating TOML as proof. If the provider succeeds directly but a spawned custom-provider child loses its dynamic task payload, report the native Codex handoff failure and run the installed foreground fallback once with the same bounded packet. A successful fallback proves the DeepSeek execution lane is usable through direct `codex exec`; it does not prove the native subagent card or handoff is fixed. If the current task cannot discover a newly added custom agent, ask the user only to start a new task; the `sol-worker-routing` Skill must then perform the route probe before treating the native lane as available. A full App restart is a fallback only when a new task still cannot discover the agent.
 
 Report installed paths, provider and credential status without secret material, the route-probe result, conflicts if any, and the remaining manual personalization step.

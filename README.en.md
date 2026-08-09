@@ -120,11 +120,11 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 The installation Agent checks the existing official provider and credential, installs the official model catalog, then verifies one real tool result and one native web-search result. A working configuration is preserved instead of being rebuilt because the installer cannot see one particular credential backend. OpenCode Go is intentionally unsupported until it exposes the Codex Responses and tool contract directly; the project no longer maintains a Chat Completions conversion layer.
 
-A profile file, text response, or provider self-report does not replace subagent acceptance. Codex currently has a [public issue](https://github.com/openai/codex/issues/35932) in which non-OpenAI custom-provider children may start but lose their dynamic task payload. That outcome must be reported as a client handoff blocker; direct API success must not be presented as proof that the named Worker lane is usable.
+A profile file, text response, or provider self-report does not replace subagent acceptance. Codex currently has a [public issue](https://github.com/openai/codex/issues/35932) in which non-OpenAI custom-provider children may start but lose their dynamic task payload. After confirming that symptom, the Skill uses a foreground direct-official fallback so the same DeepSeek V4 Flash model can complete the packet at `max` reasoning without LiteLLM or a resident process. The native subagent card remains a client blocker; fallback success is not presented as a native handoff fix.
 
 The installation flow handles all of the following:
 
-1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
+1. Install `deepseek_worker`, `luna_worker`, the `sol-worker-routing` Skill, and its direct-official DeepSeek fallback.
 2. Inspect the official DeepSeek upstream, model catalog, and credential, then verify them with an obvious bounded task.
 3. Preserve a working setup instead of reinstalling it because one environment variable or credential backend is not visible.
 4. Only after a real invocation fails, repair the provider and authentication using mechanisms supported by the current Codex client and operating system.
@@ -192,12 +192,13 @@ This is not another user-facing process. It is the minimum context Sol provides 
 
 ## Installation boundaries and project files
 
-The repository installer writes only two Agent profiles and one Skill. It can safely upgrade the known previous Skill release; any other different content stops the install before it is overwritten:
+The repository installer writes only two Agent profiles, one Skill, and its foreground DeepSeek runner. It can safely upgrade the known previous Skill release; any other different content stops the install before it is overwritten:
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
+~/.agents/skills/sol-worker-routing/scripts/run-deepseek-worker.sh
 ```
 
 | File | Purpose |
@@ -206,6 +207,7 @@ The repository installer writes only two Agent profiles and one Skill. It can sa
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
 | [`agents/`](agents/) | Official DeepSeek API and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |
+| [`skills/sol-worker-routing/scripts/run-deepseek-worker.sh`](skills/sol-worker-routing/scripts/run-deepseek-worker.sh) | Foreground direct-official fallback when native task handoff fails |
 | [`benchmarks/`](benchmarks/) | Benchmark cases, raw data, and the full report |
 
 The provider is not a fixed repository-installer output. The installation Agent judges the existing setup by a real route first and only repairs a confirmed failure using mechanisms supported by the current client and host. Credentials are never written to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.

@@ -59,16 +59,19 @@ fi
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
 installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
+installer_deepseek_runner_source="${installer_repo_root}/skills/sol-worker-routing/scripts/run-deepseek-worker.sh"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
 installer_user_skills_dir="${installer_user_agents_dir}/skills"
 installer_skill_dir="${installer_user_skills_dir}/sol-worker-routing"
+installer_skill_scripts_dir="${installer_skill_dir}/scripts"
 installer_legacy_user_skill_dir="${installer_user_skills_dir}/sol-luna-workflow"
 installer_legacy_codex_skills_dir="${installer_codex_dir}/skills"
 installer_legacy_codex_skill_dir="${installer_legacy_codex_skills_dir}/sol-luna-workflow"
 installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
+installer_deepseek_runner_target="${installer_skill_scripts_dir}/run-deepseek-worker.sh"
 installer_legacy_skill_dirs=(
   "${installer_legacy_user_skill_dir}"
   "${installer_legacy_codex_skill_dir}"
@@ -90,6 +93,7 @@ installer_known_current_skill_digests=(
   "87394123a55ec8d592b6626529f7fc38ca9065fdd8d7a10b2a02451e91f17cda"
   "4697d4c44a11ca3efcd731f607d16b353bf8efb1e87112732bc3b4794996d055"
   "014de56a672fa868cc24318e6124ce2706f750979d038a7f4a9ac986e19fb18a"
+  "375a39d9c168d689ee5ab32dc9622a2493eef3db1f4dc1247ebe35cf93a9e1c2"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -97,6 +101,7 @@ installer_known_deepseek_agent_digests=(
   "d6425cc47e1b68ea3074b8b9c3e22066a53b9bc300dcc6c80e0acdf940af0cc9"
   "5ca4b64d7fb37bdf10844bc24d434871d2f3fa38c0f12a4f2e4a51b2860e1bb8"
   "e98e09dd60ecec0ceb57064b35b9f3f196178db3e2cf19c4617347db2d983790"
+  "6abaca2b89805cfcfeef02f8d8029cab529fc5d728993e5beebf9e768d9bd5cc"
 )
 installer_conflict=0
 
@@ -159,6 +164,7 @@ for installer_dir in \
   "${installer_user_agents_dir}" \
   "${installer_user_skills_dir}" \
   "${installer_skill_dir}" \
+  "${installer_skill_scripts_dir}" \
   "${installer_legacy_user_skill_dir}" \
   "${installer_legacy_codex_skills_dir}" \
   "${installer_legacy_codex_skill_dir}"
@@ -172,7 +178,8 @@ done
 for installer_target in \
   "${installer_luna_agent_target}" \
   "${installer_deepseek_agent_target}" \
-  "${installer_skill_target}"
+  "${installer_skill_target}" \
+  "${installer_deepseek_runner_target}"
 do
   if [[ -L "${installer_target}" ]]; then
     echo "Conflict: installer target uses a symbolic link and requires manual migration: ${installer_target}" >&2
@@ -183,7 +190,8 @@ done
 for installer_pair in \
   "${installer_luna_agent_source}|${installer_luna_agent_target}" \
   "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}" \
-  "${installer_skill_source}|${installer_skill_target}"
+  "${installer_skill_source}|${installer_skill_target}" \
+  "${installer_deepseek_runner_source}|${installer_deepseek_runner_target}"
 do
   installer_source="${installer_pair%%|*}"
   installer_target="${installer_pair#*|}"
@@ -217,12 +225,13 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
-mkdir -p -- "${installer_agent_dir}" "${installer_skill_dir}"
+mkdir -p -- "${installer_agent_dir}" "${installer_skill_scripts_dir}"
 
 for installer_pair in \
   "${installer_luna_agent_source}|${installer_luna_agent_target}" \
   "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}" \
-  "${installer_skill_source}|${installer_skill_target}"
+  "${installer_skill_source}|${installer_skill_target}" \
+  "${installer_deepseek_runner_source}|${installer_deepseek_runner_target}"
 do
   installer_source="${installer_pair%%|*}"
   installer_target="${installer_pair#*|}"
@@ -237,6 +246,9 @@ do
   fi
   cmp -s "${installer_source}" "${installer_target}"
 done
+
+chmod 0755 "${installer_deepseek_runner_target}"
+cmp -s "${installer_deepseek_runner_source}" "${installer_deepseek_runner_target}"
 
 for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
   installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"

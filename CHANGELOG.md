@@ -11,6 +11,8 @@
 5. 官方直连完成文本、Codex 内置工具和原生 web search 验收；联网研究改为 Sol 规定研究合同、DeepSeek 原生搜索与阅读、Sol 复核决定性来源
 6. 记录当前 Codex custom-provider 子代理会丢失动态任务包的真实 blocker，禁止用直连成功冒充命名 Worker 可用
 7. 第三方 MCP namespace 在官方 DeepSeek 路径下未通过控制验收；原生联网不依赖 MCP，不为无关工具恢复新增桥接层
+8. DeepSeek Worker 默认推理档位调整为 `max`
+9. 为 Codex custom-provider 子代理任务丢失增加官方直连前台 fallback；不使用 LiteLLM 或常驻后台进程，并保留原生子代理卡片仍未修复的边界
 
 ## 0.6.0 - 2026-08-09
 

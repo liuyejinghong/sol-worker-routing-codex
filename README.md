@@ -119,11 +119,11 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 安装 Agent 会检查现有官方 provider 和凭据，安装官方模型目录，再分别核对一个真实工具结果和一次原生网页搜索。已经可用的配置会被保留，不会因为安装流程无法看到某个特定凭据后端而重建。OpenCode Go 暂不接入；等它直接支持 Codex Responses 与工具合同后再重新评估，而不是继续维护 Chat Completions 转换层。
 
-配置文件存在、文本请求成功或 provider 自述都不能单独替代子代理验收。当前 Codex 已有一个[公开问题](https://github.com/openai/codex/issues/35932)：非 OpenAI custom-provider 子代理可能启动成功却丢失动态任务包；遇到这种结果应明确报告为客户端 handoff blocker，不能把官方 API 的直连成功冒充为命名 Worker 已可用。
+配置文件存在、文本请求成功或 provider 自述都不能单独替代子代理验收。当前 Codex 已有一个[公开问题](https://github.com/openai/codex/issues/35932)：非 OpenAI custom-provider 子代理可能启动成功却丢失动态任务包。Skill 会在确认这个症状后改走官方直连的前台 fallback，让同一个 DeepSeek V4 Flash 以 `max` 推理完成任务；它不需要 LiteLLM 或常驻后台进程。原生子代理卡片仍然是客户端 blocker，fallback 的成功不会被写成原生 handoff 已修复。
 
 安装流程会自动完成这些工作：
 
-1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
+1. 安装 `deepseek_worker`、`luna_worker`、`sol-worker-routing` Skill 和 DeepSeek 官方直连 fallback。
 2. 检查官方 DeepSeek 上游、模型目录和凭据，并用一个答案明确的有界任务验证真实路由。
 3. 路由可用时完整保留现有配置，不因为某个环境变量或凭据后端不可见而重装。
 4. 只有真实调用失败时，才根据当前 Codex 客户端与操作系统支持的方式修复 provider 和认证。
@@ -187,12 +187,13 @@ Return format:
 
 ## 安装边界与项目文件
 
-仓库安装器只写入两个 Agent 配置和一个 Skill；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
+仓库安装器只写入两个 Agent 配置、一个 Skill 和它的 DeepSeek 前台 runner；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
+~/.agents/skills/sol-worker-routing/scripts/run-deepseek-worker.sh
 ```
 
 | 文件 | 用途 |
@@ -201,6 +202,7 @@ Return format:
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
 | [`agents/`](agents/) | DeepSeek 官方 API 与 Luna Max 的 Worker 配置 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
+| [`skills/sol-worker-routing/scripts/run-deepseek-worker.sh`](skills/sol-worker-routing/scripts/run-deepseek-worker.sh) | 原生任务交接失效时的官方直连前台 fallback |
 | [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
 Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理。凭据不得写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
