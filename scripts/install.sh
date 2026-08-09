@@ -24,16 +24,19 @@ fi
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
 installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
+installer_provider_setup="${installer_repo_root}/skills/sol-worker-routing/scripts/configure_deepseek_provider.py"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
 installer_user_skills_dir="${installer_user_agents_dir}/skills"
 installer_skill_dir="${installer_user_skills_dir}/sol-worker-routing"
+installer_skill_scripts_dir="${installer_skill_dir}/scripts"
 installer_legacy_user_skill_dir="${installer_user_skills_dir}/sol-luna-workflow"
 installer_legacy_codex_skills_dir="${installer_codex_dir}/skills"
 installer_legacy_codex_skill_dir="${installer_legacy_codex_skills_dir}/sol-luna-workflow"
 installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
+installer_provider_setup_target="${installer_skill_dir}/scripts/configure_deepseek_provider.py"
 installer_legacy_skill_dirs=(
   "${installer_legacy_user_skill_dir}"
   "${installer_legacy_codex_skill_dir}"
@@ -43,6 +46,11 @@ installer_legacy_skill_dirs=(
 installer_known_legacy_skill_digests=(
   "537eadf761d05384773dad3e4729fa84f0e560f1f6abe4e38fb1a15b9e7528b5"
   "81bfe080ae24ed0e9d365479dbe2b099b904363fc36def9c9154a318e72124fb"
+)
+# Exact installed Skill content from the previous repository release. This is
+# the only in-place upgrade source accepted for the current Skill path.
+installer_known_current_skill_digests=(
+  "b1eb8288545514c4fcaeb74b37f9a69ea129e5f3bb2fb91eaadee97ac85baec5"
 )
 installer_conflict=0
 
@@ -66,12 +74,33 @@ installer_is_known_legacy_skill() {
   return 1
 }
 
+installer_is_known_current_skill() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_current_skill_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
+installer_target_is_accepted() {
+  local installer_source="$1"
+  local installer_target="$2"
+  cmp -s "${installer_source}" "${installer_target}" && return 0
+  if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
+    return 0
+  fi
+  return 1
+}
+
 for installer_dir in \
   "${installer_codex_dir}" \
   "${installer_agent_dir}" \
   "${installer_user_agents_dir}" \
   "${installer_user_skills_dir}" \
   "${installer_skill_dir}" \
+  "${installer_skill_scripts_dir}" \
   "${installer_legacy_user_skill_dir}" \
   "${installer_legacy_codex_skills_dir}" \
   "${installer_legacy_codex_skill_dir}"
@@ -85,7 +114,8 @@ done
 for installer_target in \
   "${installer_luna_agent_target}" \
   "${installer_deepseek_agent_target}" \
-  "${installer_skill_target}"
+  "${installer_skill_target}" \
+  "${installer_provider_setup_target}"
 do
   if [[ -L "${installer_target}" ]]; then
     echo "Conflict: installer target uses a symbolic link and requires manual migration: ${installer_target}" >&2
@@ -96,11 +126,12 @@ done
 for installer_pair in \
   "${installer_luna_agent_source}|${installer_luna_agent_target}" \
   "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}" \
-  "${installer_skill_source}|${installer_skill_target}"
+  "${installer_skill_source}|${installer_skill_target}" \
+  "${installer_provider_setup}|${installer_provider_setup_target}"
 do
   installer_source="${installer_pair%%|*}"
   installer_target="${installer_pair#*|}"
-  if [[ ( -e "${installer_target}" || -L "${installer_target}" ) ]] && ! cmp -s "${installer_source}" "${installer_target}"; then
+  if [[ ( -e "${installer_target}" || -L "${installer_target}" ) ]] && ! installer_target_is_accepted "${installer_source}" "${installer_target}"; then
     echo "Conflict: ${installer_target} already exists with different content." >&2
     installer_conflict=1
   fi
@@ -128,20 +159,29 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
     "${installer_luna_agent_source}" "${installer_deepseek_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
+else
+  echo "Error: Python 3.11 or newer with tomllib is required to configure the DeepSeek provider." >&2
+  exit 4
 fi
 
-mkdir -p -- "${installer_agent_dir}" "${installer_skill_dir}"
+python3 "${installer_provider_setup}"
+
+mkdir -p -- "${installer_agent_dir}" "${installer_skill_scripts_dir}"
 
 for installer_pair in \
   "${installer_luna_agent_source}|${installer_luna_agent_target}" \
   "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}" \
-  "${installer_skill_source}|${installer_skill_target}"
+  "${installer_skill_source}|${installer_skill_target}" \
+  "${installer_provider_setup}|${installer_provider_setup_target}"
 do
   installer_source="${installer_pair%%|*}"
   installer_target="${installer_pair#*|}"
   if [[ ! -e "${installer_target}" && ! -L "${installer_target}" ]]; then
     install -m 0644 "${installer_source}" "${installer_target}"
     echo "Installed: ${installer_target}"
+  elif ! cmp -s "${installer_source}" "${installer_target}"; then
+    install -m 0644 "${installer_source}" "${installer_target}"
+    echo "Updated known prior release: ${installer_target}"
   else
     echo "Unchanged: ${installer_target}"
   fi
@@ -163,4 +203,5 @@ for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
 done
 
 echo "Verified: installed files match the repository sources."
+echo "Verified: DeepSeek provider configuration and Keychain credential are available."
 echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."

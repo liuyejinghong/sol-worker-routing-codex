@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Sol Worker Routing for Codex</h1>
   <p><strong>Send each task to the Worker that fits it.</strong></p>
-  <p>Sol owns the goal and judgment. DeepSeek handles evidence and mechanical work. Luna Max handles bounded work that needs semantic understanding.</p>
+  <p>Reduce the problem from first principles, route by work shape, and keep only the process and evidence needed to decide.</p>
   <p>
     <a href="README.md">简体中文</a> ·
     <strong>English</strong> ·
@@ -15,9 +15,13 @@
 
 ## What problem does it solve?
 
-Using one model for every kind of work creates two predictable problems: simple tasks consume more time and tokens than they need, while difficult tasks may be handed too early to a Worker suited only to mechanical execution.
+`Sol Worker Routing` does more than add two subagents to Codex. It combines three ideas in one working method:
 
-Sol Worker Routing chooses a lane by the understanding and acceptance a task requires - not by a simple price or capability ranking. Sol stays in the lead with the full objective, authorization boundary, and final judgment. Each Worker receives only a bounded task that can be accepted independently.
+- **First principles**: establish the final objective, invariant facts, minimum acceptance, and authorization boundary first. When patches, abstractions, or unrelated process accumulate, return to the root cause and simplify.
+- **Route by work shape**: Sol keeps the objective and final judgment; DeepSeek handles source-pinned, mechanically checkable work; Luna Max handles bounded tasks that need semantic understanding. Simple tasks stop consuming excess time and tokens, while ambiguous problems are not scattered across subagents too early.
+- **Less process, more useful evidence**: TDD, spec-first work, fixed review rounds, and extra tooling are never goals by themselves. The default is one focused contract check plus one real-path result check. Add validation only when it protects a concrete risk and failure would change a decision.
+
+Sol stays in the lead to understand the goal, decompose the work, inspect evidence, and deliver the result. Both Workers receive only bounded tasks they can complete and verify independently.
 
 | Executor | Best fit | Typical examples |
 |---|---|---|
@@ -65,8 +69,9 @@ The easiest path is to give this prompt directly to Codex:
 ```text
 Install https://github.com/liuyejinghong/sol-worker-routing-codex for my Codex user profile.
 Read and follow the repository AGENTS.md first. Preserve my existing Codex configuration
-and do not overwrite conflicts. Verify deepseek_worker, luna_worker, and the
-sol-worker-routing Skill after installation, then tell me which manual steps remain.
+and do not overwrite conflicts. Have the installer inspect and configure the DeepSeek
+provider, collect a missing credential through a secure prompt, and never send me away
+to edit config.toml. Verify both Workers, the Skill, and one real read-only route.
 ```
 
 Or install from a terminal:
@@ -77,12 +82,16 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-Two manual steps remain after installation:
+The installation flow handles all of the following:
 
-1. Paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**.
-2. Confirm that Codex already has a provider named `deepseek` with usable credentials, then start a new task to verify routing.
+1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
+2. Inspect the `deepseek` provider and add only the expected block when it is absent.
+3. Inspect the DeepSeek credential and, when missing, open a hidden prompt that stores the key in macOS Keychain.
+4. Verify the effective route with an obvious read-only task instead of trusting configuration files alone.
 
-The installer does not edit `config.toml`, import credentials, or change App settings. If the DeepSeek provider is unavailable, that lane must report itself as unavailable rather than pretend a call succeeded.
+Users do not need to learn the provider schema or edit TOML. They only enter their own DeepSeek API key when the secure prompt appears. If the current task cannot see a newly installed Worker, the installation Agent asks only for a new task; the Skill then runs the route probe automatically.
+
+Account-level personalization is the one step the repository cannot perform: paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**.
 
 ## What using it looks like
 
@@ -125,20 +134,17 @@ This is not another user-facing process. It is the minimum context Sol provides 
 
 </details>
 
-## Less process, more useful evidence
-
-The workflow does not prescribe TDD, spec-first work, or a fixed number of review rounds. It establishes the final objective, invariant facts, minimum acceptance, and authorization boundary first, then selects the shortest direct path that can be verified.
-
-The default is one focused contract check plus one real-path result check. Before adding a test, gate, dry run, or tool, identify the concrete risk it protects and whether failure would actually change a decision. When validation becomes more complex than the implementation, return to the original objective and simplify.
-
 ## Installation boundaries and project files
 
-The installer writes only two Agent profiles and one Skill. Different existing content stops the install before anything is overwritten:
+The installer writes two Agent profiles, one Skill, the expected DeepSeek provider block, and one macOS Keychain credential. It can safely upgrade the known previous Skill release; any other different content stops the install before it is overwritten:
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
+~/.agents/skills/sol-worker-routing/scripts/configure_deepseek_provider.py
+[model_providers.deepseek] in ~/.codex/config.toml
+com.openai.codex.deepseek-api-key in macOS Keychain
 ```
 
 | File | Purpose |
@@ -146,10 +152,13 @@ The installer writes only two Agent profiles and one Skill. Different existing c
 | [`personalization.md`](personalization.md) | Global routing preference that you paste manually |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
 | [`agents/`](agents/) | DeepSeek and Luna Max Worker profiles |
-| [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |
+| [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, provider setup, and old-name migration |
+| [`skills/sol-worker-routing/scripts/configure_deepseek_provider.py`](skills/sol-worker-routing/scripts/configure_deepseek_provider.py) | Provider and Keychain setup installed with the Skill |
 | [`benchmarks/`](benchmarks/) | Benchmark cases, raw data, and the full report |
 
-A known `sol-luna-workflow` installation is migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed. This is a community workflow, not an OpenAI preset. A profile file or Worker self-report is not route proof by itself; use client-exposed subagent information and the accepted task result.
+The provider script adds the known block only when it is absent; a different existing `[model_providers.deepseek]` is a conflict. The key is never written to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.
+
+This is a community workflow, not an OpenAI preset. A profile file or Worker self-report is not route proof by itself; use client-exposed subagent information and the accepted task result.
 
 ## References
 

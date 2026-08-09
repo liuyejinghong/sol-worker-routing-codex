@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Sol Worker Routing for Codex</h1>
   <p><strong>把合适的任务，交给合适的 Worker。</strong></p>
-  <p>Sol 负责目标与判断，DeepSeek 处理证据和机械任务，Luna Max 完成需要语义理解的有界工作。</p>
+  <p>先从第一性原理收敛问题，再按任务分流，只保留足够完成判断的流程与证据。</p>
   <p>
     <strong>简体中文</strong> ·
     <a href="README.en.md">English</a> ·
@@ -15,9 +15,13 @@
 
 ## 它解决什么问题
 
-让同一个模型包办所有工作，通常会遇到两个问题：简单任务消耗了不必要的时间和 token，复杂任务又可能被过早交给只适合机械执行的 Worker。
+`Sol Worker Routing` 不只是给 Codex 增加两个子代理。它把三件事放进同一套工作方式里：
 
-Sol Worker Routing 按“任务需要怎样的理解和验收”来分流，而不是简单地按模型价格或能力排名。Sol 始终留在主线程，保留完整目标、授权边界和最终判断；两个 Worker 只接收已经收敛、能够独立验收的任务。
+- **第一性原理**：先明确最终目标、不可变事实、最小验收标准和授权边界，出现重复补丁、额外抽象或无关流程时，回到根因重新简化。
+- **按任务分流**：Sol 保留目标和最终判断；DeepSeek 处理来源固定、可机械验收的工作；Luna Max 处理需要语义理解的有界任务。简单任务不再消耗过多时间和 token，模糊问题也不会被过早分散给多个子代理。
+- **少一些流程，多一些有效证据**：不把 TDD、spec-first、固定审查轮次或更多工具当成目标。默认只做一次聚焦合同检查和一次真实链路结果核对；新增验证之前，先确认它保护了什么具体风险，以及失败是否真的会改变决策。
+
+Sol 始终留在主线程，负责理解目标、拆分任务、检查证据和交付结果。两个 Worker 只接收边界明确、能够独立完成并验收的任务。
 
 | 执行者 | 最适合的工作 | 典型例子 |
 |---|---|---|
@@ -65,8 +69,8 @@ DeepSeek 与 Luna Max 是并列的叶子 Worker，不是前后级关系。Sol �
 ```text
 请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-worker-routing-codex 。
 先读取并遵守仓库里的 AGENTS.md，保留现有 Codex 配置，遇到冲突不要覆盖。
-安装后验证 deepseek_worker、luna_worker 和 sol-worker-routing Skill，
-并说明我还需要完成的人工步骤。
+由安装流程检查并配置 DeepSeek provider，通过安全提示录入缺失的凭据，
+不要让我自己编辑 config.toml。安装后验证两个 Worker、Skill 和一次真实的只读路由。
 ```
 
 也可以在终端安装：
@@ -77,12 +81,16 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-安装完成后还需要两步：
+安装流程会自动完成这些工作：
 
-1. 从 [`personalization.md`](personalization.md) 复制一个完整语言块，粘贴到 Codex App 的“设置 → 个性化 → 自定义指令”。
-2. 确认 Codex 已配置名为 `deepseek` 的 provider 和可用凭据，然后新建一个任务验证路由。
+1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
+2. 检查 `deepseek` provider；缺失时只添加预期的配置段。
+3. 检查 DeepSeek 凭据；缺失时打开隐藏输入，并把密钥保存到 macOS Keychain。
+4. 用一个答案明确的只读任务验证真实路由，而不是只检查配置文件。
 
-安装器不会编辑 `config.toml`、导入密钥或修改 App 设置。DeepSeek provider 不可用时，这条 lane 应明确返回不可用，不能假装已经调用成功。
+使用者不需要研究 provider 格式或手动修改 TOML，只需在安全提示出现时输入自己的 DeepSeek API key。安装 Agent 如果在当前任务中还看不到新 Worker，只会请你新建一个任务，随后由 Skill 自动完成路由探针。
+
+唯一无法由仓库自动完成的是账号级个性化：从 [`personalization.md`](personalization.md) 复制一个完整语言块，粘贴到 Codex App 的“设置 → 个性化 → 自定义指令”。
 
 ## 实际使用方式
 
@@ -125,20 +133,17 @@ Return format:
 
 </details>
 
-## 少一些流程，多一些有效证据
-
-这个工作流不强制 TDD、spec-first 或固定审查轮次。它先明确最终目标、不可变事实、最小验收标准和授权边界，再选择最短、最直接、可验证的路径。
-
-默认只做“一次聚焦合同检查 + 一次真实链路结果核对”。新增测试、gate、dry-run 或工具之前，先确认它保护了什么具体风险，以及失败是否真的会改变决策。如果验证层开始比实现本身更复杂，就回到原始目标重新简化。
-
 ## 安装边界与项目文件
 
-安装器只写入两个 Agent 配置和一个 Skill；遇到不同内容会在覆盖前停止：
+安装器写入两个 Agent 配置、一个 Skill、预期的 DeepSeek provider 配置段和一项 macOS Keychain 凭据；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
+~/.agents/skills/sol-worker-routing/scripts/configure_deepseek_provider.py
+[model_providers.deepseek] in ~/.codex/config.toml
+com.openai.codex.deepseek-api-key in macOS Keychain
 ```
 
 | 文件 | 用途 |
@@ -146,10 +151,13 @@ Return format:
 | [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
 | [`agents/`](agents/) | DeepSeek 与 Luna Max 的 Worker 配置 |
-| [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
+| [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装、provider 配置和旧名称迁移 |
+| [`skills/sol-worker-routing/scripts/configure_deepseek_provider.py`](skills/sol-worker-routing/scripts/configure_deepseek_provider.py) | 随 Skill 安装的 provider 与 Keychain 配置脚本 |
 | [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
-已知旧版 `sol-luna-workflow` 只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述也不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
+provider 脚本只会在配置缺失时添加已知段落；不同的现有 `[model_providers.deepseek]` 会被视为冲突。密钥不会写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
+
+这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
 
 ## 参考资料
 
