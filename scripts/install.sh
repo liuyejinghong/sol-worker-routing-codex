@@ -4,12 +4,12 @@ set -euo pipefail
 installer_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 installer_repo_root="$(cd -- "${installer_script_dir}/.." && pwd)"
 installer_home_dir="${HOME:?HOME is not set}"
-installer_requested_deepseek_provider="auto"
+installer_requested_deepseek_provider="deepseek-api"
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --deepseek-provider)
-      [[ "$#" -ge 2 ]] || { echo "Error: --deepseek-provider requires deepseek-api or opencode-go." >&2; exit 64; }
+      [[ "$#" -ge 2 ]] || { echo "Error: --deepseek-provider requires deepseek-api." >&2; exit 64; }
       installer_requested_deepseek_provider="$2"
       shift 2
       ;;
@@ -18,7 +18,7 @@ while [[ "$#" -gt 0 ]]; do
       shift
       ;;
     -h|--help)
-      echo "Usage: bash scripts/install.sh [--deepseek-provider deepseek-api|opencode-go]"
+      echo "Usage: bash scripts/install.sh [--deepseek-provider deepseek-api]"
       exit 0
       ;;
     *)
@@ -29,9 +29,13 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 case "${installer_requested_deepseek_provider}" in
-  auto|deepseek-api|opencode-go) ;;
+  deepseek-api) ;;
+  opencode-go)
+    echo "Error: OpenCode Go is not supported until it exposes the Codex Responses contract directly; use deepseek-api." >&2
+    exit 64
+    ;;
   *)
-    echo "Error: --deepseek-provider must be deepseek-api or opencode-go." >&2
+    echo "Error: --deepseek-provider must be deepseek-api." >&2
     exit 64
     ;;
 esac
@@ -53,32 +57,26 @@ if [[ "${installer_codex_dir}" != /* ]]; then
 fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
-installer_deepseek_api_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
-installer_opencode_go_agent_source="${installer_repo_root}/agents/deepseek-worker.opencode-go.toml"
+installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
 installer_user_skills_dir="${installer_user_agents_dir}/skills"
 installer_skill_dir="${installer_user_skills_dir}/sol-worker-routing"
+installer_skill_scripts_dir="${installer_skill_dir}/scripts"
 installer_legacy_user_skill_dir="${installer_user_skills_dir}/sol-luna-workflow"
 installer_legacy_codex_skills_dir="${installer_codex_dir}/skills"
 installer_legacy_codex_skill_dir="${installer_legacy_codex_skills_dir}/sol-luna-workflow"
 installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
+installer_removed_runner_target="${installer_skill_scripts_dir}/run-deepseek-worker.sh"
 installer_legacy_skill_dirs=(
   "${installer_legacy_user_skill_dir}"
   "${installer_legacy_codex_skill_dir}"
 )
 
-if [[ "${installer_requested_deepseek_provider}" == "opencode-go" ]] || \
-   { [[ "${installer_requested_deepseek_provider}" == "auto" ]] && [[ -f "${installer_deepseek_agent_target}" ]] && cmp -s "${installer_opencode_go_agent_source}" "${installer_deepseek_agent_target}"; }; then
-  installer_deepseek_agent_source="${installer_opencode_go_agent_source}"
-  installer_effective_deepseek_provider="opencode-go"
-else
-  installer_deepseek_agent_source="${installer_deepseek_api_agent_source}"
-  installer_effective_deepseek_provider="deepseek-api"
-fi
+installer_effective_deepseek_provider="deepseek-api"
 # Exact Skill contents from v0.4.1 and the pre-release v0.5.0 source. These
 # digests are only deletion proofs for the renamed legacy path.
 installer_known_legacy_skill_digests=(
@@ -91,9 +89,21 @@ installer_known_current_skill_digests=(
   "b1eb8288545514c4fcaeb74b37f9a69ea129e5f3bb2fb91eaadee97ac85baec5"
   "468a66d39f195d736e087bd5a93b3dc596bc9196a7b847cc0681a8dcf9c8b864"
   "1565fc570b2f211f78fb76fe2b17bd2f8bb6a6ad9ac71827479681c3208e41f2"
+  "87394123a55ec8d592b6626529f7fc38ca9065fdd8d7a10b2a02451e91f17cda"
+  "4697d4c44a11ca3efcd731f607d16b353bf8efb1e87112732bc3b4794996d055"
+  "014de56a672fa868cc24318e6124ce2706f750979d038a7f4a9ac986e19fb18a"
+  "375a39d9c168d689ee5ab32dc9622a2493eef3db1f4dc1247ebe35cf93a9e1c2"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
+  "e295a298df1fa9b1e3edfea0fd85f64d41ec72c0c7239b518aee93a72ced9dbb"
+  "d6425cc47e1b68ea3074b8b9c3e22066a53b9bc300dcc6c80e0acdf940af0cc9"
+  "5ca4b64d7fb37bdf10844bc24d434871d2f3fa38c0f12a4f2e4a51b2860e1bb8"
+  "e98e09dd60ecec0ceb57064b35b9f3f196178db3e2cf19c4617347db2d983790"
+  "6abaca2b89805cfcfeef02f8d8029cab529fc5d728993e5beebf9e768d9bd5cc"
+)
+installer_known_removed_runner_digests=(
+  "45114d158faf6016950b70c21087d33587ab7098daf835ce62e9eb69667abf77"
 )
 installer_conflict=0
 
@@ -137,14 +147,20 @@ installer_is_known_deepseek_agent() {
   return 1
 }
 
+installer_is_known_removed_runner() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_removed_runner_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
 installer_target_is_accepted() {
   local installer_source="$1"
   local installer_target="$2"
   cmp -s "${installer_source}" "${installer_target}" && return 0
-  if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && \
-     { cmp -s "${installer_deepseek_api_agent_source}" "${installer_target}" || cmp -s "${installer_opencode_go_agent_source}" "${installer_target}"; }; then
-    return 0
-  fi
   if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && installer_is_known_deepseek_agent "${installer_target}"; then
     return 0
   fi
@@ -160,6 +176,7 @@ for installer_dir in \
   "${installer_user_agents_dir}" \
   "${installer_user_skills_dir}" \
   "${installer_skill_dir}" \
+  "${installer_skill_scripts_dir}" \
   "${installer_legacy_user_skill_dir}" \
   "${installer_legacy_codex_skills_dir}" \
   "${installer_legacy_codex_skill_dir}"
@@ -169,6 +186,16 @@ do
     installer_conflict=1
   fi
 done
+
+if [[ -L "${installer_removed_runner_target}" ]]; then
+  echo "Conflict: removed DeepSeek runner uses a symbolic link and requires manual cleanup: ${installer_removed_runner_target}" >&2
+  installer_conflict=1
+elif [[ -e "${installer_removed_runner_target}" ]]; then
+  if [[ ! -f "${installer_removed_runner_target}" ]] || ! installer_is_known_removed_runner "${installer_removed_runner_target}"; then
+    echo "Conflict: removed DeepSeek runner has unknown content and requires manual cleanup: ${installer_removed_runner_target}" >&2
+    installer_conflict=1
+  fi
+fi
 
 for installer_target in \
   "${installer_luna_agent_target}" \
@@ -196,7 +223,10 @@ done
 
 for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
   installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
-  if [[ -e "${installer_legacy_skill_target}" ]]; then
+  if [[ -L "${installer_legacy_skill_target}" ]]; then
+    echo "Conflict: legacy Skill uses a symbolic link and requires manual migration: ${installer_legacy_skill_target}" >&2
+    installer_conflict=1
+  elif [[ -e "${installer_legacy_skill_target}" ]]; then
     if [[ ! -f "${installer_legacy_skill_target}" ]]; then
       echo "Conflict: legacy Skill is not a regular file: ${installer_legacy_skill_target}" >&2
       installer_conflict=1
@@ -214,8 +244,18 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_luna_agent_source}" "${installer_deepseek_api_agent_source}" "${installer_opencode_go_agent_source}"
+    "${installer_luna_agent_source}" "${installer_deepseek_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
+fi
+
+if [[ -e "${installer_removed_runner_target}" ]]; then
+  if [[ -L "${installer_skill_scripts_dir}" || -L "${installer_removed_runner_target}" || ! -f "${installer_removed_runner_target}" ]] || ! installer_is_known_removed_runner "${installer_removed_runner_target}"; then
+    echo "Error: removed DeepSeek runner changed during installation; refusing to remove: ${installer_removed_runner_target}" >&2
+    exit 3
+  fi
+  rm -- "${installer_removed_runner_target}"
+  rmdir -- "${installer_skill_scripts_dir}" 2>/dev/null || true
+  echo "Migrated: removed known pre-release DeepSeek runner at ${installer_removed_runner_target}"
 fi
 
 mkdir -p -- "${installer_agent_dir}" "${installer_skill_dir}"
@@ -254,5 +294,5 @@ for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
 done
 
 echo "Verified: installed files match the repository sources."
-echo "DeepSeek provider profile: ${installer_effective_deepseek_provider}"
+echo "Installed DeepSeek Agent source profile: ${installer_effective_deepseek_provider}"
 echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."

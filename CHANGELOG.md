@@ -2,6 +2,20 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.7.0 - 2026-08-10
+
+1. 增加状态驱动的 Worker 租约：单次等待结束、沉默、耗时较长或尚未写入文件均不得作为中断理由，并禁止对同一 turn 重复中断
+2. 将 DeepSeek V4 Flash 从只读证据通道扩展为快速 1M 上下文通用 Worker，可承担有界语义分析、排障和多文件实现
+3. 将当前 DeepSeek 路由收敛为官方 V4 Flash Responses API，安装官方 1,048,576-token 模型目录，并移除 LiteLLM/OpenCode Go 转换层
+4. 优化中英文 README 与个性化 prompt，明确 Luna 的深度推理定位以及发布动作必须单独授权
+5. 官方直连完成文本、Codex 内置工具和原生 web search 验收；联网研究改为 Sol 规定研究合同、DeepSeek 原生搜索与阅读、Sol 复核决定性来源
+6. 记录当前 Codex custom-provider 子代理会丢失动态任务包的真实 blocker，禁止用直连成功冒充命名 Worker 可用
+7. 第三方 MCP namespace 在官方 DeepSeek 路径下未通过控制验收；原生联网不依赖 MCP，不为无关工具恢复新增桥接层
+8. DeepSeek Worker 默认推理档位调整为 `max`
+9. 在 Codex 修复跨 provider 加密任务交接前，DeepSeek 仅使用 `fork_turns="1"` 的原生继承模式；只接受当前用户请求本身就是完整任务的场景
+10. 明确禁止把 API 请求、`codex exec`、桥接进程或独立任务描述为 DeepSeek 子代理
+11. 删除预发布的前台 DeepSeek runner；安装器仅按已知摘要安全清理其精确副本，并把符号链接冲突提前到任何写入之前
+
 ## 0.6.0 - 2026-08-09
 
 1. 新增高上下文证据压缩路线：Sol 负责发现和固定网页或材料，DeepSeek 负责低成本阅读与结构化提取，Sol 复核来源并形成最终结论
