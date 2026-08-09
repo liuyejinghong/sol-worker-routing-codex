@@ -82,14 +82,35 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-DeepSeek Worker supports two upstreams. The default is the official DeepSeek API. OpenCode Go subscribers can have the installation Agent connect only **DeepSeek V4 Flash**. The two commands below select the Go Worker and start the local bridge; the installation Agent still owns safe Codex provider setup and verification:
+### Choose a DeepSeek upstream
+
+DeepSeek Worker supports two configurations. Both use the same `deepseek_worker` name and routing rules, and both currently expose only **DeepSeek V4 Flash**. The difference is where usage is billed and whether a local protocol bridge is required.
+
+| Configuration | Best for | Request path | Runtime requirement |
+|---|---|---|---|
+| **Official DeepSeek API (default)** | Users with official DeepSeek API credentials who want a direct connection | Codex → DeepSeek API | No local bridge |
+| **OpenCode Go** | OpenCode Go subscribers who want to use the subscription's V4 Flash allowance | Codex → local LiteLLM → OpenCode Go | The bridge must stay running while in use |
+
+When handing installation to Codex, append either “use the official DeepSeek API” or “use OpenCode Go” to the installation prompt above. The official API is selected when no preference is stated.
+
+Use the official DeepSeek API when you do not have a reason to choose Go. The explicit command below is equivalent to running `bash scripts/install.sh` without an option:
+
+```bash
+bash scripts/install.sh --deepseek-provider deepseek-api
+```
+
+The installation Agent checks the existing official provider and credentials, then verifies the route with an obvious read-only task. A working configuration is preserved instead of being rebuilt because the installer cannot see one particular credential backend.
+
+For OpenCode Go, select the Go Worker and then start the local bridge:
 
 ```bash
 bash scripts/install.sh --deepseek-provider opencode-go
 bash scripts/run-opencode-go-bridge.sh
 ```
 
-This uses the API included with the OpenCode Go subscription; it does not install or configure the OpenCode application. Go exposes V4 Flash through `chat/completions`, while current Codex custom providers accept only the Responses API. The repository therefore uses a local LiteLLM protocol bridge: Codex keeps calling `/v1/responses`, and the bridge forwards only `deepseek-v4-flash` to Go while normalizing Codex tool history into the adjacent `tool_calls → tool results` order Go accepts. The API key is supplied through a secure process prompt or `OPENCODE_API_KEY`, never written to the repository or Codex TOML. The bridge script pins its LiteLLM version instead of accepting dependency drift. The installation Agent owns profile selection, bridge startup, provider setup, and one real route probe, so users do not need to discover the OpenCode schema.
+This uses the API included with the OpenCode Go subscription and does not install or configure the OpenCode application. Go exposes V4 Flash through `chat/completions`, while the Codex provider uses the Responses API. Local LiteLLM translates the protocol and normalizes tool history into the adjacent `tool_calls → tool results` order Go accepts. Supply the API key through the hidden startup prompt or `OPENCODE_API_KEY`; it is not written to the repository or Codex TOML. Restart the bridge after its process stops or the computer reboots.
+
+For either configuration, the installation Agent owns the matching provider setup and one real Worker verification. A profile file, health check, or successful text request does not replace acceptance of a tool-using task.
 
 The installation flow handles all of the following:
 

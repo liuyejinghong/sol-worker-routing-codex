@@ -81,14 +81,35 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-DeepSeek Worker 支持两种上游：默认使用 DeepSeek 官方 API；如果你订阅了 OpenCode Go，也可以让安装 Agent 只把其中的 **DeepSeek V4 Flash** 接入。下面两个命令分别选择 Go 版 Worker、启动本机桥接；对应 Codex provider 仍由安装 Agent 安全写入并验证：
+### 选择 DeepSeek 的接入方式
+
+DeepSeek Worker 支持两种配置。两种配置使用同一个 `deepseek_worker` 名称和相同的路由规则，当前都只接入 **DeepSeek V4 Flash**；区别只在于请求从哪里计费，以及是否需要本机协议桥接。
+
+| 配置 | 适合谁 | 请求路径 | 运行要求 |
+|---|---|---|---|
+| **DeepSeek 官方 API（默认）** | 有 DeepSeek 官方 API 凭据，希望直接调用官方服务 | Codex → DeepSeek API | 不需要本机桥接 |
+| **OpenCode Go** | 已订阅 OpenCode Go，希望使用订阅内的 V4 Flash 额度 | Codex → 本机 LiteLLM → OpenCode Go | 使用期间桥接进程必须保持运行 |
+
+如果把安装任务直接交给 Codex，在上面的安装提示末尾补充“使用 DeepSeek 官方 API”或“使用 OpenCode Go”即可；没有指定时使用官方 API。
+
+不确定选哪一种时，使用默认的 DeepSeek 官方 API。显式安装命令如下；直接运行 `bash scripts/install.sh` 与这一配置等价：
+
+```bash
+bash scripts/install.sh --deepseek-provider deepseek-api
+```
+
+安装 Agent 会检查现有官方 provider 和凭据，再通过一个答案明确的只读任务验证真实路由。已经可用的配置会被保留，不会因为安装流程无法看到某个特定凭据后端而重建。
+
+如果使用 OpenCode Go，先选择 Go 版 Worker，再启动本机桥接：
 
 ```bash
 bash scripts/install.sh --deepseek-provider opencode-go
 bash scripts/run-opencode-go-bridge.sh
 ```
 
-这里使用的是 OpenCode Go 订阅提供的 API，不需要安装或配置 OpenCode 软件。OpenCode Go 为 V4 Flash 提供的是 `chat/completions`，而当前 Codex 自定义 provider 只接受 Responses API，因此仓库通过本机 LiteLLM 做一次协议转换：Codex 仍调用标准 `/v1/responses`，桥接层只把 `deepseek-v4-flash` 转发到 Go，并自动把 Codex 工具历史整理成 Go 接受的相邻 `tool_calls → tool results` 顺序。API key 通过当前进程的安全输入或 `OPENCODE_API_KEY` 提供，不写进仓库或 Codex TOML。桥接脚本固定 LiteLLM 版本，避免依赖漂移。安装 Agent 会负责选择 Worker 配置、启动桥接、写入对应 provider 并完成一次真实路由验证；使用者不需要研究 OpenCode 配置格式。
+这里使用的是 OpenCode Go 订阅提供的 API，不会安装或配置 OpenCode 软件。Go 为 V4 Flash 提供 `chat/completions`，而 Codex provider 使用 Responses API；本机 LiteLLM 负责协议转换，并把工具历史整理成 Go 接受的相邻 `tool_calls → tool results` 顺序。API key 通过启动时的隐藏输入或 `OPENCODE_API_KEY` 提供，不写进仓库或 Codex TOML。桥接进程停止或电脑重启后，需要重新启动桥接。
+
+无论选择哪一种配置，安装 Agent 都负责写入对应 provider 并完成一次真实 Worker 验证。配置文件存在、健康检查通过或文本请求成功，都不能代替工具任务的最终验收。
 
 安装流程会自动完成这些工作：
 
