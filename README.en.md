@@ -26,7 +26,7 @@ Sol stays in the lead to understand the goal, decompose the work, inspect eviden
 | Executor | Best fit | Typical examples |
 |---|---|---|
 | **Sol** | Tiny tasks, ambiguity, architecture, and final decisions | Decide whether to change something, integrate results, make a one-step edit |
-| **DeepSeek** | Source-pinned, read-heavy, mechanically checkable work | Find code facts, collect evidence, make a one-file mechanical patch |
+| **DeepSeek** | Fixed sources, large inputs, mechanically checkable results | Read fixed webpages or papers, find code facts, organize logs and structured data |
 | **Luna Max** | Bounded work that still needs semantic understanding | Code review, module analysis, isolated implementation, focused diagnosis |
 
 ## What does the same work cost?
@@ -50,7 +50,7 @@ For the same accepted results, DeepSeek used **147 fewer seconds** and **11,627 
 flowchart LR
     U["User objective"] --> S["Sol<br/>understand, decompose, accept, integrate"]
     S -->|"one focused action"| D["Sol executes directly"]
-    S -->|"source-pinned and mechanical"| DS["DeepSeek"]
+    S -->|"fixed material, reducible evidence"| DS["DeepSeek"]
     S -->|"bounded semantic understanding"| L["Luna Max"]
     D --> O["Final result"]
     DS --> S
@@ -58,9 +58,26 @@ flowchart LR
     S --> O
 ```
 
-DeepSeek and Luna Max are peer leaf Workers, not stages in a hierarchy. Sol runs tasks in parallel only when they are independent and have non-overlapping scope. Shared state, ordered dependencies, or overlapping writes stay sequential.
+DeepSeek and Luna Max are peer leaf Workers, not stages in a hierarchy. Sol owns task recognition, material discovery, decomposition, dispatch, acceptance, and the final conclusion. For everyday use, we recommend `gpt-5.6-sol` at **medium** effort: it is enough for most routing and integration without erasing the savings in the lead thread. Move to high only for ambiguous architecture, conflicting evidence, high-stakes decisions, or complex synthesis. The Skill describes this policy but cannot change the model or effort selected for the current task.
 
 The workflow also follows one deliberately simple rule: if Sol can finish the task in one focused action, it does not delegate merely to use a subagent. Handoffs cost time and tokens too.
+
+## Where routing pays off most
+
+DeepSeek's biggest advantage is not merely finding one line of code cheaply. It is reducing **a large body of fixed material into a small, checkable evidence set**:
+
+| Input material | What DeepSeek returns to Sol |
+|---|---|
+| Fixed webpages, papers, or long documents | Evidence table with source, date, core fact, support, and limitations |
+| Large repositories or diffs | Call sites, configuration references, repeated patterns, and mechanical contract checks |
+| CI output, runtime logs, or incident records | Error classes, frequency, and timeline |
+| Issues, pull requests, or release records | Deduplicated items, module groups, and status lists |
+| CSV, JSON, or API snapshots | Reconciliation results, missing records, and anomaly candidates |
+| Localization and dependency data | Missing keys, placeholder differences, version matches, and affected-file candidates |
+
+Web research uses one clear handoff: **Sol performs the minimum useful search and source judgment, then fixes a URL list or saves page text; DeepSeek reads only that fixed material and compresses the evidence; Sol checks the primary sources, resolves conflicts, and writes the conclusion.** This keeps large webpage contexts out of repeated premium-model passes without outsourcing open-ended discovery or source credibility.
+
+Concurrency is adaptive rather than permanently capped at two. Sol starts with two Workers to validate the packet contract. If the first results pass and the remaining material is genuinely independent and read-only, Sol may expand DeepSeek to **four active Workers**. Luna Max stays at two or fewer with fully disjoint ownership; work touching the same write surface remains sequential and normally uses one Luna Worker.
 
 ## Install
 
@@ -132,6 +149,13 @@ At this pinned commit, find the setting's default and every call site. Cite a li
 ```
 
 With fixed sources and acceptance, this fits DeepSeek.
+
+```text
+Find and fix the relevant URL set first. Have DeepSeek extract claims, figures, dates,
+and evidence limitations from those pages; then verify the primary sources and give me the conclusion.
+```
+
+That is the standard split for context-heavy web work: Sol searches and selects, DeepSeek reads and reduces, and Sol verifies and synthesizes.
 
 ```text
 Review cancellation and resource cleanup in this module. Report only issues you can locate and reproduce.

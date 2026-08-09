@@ -90,6 +90,7 @@ installer_known_legacy_skill_digests=(
 installer_known_current_skill_digests=(
   "b1eb8288545514c4fcaeb74b37f9a69ea129e5f3bb2fb91eaadee97ac85baec5"
   "468a66d39f195d736e087bd5a93b3dc596bc9196a7b847cc0681a8dcf9c8b864"
+  "1565fc570b2f211f78fb76fe2b17bd2f8bb6a6ad9ac71827479681c3208e41f2"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
