@@ -7,6 +7,7 @@
 1. 修复 Codex Responses 历史转换为 OpenCode Go Chat 历史时，assistant 状态消息插入 `tool_calls` 与对应 `tool` 结果之间导致的 400
 2. 在实际发往 OpenCode Go 前，仅按 `tool_call_id` 重排完整工具结果组；消息内容、工具参数与结果保持不变，不完整历史仍由上游明确拒绝
 3. 真实 DeepSeek Worker 工具链已越过原 400，并连续获得 `/v1/responses` 200 响应
+4. README 分开展示 DeepSeek 官方 API 与 OpenCode Go 两种配置，并说明选择方式、请求路径和运行要求
 
 ## 0.5.2 - 2026-08-09
 
