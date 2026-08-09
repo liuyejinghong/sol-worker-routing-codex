@@ -2,6 +2,13 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.5.2 - 2026-08-09
+
+1. 根据 OpenCode Go 真实请求修正 V4 Flash 的 Chat Completions 转发，确保上游模型 ID 保持为 `deepseek-v4-flash`
+2. 移除 Go Worker 未受支持的固定 reasoning effort，并由桥接层丢弃上游明确不支持的 Responses 参数
+3. 固定已通过启动与 Codex 实际请求验证的 LiteLLM、FastAPI 和 SOCKS 依赖组合
+4. 安装器允许从已知的上一版 OpenCode Go Worker 安全升级
+
 ## 0.5.1 - 2026-08-09
 
 1. 为 DeepSeek Worker 增加 OpenCode Go 上游选项，仅开放 `deepseek-v4-flash`

@@ -2,7 +2,6 @@ name = "deepseek_worker"
 description = "Low-cost bounded worker for read-heavy, evidence-first, or mechanically verifiable tasks with a compact handoff."
 model = "deepseek-v4-flash"
 model_provider = "opencode-go"
-model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """

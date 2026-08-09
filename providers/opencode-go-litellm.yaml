@@ -1,6 +1,10 @@
 model_list:
   - model_name: deepseek-v4-flash
     litellm_params:
-      model: openai/chat_completions/deepseek-v4-flash
+      model: openai/deepseek-v4-flash
       api_base: https://opencode.ai/zen/go/v1
       api_key: os.environ/OPENCODE_API_KEY
+      use_chat_completions_api: true
+
+litellm_settings:
+  drop_params: true

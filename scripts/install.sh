@@ -91,6 +91,9 @@ installer_known_current_skill_digests=(
   "b1eb8288545514c4fcaeb74b37f9a69ea129e5f3bb2fb91eaadee97ac85baec5"
   "468a66d39f195d736e087bd5a93b3dc596bc9196a7b847cc0681a8dcf9c8b864"
 )
+installer_known_deepseek_agent_digests=(
+  "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
+)
 installer_conflict=0
 
 installer_sha256() {
@@ -123,12 +126,25 @@ installer_is_known_current_skill() {
   return 1
 }
 
+installer_is_known_deepseek_agent() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_deepseek_agent_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
 installer_target_is_accepted() {
   local installer_source="$1"
   local installer_target="$2"
   cmp -s "${installer_source}" "${installer_target}" && return 0
   if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && \
      { cmp -s "${installer_deepseek_api_agent_source}" "${installer_target}" || cmp -s "${installer_opencode_go_agent_source}" "${installer_target}"; }; then
+    return 0
+  fi
+  if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && installer_is_known_deepseek_agent "${installer_target}"; then
     return 0
   fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then

@@ -29,14 +29,15 @@ fi
 echo "Starting the OpenCode Go bridge on http://127.0.0.1:${bridge_port}/v1"
 echo "Only the deepseek-v4-flash model is configured. Stop with Ctrl-C."
 
-if command -v litellm >/dev/null 2>&1; then
-  exec litellm --config "${bridge_config}" --host 127.0.0.1 --port "${bridge_port}"
-fi
-
 if command -v uvx >/dev/null 2>&1; then
-  exec uvx --from 'litellm[proxy]==1.80.10' --with socksio \
+  exec uvx --from 'litellm[proxy]==1.96.0' --with 'fastapi==0.136.3' --with socksio \
     litellm --config "${bridge_config}" --host 127.0.0.1 --port "${bridge_port}"
 fi
 
-echo "Error: LiteLLM is unavailable. Install the LiteLLM proxy or uv, then retry." >&2
+if command -v litellm >/dev/null 2>&1; then
+  echo "Warning: uvx is unavailable; using the installed LiteLLM without the repository's dependency pins." >&2
+  exec litellm --config "${bridge_config}" --host 127.0.0.1 --port "${bridge_port}"
+fi
+
+echo "Error: LiteLLM is unavailable. Install uv or the LiteLLM proxy, then retry." >&2
 exit 4
