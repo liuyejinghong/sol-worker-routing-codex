@@ -78,7 +78,7 @@ The OpenCode Go route has passed a real request beyond 256K: the direct bridge r
 | Localization and dependency data | Missing keys, placeholder differences, version matches, and affected-file candidates |
 | Clearly bounded multi-file work | Semantic analysis, implementation changes, and named acceptance results |
 
-Web research uses one clear handoff: **Sol performs the minimum useful search and source judgment, then fixes a URL list or saves page text; DeepSeek reads only that fixed material and compresses the evidence; Sol checks the primary sources, resolves conflicts, and writes the conclusion.** This keeps large webpage contexts out of repeated premium-model passes without outsourcing open-ended discovery or source credibility.
+Web research uses one clear handoff: **Sol performs the minimum useful search and source judgment, fixes the URLs, and saves the relevant page text or excerpts as local artifacts; DeepSeek reads only those materialized sources and compresses the evidence; Sol checks the primary sources, resolves conflicts, and writes the conclusion.** A URL alone is not a complete handoff because the OpenCode Go Worker may have neither built-in web tools nor outbound network access. This keeps large webpage contexts out of repeated premium-model passes without outsourcing open-ended discovery or source credibility.
 
 Concurrency is adaptive rather than permanently capped at two. Sol starts with two Workers to validate the packet contract. If the first results pass and the remaining material is genuinely independent and read-only, Sol may expand DeepSeek to **four active Workers**. Write-bearing DeepSeek and Luna work stays at two or fewer with fully disjoint ownership; work touching the same write surface remains sequential.
 
@@ -160,8 +160,9 @@ At this pinned commit, find the setting's default and every call site. Cite a li
 With fixed sources and acceptance, this fits DeepSeek.
 
 ```text
-Find and fix the relevant URL set first. Have DeepSeek extract claims, figures, dates,
-and evidence limitations from those pages; then verify the primary sources and give me the conclusion.
+Find and fix the relevant URL set first, then save the page text or relevant excerpts.
+Have DeepSeek extract claims, figures, dates, and evidence limitations from those local materials;
+then verify the primary sources and give me the conclusion.
 ```
 
 That is the standard split for context-heavy web work: Sol searches and selects, DeepSeek reads and reduces, and Sol verifies and synthesizes.

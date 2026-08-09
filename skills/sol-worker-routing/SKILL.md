@@ -48,8 +48,8 @@ DeepSeek may make non-trivial local judgments needed to finish its packet. Archi
 Do not ask the OpenCode Go `deepseek_worker` to use Codex's built-in web-search namespace. The current bridge does not preserve Responses namespace tools, and open-ended source selection remains a Sol judgment even when another provider is used.
 
 1. Sol defines the question, date range, source quality, and domain constraints.
-2. Sol performs the smallest useful discovery pass and fixes a URL list, or saves the relevant page text as named artifacts.
-3. DeepSeek reads only those fixed materials and returns a compact evidence matrix.
+2. Sol performs the smallest useful discovery pass, fixes the URL list, and saves the relevant page text or source excerpts as named artifacts. A URL-only handoff is not sufficient: the OpenCode Go worker may have neither the built-in web namespace nor outbound network access.
+3. DeepSeek reads only those local source artifacts and returns a compact evidence matrix. If an artifact is missing, it reports the missing source instead of attempting open-ended browsing or substituting unrelated local evidence.
 4. Sol checks primary claims, resolves conflicts, adds final citations, and owns the synthesis.
 
 Use this return shape unless the parent contract needs less:
