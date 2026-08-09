@@ -88,7 +88,7 @@ bash scripts/install.sh --deepseek-provider opencode-go
 bash scripts/run-opencode-go-bridge.sh
 ```
 
-这里使用的是 OpenCode Go 订阅提供的 API，不需要安装或配置 OpenCode 软件。OpenCode Go 为 V4 Flash 提供的是 `chat/completions`，而当前 Codex 自定义 provider 只接受 Responses API，因此仓库通过本机 LiteLLM 做一次协议转换：Codex 仍调用标准 `/v1/responses`，桥接层只把 `deepseek-v4-flash` 转发到 Go。API key 通过当前进程的安全输入或 `OPENCODE_API_KEY` 提供，不写进仓库或 Codex TOML。桥接脚本固定 LiteLLM 版本，避免依赖漂移。安装 Agent 会负责选择 Worker 配置、启动桥接、写入对应 provider 并完成一次真实路由验证；使用者不需要研究 OpenCode 配置格式。
+这里使用的是 OpenCode Go 订阅提供的 API，不需要安装或配置 OpenCode 软件。OpenCode Go 为 V4 Flash 提供的是 `chat/completions`，而当前 Codex 自定义 provider 只接受 Responses API，因此仓库通过本机 LiteLLM 做一次协议转换：Codex 仍调用标准 `/v1/responses`，桥接层只把 `deepseek-v4-flash` 转发到 Go，并自动把 Codex 工具历史整理成 Go 接受的相邻 `tool_calls → tool results` 顺序。API key 通过当前进程的安全输入或 `OPENCODE_API_KEY` 提供，不写进仓库或 Codex TOML。桥接脚本固定 LiteLLM 版本，避免依赖漂移。安装 Agent 会负责选择 Worker 配置、启动桥接、写入对应 provider 并完成一次真实路由验证；使用者不需要研究 OpenCode 配置格式。
 
 安装流程会自动完成这些工作：
 

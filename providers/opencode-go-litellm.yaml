@@ -8,3 +8,5 @@ model_list:
 
 litellm_settings:
   drop_params: true
+  callbacks:
+    - opencode_go_tool_pairing.opencode_go_tool_pairing
