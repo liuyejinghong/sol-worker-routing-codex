@@ -66,7 +66,7 @@ DeepSeek 与 Luna Max 是并列的叶子 Worker，不是前后级关系。Sol �
 
 DeepSeek V4 Flash 是快速、低成本的通用 Worker，不只是证据提取器。1M 上下文让它可以把大型代码库、长文档或成批记录作为一个连贯整体理解，减少为了迁就窗口而过早切碎材料造成的信息损失。
 
-OpenCode Go 路线已经通过超过 256K 的真实链路验收：直接 bridge 请求计量为 **260,093 input token**，同一输入经 Codex 端到端返回了首尾标记。它证明当前配置能够越过 256K，不代表已经测到 1M 极限；方法与限制见[长上下文验收记录](benchmarks/long-context-acceptance-2026-08-10.md)。
+DeepSeek 官方模型目录把 V4 Flash 的上下文窗口声明为 **1,048,576 token**。官方直连已经通过文本、Codex 内置工具和原生网页搜索三条真实链路；这证明当前路由不需要本机协议桥接，但不等于已经用单次任务压满 1M。[官方直连验收记录](benchmarks/official-deepseek-acceptance-2026-08-10.md)同时保留了第三方 MCP 与子代理交接的失败边界；历史上的 260K 桥接探针仍保留在[长上下文验收记录](benchmarks/long-context-acceptance-2026-08-10.md)，不再代表当前安装路径。
 
 | 输入或任务 | DeepSeek 可以交付的结果 |
 |---|---|
@@ -78,7 +78,7 @@ OpenCode Go 路线已经通过超过 256K 的真实链路验收：直接 bridge 
 | 多语言与依赖数据 | 缺失 key、占位符差异、版本匹配和受影响文件候选 |
 | 边界清楚的多文件任务 | 语义分析、实现修改和指定验收结果 |
 
-联网搜索采用一条清晰的交接线：**Sol 做最小范围的搜索和来源判断，固定 URL，并把网页正文或相关摘录保存为本地材料；DeepSeek 只阅读这些已落地材料并压缩证据；Sol 最后核对关键来源、处理冲突并写出结论。** 只交 URL 不算完成交接，因为 OpenCode Go Worker 不一定具备内置网页工具或出站网络。这样既能避开一批网页上下文在高价模型中反复流转，也不会把开放式搜索和来源可信度判断交给证据 Worker。
+联网搜索可以直接交给 DeepSeek 的原生 `web_search`：**Sol 先规定问题、日期范围、来源质量和验收；DeepSeek 负责有界发现、阅读大量页面并返回精确 URL、事实和证据限制；Sol 最后复核决定性的一手来源、处理冲突并写出结论。** 固定来源的任务仍可直接交 URL 或本地材料，但不再要求 Sol 先把每个页面抓取落地。这样才能真正利用 Flash 的速度、成本和 1M 上下文处理高网页吞吐。
 
 并发也不再固定卡在两个。Sol 先派两个 Worker 验证任务合同；首批结果合格、剩余材料确实相互独立且只读时，可以自动把 DeepSeek 扩到**最多四个**。涉及写入的 DeepSeek 和 Luna Max 同时最多两个，且所有权必须完全分离；同一写入面仍按顺序执行。
 
@@ -107,40 +107,24 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-### 选择 DeepSeek 的接入方式
+### DeepSeek 官方直连
 
-DeepSeek Worker 支持两种配置。两种配置使用同一个 `deepseek_worker` 名称、**1M 模型上下文**和相同的路由规则，当前都只接入 **DeepSeek V4 Flash**；区别只在于请求从哪里计费，以及是否需要本机协议桥接。
+DeepSeek Worker 只使用 **DeepSeek V4 Flash 官方 API**。请求从 Codex 直接进入 DeepSeek Responses API，原生支持 Codex 内置工具和网页搜索，不需要 LiteLLM、OpenCode Go proxy 或其他常驻桥接进程。
 
-| 配置 | 适合谁 | 请求路径 | 运行要求 |
-|---|---|---|---|
-| **DeepSeek 官方 API（默认）** | 有 DeepSeek 官方 API 凭据，希望直接调用官方服务 | Codex → DeepSeek API | 不需要本机桥接 |
-| **OpenCode Go** | 已订阅 OpenCode Go，希望使用订阅内的 V4 Flash 额度 | Codex → 本机 LiteLLM → OpenCode Go | 使用期间桥接进程必须保持运行 |
-
-如果把安装任务直接交给 Codex，在上面的安装提示末尾补充“使用 DeepSeek 官方 API”或“使用 OpenCode Go”即可；没有指定时使用官方 API。
-
-不确定选哪一种时，使用默认的 DeepSeek 官方 API。显式安装命令如下；直接运行 `bash scripts/install.sh` 与这一配置等价：
+直接运行安装器即可；保留的显式参数只用于兼容已有安装命令：
 
 ```bash
 bash scripts/install.sh --deepseek-provider deepseek-api
 ```
 
-安装 Agent 会检查现有官方 provider 和凭据，再通过一个答案明确的只读任务验证真实路由。已经可用的配置会被保留，不会因为安装流程无法看到某个特定凭据后端而重建。
+安装 Agent 会检查现有官方 provider 和凭据，安装官方模型目录，再分别核对一个真实工具结果和一次原生网页搜索。已经可用的配置会被保留，不会因为安装流程无法看到某个特定凭据后端而重建。OpenCode Go 暂不接入；等它直接支持 Codex Responses 与工具合同后再重新评估，而不是继续维护 Chat Completions 转换层。
 
-如果使用 OpenCode Go，先选择 Go 版 Worker，再启动本机桥接：
-
-```bash
-bash scripts/install.sh --deepseek-provider opencode-go
-bash scripts/run-opencode-go-bridge.sh
-```
-
-这里使用的是 OpenCode Go 订阅提供的 API，不会安装或配置 OpenCode 软件。Go 为 V4 Flash 提供 `chat/completions`，而 Codex provider 使用 Responses API；本机 LiteLLM 负责协议转换，并把工具历史整理成 Go 接受的相邻 `tool_calls → tool results` 顺序。API key 通过启动时的隐藏输入或 `OPENCODE_API_KEY` 提供，不写进仓库或 Codex TOML。桥接进程停止或电脑重启后，需要重新启动桥接。
-
-无论选择哪一种配置，安装 Agent 都负责写入对应 provider 并完成一次真实 Worker 验证。配置文件存在、健康检查通过或文本请求成功，都不能代替工具任务的最终验收。
+配置文件存在、文本请求成功或 provider 自述都不能单独替代子代理验收。当前 Codex 已有一个[公开问题](https://github.com/openai/codex/issues/35932)：非 OpenAI custom-provider 子代理可能启动成功却丢失动态任务包；遇到这种结果应明确报告为客户端 handoff blocker，不能把官方 API 的直连成功冒充为命名 Worker 已可用。
 
 安装流程会自动完成这些工作：
 
 1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
-2. 检查选择的 DeepSeek 上游，并用一个答案明确的有界任务验证真实路由。
+2. 检查官方 DeepSeek 上游、模型目录和凭据，并用一个答案明确的有界任务验证真实路由。
 3. 路由可用时完整保留现有配置，不因为某个环境变量或凭据后端不可见而重装。
 4. 只有真实调用失败时，才根据当前 Codex 客户端与操作系统支持的方式修复 provider 和认证。
 
@@ -159,10 +143,10 @@ bash scripts/run-opencode-go-bridge.sh
 来源和验收都固定时，适合交给 DeepSeek。
 
 ```text
-先找到这次研究真正相关的一组网页，固定 URL 并保存正文或相关摘录，再让 DeepSeek 从这些本地材料提取观点、数据、日期和证据限制；最后复核原始来源并给我结论。
+让 DeepSeek 搜索这次研究真正相关的一组网页，优先一手来源，返回精确 URL、观点、数据、日期和证据限制；最后复核决定性来源并给我结论。
 ```
 
-这是高上下文联网任务的标准分工：Sol 搜索与选源，DeepSeek 阅读与压缩，Sol 复核与综合。
+这是高上下文联网任务的标准分工：Sol 规定研究合同，DeepSeek 原生搜索、阅读与压缩，Sol 复核与综合。
 
 ```text
 读取整个服务目录和迁移说明，找出所有旧配置调用点，在指定文件内完成迁移，并运行目标测试。
@@ -215,12 +199,11 @@ Return format:
 |---|---|
 | [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
-| [`agents/`](agents/) | DeepSeek 官方 API、OpenCode Go 与 Luna Max 的 Worker 配置 |
-| [`providers/`](providers/) | OpenCode Go 的单模型桥接与 Codex provider 模板 |
+| [`agents/`](agents/) | DeepSeek 官方 API 与 Luna Max 的 Worker 配置 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
 | [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
-Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理。OpenCode Go 模式只增加本机 Responses 桥接和对应 provider，不会改动 OpenCode 软件，也不会把密钥写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
+Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实路由判断现有配置是否有效；只有确认失败后，才按当前客户端和系统支持的方式处理。凭据不得写入仓库、聊天记录或 `config.toml`。已知旧版 `sol-luna-workflow` 也只会在内容与历史版本一致、且路径不是符号链接时迁移；未知内容不会被覆盖或删除。
 
 这是社区工作流，不是 OpenAI 官方预设。配置文件和 Worker 自述不能单独证明路由成功，应以客户端实际返回的子代理信息和任务验收结果为准。
 
@@ -229,6 +212,5 @@ Provider 不属于仓库安装器的固定写入物。安装 Agent 先以真实�
 - [Codex 子代理和自定义 Agent](https://developers.openai.com/codex/agent-configuration/subagents)
 - [Codex Skills 与发现路径](https://developers.openai.com/codex/skills)
 - [Codex 指令发现顺序](https://developers.openai.com/codex/guides/agents-md)
-- [OpenCode Go 模型与 API 端点](https://opencode.ai/docs/zh-cn/go/)
-- [LiteLLM Responses API 桥接](https://docs.litellm.ai/docs/response_api)
+- [DeepSeek 官方 Codex 集成](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/)
 - [Oh My OpenAgent 编排参考](https://github.com/code-yeongyu/oh-my-openagent)

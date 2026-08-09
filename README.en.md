@@ -66,7 +66,7 @@ The workflow also follows one deliberately simple rule: if Sol can finish the ta
 
 DeepSeek V4 Flash is a fast, low-cost general Worker rather than an evidence-only extractor. Its 1M context can keep a large repository, long document set, or batch of records coherent instead of fragmenting the material early to fit a smaller window.
 
-The OpenCode Go route has passed a real request beyond 256K: the direct bridge reported **260,093 input tokens**, and the same input returned both boundary markers through Codex end to end. This proves that the current route crosses 256K, not that the full 1M limit has been saturated. See the [long-context acceptance record](benchmarks/long-context-acceptance-2026-08-10.md) for the method and limitation.
+The official DeepSeek model catalog declares a **1,048,576-token** context window for V4 Flash. The direct official route has passed real text, built-in Codex tool, and native web-search calls. That proves the current route needs no local protocol bridge; it does not claim that one task has saturated the full 1M window. The [official-route acceptance record](benchmarks/official-deepseek-acceptance-2026-08-10.md) also preserves the failed third-party MCP and subagent-handoff boundaries. The historical 260K bridge probe remains in the [long-context acceptance record](benchmarks/long-context-acceptance-2026-08-10.md), but it no longer represents the active installation path.
 
 | Input or task | What DeepSeek can return to Sol |
 |---|---|
@@ -78,7 +78,7 @@ The OpenCode Go route has passed a real request beyond 256K: the direct bridge r
 | Localization and dependency data | Missing keys, placeholder differences, version matches, and affected-file candidates |
 | Clearly bounded multi-file work | Semantic analysis, implementation changes, and named acceptance results |
 
-Web research uses one clear handoff: **Sol performs the minimum useful search and source judgment, fixes the URLs, and saves the relevant page text or excerpts as local artifacts; DeepSeek reads only those materialized sources and compresses the evidence; Sol checks the primary sources, resolves conflicts, and writes the conclusion.** A URL alone is not a complete handoff because the OpenCode Go Worker may have neither built-in web tools nor outbound network access. This keeps large webpage contexts out of repeated premium-model passes without outsourcing open-ended discovery or source credibility.
+Web research can go directly through DeepSeek's native `web_search`: **Sol defines the question, date range, source-quality bar, and acceptance; DeepSeek performs bounded discovery, reads many pages, and returns exact URLs, facts, and evidence limits; Sol rechecks the decisive primary sources, resolves conflicts, and writes the conclusion.** Fixed-source work may still provide URLs or local artifacts directly, but Sol no longer has to materialize every page before delegation. This is where Flash's speed, price, and 1M context can absorb high webpage throughput.
 
 Concurrency is adaptive rather than permanently capped at two. Sol starts with two Workers to validate the packet contract. If the first results pass and the remaining material is genuinely independent and read-only, Sol may expand DeepSeek to **four active Workers**. Write-bearing DeepSeek and Luna work stays at two or fewer with fully disjoint ownership; work touching the same write surface remains sequential.
 
@@ -108,40 +108,24 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-### Choose a DeepSeek upstream
+### Direct official DeepSeek route
 
-DeepSeek Worker supports two configurations. Both use the same `deepseek_worker` name, **1M model context**, and routing rules, and both currently expose only **DeepSeek V4 Flash**. The difference is where usage is billed and whether a local protocol bridge is required.
+The DeepSeek Worker uses only the **official DeepSeek V4 Flash API**. Codex sends requests directly to the DeepSeek Responses API, with native built-in tools and web search. No LiteLLM process, OpenCode Go proxy, or other resident bridge is required.
 
-| Configuration | Best for | Request path | Runtime requirement |
-|---|---|---|---|
-| **Official DeepSeek API (default)** | Users with official DeepSeek API credentials who want a direct connection | Codex → DeepSeek API | No local bridge |
-| **OpenCode Go** | OpenCode Go subscribers who want to use the subscription's V4 Flash allowance | Codex → local LiteLLM → OpenCode Go | The bridge must stay running while in use |
-
-When handing installation to Codex, append either “use the official DeepSeek API” or “use OpenCode Go” to the installation prompt above. The official API is selected when no preference is stated.
-
-Use the official DeepSeek API when you do not have a reason to choose Go. The explicit command below is equivalent to running `bash scripts/install.sh` without an option:
+Run the installer directly. The explicit option remains only for compatibility with existing installation commands:
 
 ```bash
 bash scripts/install.sh --deepseek-provider deepseek-api
 ```
 
-The installation Agent checks the existing official provider and credentials, then verifies the route with an obvious read-only task. A working configuration is preserved instead of being rebuilt because the installer cannot see one particular credential backend.
+The installation Agent checks the existing official provider and credential, installs the official model catalog, then verifies one real tool result and one native web-search result. A working configuration is preserved instead of being rebuilt because the installer cannot see one particular credential backend. OpenCode Go is intentionally unsupported until it exposes the Codex Responses and tool contract directly; the project no longer maintains a Chat Completions conversion layer.
 
-For OpenCode Go, select the Go Worker and then start the local bridge:
-
-```bash
-bash scripts/install.sh --deepseek-provider opencode-go
-bash scripts/run-opencode-go-bridge.sh
-```
-
-This uses the API included with the OpenCode Go subscription and does not install or configure the OpenCode application. Go exposes V4 Flash through `chat/completions`, while the Codex provider uses the Responses API. Local LiteLLM translates the protocol and normalizes tool history into the adjacent `tool_calls → tool results` order Go accepts. Supply the API key through the hidden startup prompt or `OPENCODE_API_KEY`; it is not written to the repository or Codex TOML. Restart the bridge after its process stops or the computer reboots.
-
-For either configuration, the installation Agent owns the matching provider setup and one real Worker verification. A profile file, health check, or successful text request does not replace acceptance of a tool-using task.
+A profile file, text response, or provider self-report does not replace subagent acceptance. Codex currently has a [public issue](https://github.com/openai/codex/issues/35932) in which non-OpenAI custom-provider children may start but lose their dynamic task payload. That outcome must be reported as a client handoff blocker; direct API success must not be presented as proof that the named Worker lane is usable.
 
 The installation flow handles all of the following:
 
 1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
-2. Inspect the selected DeepSeek upstream and verify it with an obvious bounded task.
+2. Inspect the official DeepSeek upstream, model catalog, and credential, then verify them with an obvious bounded task.
 3. Preserve a working setup instead of reinstalling it because one environment variable or credential backend is not visible.
 4. Only after a real invocation fails, repair the provider and authentication using mechanisms supported by the current Codex client and operating system.
 
@@ -160,12 +144,12 @@ At this pinned commit, find the setting's default and every call site. Cite a li
 With fixed sources and acceptance, this fits DeepSeek.
 
 ```text
-Find and fix the relevant URL set first, then save the page text or relevant excerpts.
-Have DeepSeek extract claims, figures, dates, and evidence limitations from those local materials;
-then verify the primary sources and give me the conclusion.
+Have DeepSeek search for the small set of webpages that actually matters, prefer primary sources,
+and return exact URLs, claims, figures, dates, and evidence limitations;
+then verify the decisive original sources and give me the conclusion.
 ```
 
-That is the standard split for context-heavy web work: Sol searches and selects, DeepSeek reads and reduces, and Sol verifies and synthesizes.
+That is the standard split for context-heavy web work: Sol defines the research contract, DeepSeek searches, reads, and reduces natively, and Sol verifies and synthesizes.
 
 ```text
 Read the full service directory and migration note, find every legacy configuration call site,
@@ -220,12 +204,11 @@ The repository installer writes only two Agent profiles and one Skill. It can sa
 |---|---|
 | [`personalization.md`](personalization.md) | Global routing preference that you paste manually |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
-| [`agents/`](agents/) | DeepSeek API, OpenCode Go, and Luna Max Worker profiles |
-| [`providers/`](providers/) | Single-model OpenCode Go bridge and Codex provider template |
+| [`agents/`](agents/) | Official DeepSeek API and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |
 | [`benchmarks/`](benchmarks/) | Benchmark cases, raw data, and the full report |
 
-The provider is not a fixed repository-installer output. The installation Agent judges the existing setup by a real route first and only repairs a confirmed failure using mechanisms supported by the current client and host. OpenCode Go mode adds only a local Responses bridge and its provider; it does not modify the OpenCode application or write the key to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.
+The provider is not a fixed repository-installer output. The installation Agent judges the existing setup by a real route first and only repairs a confirmed failure using mechanisms supported by the current client and host. Credentials are never written to the repository, chat, or `config.toml`. A known `sol-luna-workflow` installation is also migrated only when its content matches a prior release and the path is not a symbolic link. Unknown content is never overwritten or removed.
 
 This is a community workflow, not an OpenAI preset. A profile file or Worker self-report is not route proof by itself; use client-exposed subagent information and the accepted task result.
 
@@ -234,6 +217,5 @@ This is a community workflow, not an OpenAI preset. A profile file or Worker sel
 - [Codex subagents and custom agents](https://developers.openai.com/codex/agent-configuration/subagents)
 - [Codex Skills and discovery paths](https://developers.openai.com/codex/skills)
 - [Codex instruction discovery](https://developers.openai.com/codex/guides/agents-md)
-- [OpenCode Go models and API endpoints](https://opencode.ai/docs/zh-cn/go/)
-- [LiteLLM Responses API bridge](https://docs.litellm.ai/docs/response_api)
+- [Official DeepSeek Codex integration](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/)
 - [Oh My OpenAgent orchestration reference](https://github.com/code-yeongyu/oh-my-openagent)

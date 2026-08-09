@@ -1,5 +1,7 @@
 # OpenCode Go 长上下文验收
 
+> 历史记录：当前版本已改用 DeepSeek 官方 Responses API，并移除 OpenCode Go/LiteLLM 桥接。本记录只保留当时路线的可复核证据，不代表当前安装方式。
+
 日期：2026-08-10（Asia/Shanghai）
 
 ## 验收目标

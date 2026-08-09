@@ -33,4 +33,6 @@ B1 和 B3 有意使用 DeepSeek 与 Luna 的同合同对照；B2 和 B4 用来�
 
 当前首轮结果见 [`report-2026-08-09.md`](report-2026-08-09.md)，原始汇总行见 [`pilot-2026-08-09.csv`](pilot-2026-08-09.csv)。
 
-OpenCode Go 的超过 256K 真实上下文验证见 [`long-context-acceptance-2026-08-10.md`](long-context-acceptance-2026-08-10.md)。
+当前 DeepSeek 官方 API 的文本、工具、原生联网、第三方 MCP 与命名子代理交接边界见 [`official-deepseek-acceptance-2026-08-10.md`](official-deepseek-acceptance-2026-08-10.md)。
+
+历史 OpenCode Go 桥接路线的超过 256K 验证见 [`long-context-acceptance-2026-08-10.md`](long-context-acceptance-2026-08-10.md)；该记录保留作证据，不代表当前官方 API 安装路径。

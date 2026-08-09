@@ -43,14 +43,16 @@ DeepSeek V4 Flash provides a 1M model context window. Use that capacity to avoid
 
 DeepSeek may make non-trivial local judgments needed to finish its packet. Architecture changes, source credibility, policy, authorization, release decisions, and final business judgment remain with Sol.
 
-### Web material handoff
+### Native web research
 
-Do not ask the OpenCode Go `deepseek_worker` to use Codex's built-in web-search namespace. The current bridge does not preserve Responses namespace tools, and open-ended source selection remains a Sol judgment even when another provider is used.
+The supported official DeepSeek route exposes Codex's native `web_search` without a local bridge. Use it when search volume or webpage context is the bottleneck, while keeping the research judgment with Sol.
 
-1. Sol defines the question, date range, source quality, and domain constraints.
-2. Sol performs the smallest useful discovery pass, fixes the URL list, and saves the relevant page text or source excerpts as named artifacts. A URL-only handoff is not sufficient: the OpenCode Go worker may have neither the built-in web namespace nor outbound network access.
-3. DeepSeek reads only those local source artifacts and returns a compact evidence matrix. If an artifact is missing, it reports the missing source instead of attempting open-ended browsing or substituting unrelated local evidence.
-4. Sol checks primary claims, resolves conflicts, adds final citations, and owns the synthesis.
+1. Sol defines the question, date range, source-quality bar, domain constraints, and required output.
+2. DeepSeek performs bounded discovery and page reading with native `web_search`, records the exact URLs it used, and returns a compact evidence matrix. It must not silently widen the topic or replace requested primary sources with weaker commentary.
+3. For a fixed source set, Sol may instead hand DeepSeek URLs or local artifacts directly; materializing every page first is optional, not a prerequisite.
+4. Sol reopens the decisive primary sources, resolves conflicts, adds final citations, and owns the synthesis.
+
+Native web search is not proof that arbitrary third-party MCP namespaces work. After a provider or client change, verify any required MCP tool separately. If that probe fails but native web search passes, keep web research on the native route and do not add a bridge merely to restore unrelated MCP tools.
 
 Use this return shape unless the parent contract needs less:
 
@@ -135,11 +137,13 @@ Where the client exposes a reasoning setting, recommend `gpt-5.6-sol` with `medi
 
 When this workflow is being installed or the DeepSeek lane is unavailable, Sol owns the setup instead of sending the user away to edit Codex configuration:
 
-1. Inspect the current `deepseek_worker` and its selected provider without printing secret material, then run one bounded task whose answer and acceptance are obvious. Supported upstreams are the official DeepSeek API and OpenCode Go; configure only `deepseek-v4-flash` with a 1,000,000-token model context window for either route.
+1. Inspect the current `deepseek_worker` and its selected provider without printing secret material, then run one bounded task whose answer and acceptance are obvious. The supported upstream is the official DeepSeek API using `deepseek-v4-flash`, the official model catalog, and its 1,048,576-token context window.
 2. Treat a successful real invocation as authoritative. Preserve the existing provider and credential mechanism exactly as it is; the absence of one environment variable, keychain item, command, or platform-specific backend is not failure evidence.
 3. Only if the provider is absent or the invocation fails, inspect the current Codex client's supported provider and authentication interfaces. Configure only the selected DeepSeek provider and its credential reference using a mechanism native to that client and host environment. Never hard-code one operating system's credential store as the public workflow.
-4. For OpenCode Go, do not configure the OpenCode application. Its V4 Flash endpoint uses Chat Completions, while current Codex accepts only Responses providers. Select `agents/deepseek-worker.opencode-go.toml`, run the repository's local LiteLLM bridge, add only the provider block represented by `providers/opencode-go.codex.toml`, and verify the bridge plus one real Worker task. Confirm the client exposes the intended 1M window after installation or a major client change; a TOML field alone is not route proof. Obtain the Go API key through a secure local prompt or an already supported credential mechanism; never put it in chat, repository files, or Codex TOML.
-5. If a different provider block already exists, diagnose the actual invocation before proposing a change. Do not overwrite a working custom setup. Never request a key in chat or place it directly in `config.toml`.
-6. If the current task cannot discover a newly installed agent, ask the user only to start a new task, then run the probe automatically. Reopen the App only if discovery still fails.
+4. Confirm one direct text/tool result and one native `web_search` result. Test a third-party MCP namespace only when the workflow actually needs it; current native web acceptance does not depend on MCP.
+5. If `spawn_agent` creates the custom-provider child but the child reports that no dynamic task payload arrived, classify the lane as blocked by the Codex custom-provider handoff rather than reinstalling the provider or retrying the same payload. A direct official Responses probe may still prove the provider itself healthy, but it does not make the named subagent lane available.
+6. OpenCode Go remains unsupported until it exposes the Codex Responses and tool contract directly. Do not install LiteLLM, a Responses-to-Chat bridge, or the alternate Go Worker profile.
+7. If a different provider block already exists, diagnose the actual invocation before proposing a change. Do not overwrite a working custom setup. Never request a key in chat or place it directly in `config.toml`.
+8. If the current task cannot discover a newly installed agent, ask the user only to start a new task, then run the probe automatically. Reopen the App only if discovery still fails.
 
 Outside a repository installation, configuration mutation still requires explicit user authorization. The user may need to approve the change and enter a credential through a secure prompt, but must not be asked to discover the provider schema or installation steps.

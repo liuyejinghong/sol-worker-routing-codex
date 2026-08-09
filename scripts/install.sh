@@ -4,12 +4,12 @@ set -euo pipefail
 installer_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 installer_repo_root="$(cd -- "${installer_script_dir}/.." && pwd)"
 installer_home_dir="${HOME:?HOME is not set}"
-installer_requested_deepseek_provider="auto"
+installer_requested_deepseek_provider="deepseek-api"
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --deepseek-provider)
-      [[ "$#" -ge 2 ]] || { echo "Error: --deepseek-provider requires deepseek-api or opencode-go." >&2; exit 64; }
+      [[ "$#" -ge 2 ]] || { echo "Error: --deepseek-provider requires deepseek-api." >&2; exit 64; }
       installer_requested_deepseek_provider="$2"
       shift 2
       ;;
@@ -18,7 +18,7 @@ while [[ "$#" -gt 0 ]]; do
       shift
       ;;
     -h|--help)
-      echo "Usage: bash scripts/install.sh [--deepseek-provider deepseek-api|opencode-go]"
+      echo "Usage: bash scripts/install.sh [--deepseek-provider deepseek-api]"
       exit 0
       ;;
     *)
@@ -29,9 +29,13 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 case "${installer_requested_deepseek_provider}" in
-  auto|deepseek-api|opencode-go) ;;
+  deepseek-api) ;;
+  opencode-go)
+    echo "Error: OpenCode Go is not supported until it exposes the Codex Responses contract directly; use deepseek-api." >&2
+    exit 64
+    ;;
   *)
-    echo "Error: --deepseek-provider must be deepseek-api or opencode-go." >&2
+    echo "Error: --deepseek-provider must be deepseek-api." >&2
     exit 64
     ;;
 esac
@@ -53,8 +57,7 @@ if [[ "${installer_codex_dir}" != /* ]]; then
 fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
-installer_deepseek_api_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
-installer_opencode_go_agent_source="${installer_repo_root}/agents/deepseek-worker.opencode-go.toml"
+installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
@@ -71,17 +74,7 @@ installer_legacy_skill_dirs=(
   "${installer_legacy_codex_skill_dir}"
 )
 
-if [[ "${installer_requested_deepseek_provider}" == "opencode-go" ]] || \
-   { [[ "${installer_requested_deepseek_provider}" == "auto" ]] && \
-     [[ -f "${installer_deepseek_agent_target}" ]] && \
-     { cmp -s "${installer_opencode_go_agent_source}" "${installer_deepseek_agent_target}" || \
-       grep -Fqx 'model_provider = "opencode-go"' "${installer_deepseek_agent_target}"; }; }; then
-  installer_deepseek_agent_source="${installer_opencode_go_agent_source}"
-  installer_effective_deepseek_provider="opencode-go"
-else
-  installer_deepseek_agent_source="${installer_deepseek_api_agent_source}"
-  installer_effective_deepseek_provider="deepseek-api"
-fi
+installer_effective_deepseek_provider="deepseek-api"
 # Exact Skill contents from v0.4.1 and the pre-release v0.5.0 source. These
 # digests are only deletion proofs for the renamed legacy path.
 installer_known_legacy_skill_digests=(
@@ -96,11 +89,14 @@ installer_known_current_skill_digests=(
   "1565fc570b2f211f78fb76fe2b17bd2f8bb6a6ad9ac71827479681c3208e41f2"
   "87394123a55ec8d592b6626529f7fc38ca9065fdd8d7a10b2a02451e91f17cda"
   "4697d4c44a11ca3efcd731f607d16b353bf8efb1e87112732bc3b4794996d055"
+  "014de56a672fa868cc24318e6124ce2706f750979d038a7f4a9ac986e19fb18a"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
   "e295a298df1fa9b1e3edfea0fd85f64d41ec72c0c7239b518aee93a72ced9dbb"
   "d6425cc47e1b68ea3074b8b9c3e22066a53b9bc300dcc6c80e0acdf940af0cc9"
+  "5ca4b64d7fb37bdf10844bc24d434871d2f3fa38c0f12a4f2e4a51b2860e1bb8"
+  "e98e09dd60ecec0ceb57064b35b9f3f196178db3e2cf19c4617347db2d983790"
 )
 installer_conflict=0
 
@@ -148,10 +144,6 @@ installer_target_is_accepted() {
   local installer_source="$1"
   local installer_target="$2"
   cmp -s "${installer_source}" "${installer_target}" && return 0
-  if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && \
-     { cmp -s "${installer_deepseek_api_agent_source}" "${installer_target}" || cmp -s "${installer_opencode_go_agent_source}" "${installer_target}"; }; then
-    return 0
-  fi
   if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && installer_is_known_deepseek_agent "${installer_target}"; then
     return 0
   fi
@@ -221,7 +213,7 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_luna_agent_source}" "${installer_deepseek_api_agent_source}" "${installer_opencode_go_agent_source}"
+    "${installer_luna_agent_source}" "${installer_deepseek_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
