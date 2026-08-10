@@ -50,7 +50,7 @@ For the same accepted results, DeepSeek used **147 fewer seconds** and **11,627 
 flowchart LR
     U["User objective"] --> S["Sol<br/>understand, decompose, accept, integrate"]
     S -->|"one focused action"| D["Sol executes directly"]
-    S -->|"complete user request; large context, throughput"| DS["DeepSeek V4 Flash<br/>native inherited Worker"]
+    S -->|"large context, throughput"| DS["DeepSeek V4 Flash<br/>fast general Worker"]
     S -->|"hidden coupling, deep reasoning"| L["Luna Max<br/>depth-first Worker"]
     D --> O["Final result"]
     DS --> S
@@ -60,33 +60,7 @@ flowchart LR
 
 DeepSeek and Luna Max are peer leaf Workers, not stages in a hierarchy. Sol owns task recognition, material discovery, decomposition, dispatch, acceptance, and the final conclusion. For everyday use, we recommend `gpt-5.6-sol` at **medium** effort: it is enough for most routing and integration without erasing the savings in the lead thread. Move to high only for ambiguous architecture, conflicting evidence, high-stakes decisions, or complex synthesis. The Skill describes this policy but cannot change the model or effort selected for the current task.
 
-The workflow also follows one deliberately simple rule: if Sol can finish the task in one focused action, it does not delegate merely to use a subagent. Handoffs cost time and tokens too.
-
-## Where DeepSeek's 1M context pays off
-
-DeepSeek V4 Flash is a fast, low-cost general Worker rather than an evidence-only extractor. Its 1M context can keep a large repository, long document set, or batch of records coherent instead of fragmenting the material early to fit a smaller window.
-
-The official DeepSeek model catalog declares a **1,048,576-token** context window for V4 Flash. The direct official route has passed real text, built-in Codex tool, and native web-search calls. That proves the current route needs no local protocol bridge; it does not claim that one task has saturated the full 1M window. The [official-route acceptance record](benchmarks/official-deepseek-acceptance-2026-08-10.md) also preserves the failed third-party MCP and subagent-handoff boundaries. The historical 260K bridge probe remains in the [long-context acceptance record](benchmarks/long-context-acceptance-2026-08-10.md), but it no longer represents the active installation path.
-
-| Input or task | What DeepSeek can return to Sol |
-|---|---|
-| Fixed webpages, papers, or long documents | Evidence table with source, date, core fact, support, and limitations |
-| Large repositories or diffs | Architecture relationships, call sites, configuration references, repeated patterns, and review candidates |
-| CI output, runtime logs, or incident records | Error classes, frequency, and timeline |
-| Issues, pull requests, or release records | Deduplicated items, module groups, and status lists |
-| CSV, JSON, or API snapshots | Reconciliation results, missing records, and anomaly candidates |
-| Localization and dependency data | Missing keys, placeholder differences, version matches, and affected-file candidates |
-| Clearly bounded multi-file work | Semantic analysis, implementation changes, and named acceptance results |
-
-Web research can go directly through DeepSeek's native `web_search` when **the current user turn already contains the complete question, date range, source requirements, and deliverable**. DeepSeek inherits that turn, performs bounded discovery, reads many pages, and returns exact URLs, facts, and evidence limits; Sol rechecks decisive primary sources, resolves conflicts, and writes the conclusion. If Sol must first discover sources, narrow the scope, or add a private packet, Sol keeps the work or uses Luna rather than pretending those new instructions reached DeepSeek.
-
-Concurrency is not a permanent fixed number, but the current client cannot secretly split one user request into four DeepSeek packets because cross-provider dynamic payloads are still lost. A normal user turn therefore uses at most one inherited DeepSeek Worker. Luna may run in parallel when packets and write ownership are genuinely independent; any shared write surface stays sequential. Hidden DeepSeek sharding can return after Codex repairs dynamic handoff.
-
-## Let deep reasoning finish
-
-A completed wait poll means only that no final result arrived during that polling window. It does not mean the Worker failed. Sol must not interrupt Luna because it is silent, slower than expected, has not written files yet, or because the packet looks larger after dispatch. When progress matters, Sol asks for a non-terminating checkpoint and keeps waiting.
-
-Interruption is reserved for user cancellation, obsolete work, observed scope or authorization violations, repeated concrete execution errors, or resource deadlock that blocks the parent task. Packet sizing happens before dispatch; a deep Worker must not spend reasoning tokens only to be killed and repackaged as a cost-control reaction.
+The workflow follows two simple rules: do not add a handoff when Sol can finish in one focused action; use DeepSeek's 1M context for large repositories, long documents, batch data, and high-volume web research, while giving Luna the time required for deep reasoning.
 
 ## Install
 
@@ -120,13 +94,7 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 The installation Agent checks the existing official provider and credential, installs the official model catalog, then verifies one real tool result and one native web-search result. A working configuration is preserved instead of being rebuilt because the installer cannot see one particular credential backend. OpenCode Go is intentionally unsupported until it exposes the Codex Responses and tool contract directly; the project no longer maintains a Chat Completions conversion layer.
 
-### Current native-subagent boundary
-
-DeepSeek remains a **native Codex subagent**, not an API runner, a `codex exec` process, or a separate first-class task. Codex currently has public cross-provider handoff bugs: a child can start while the encrypted dynamic task payload from an OpenAI parent is lost in a non-OpenAI child (see [#36586](https://github.com/openai/codex/issues/36586), [#36376](https://github.com/openai/codex/issues/36376), and [#35932](https://github.com/openai/codex/issues/35932)).
-
-This project uses a tested conditional workaround. Sol creates `deepseek_worker` with `fork_turns="1"` only when **the current user request is already the complete DeepSeek assignment**. The child inherits the current turn and context and retains a real Codex subagent lifecycle, the official DeepSeek model, native tools, and native web search. It cannot yet reliably receive a narrower private packet in `spawn_agent.message`, nor can the workflow depend on later `send_message` or `followup_task` calls. Work that needs decomposition, a changed objective, restricted write ownership, or later instructions stays with Sol or goes to Luna.
-
-This does not claim to repair the upstream bug. It preserves native-subagent semantics within a clearly conditional route. See the [official-route acceptance record](benchmarks/official-deepseek-acceptance-2026-08-10.md).
+> Codex still has a cross-provider handoff limitation, so DeepSeek is used only when the user request is already complete. It remains a native subagent; this project does not use an API runner or resident bridge. See the [acceptance record](benchmarks/official-deepseek-acceptance-2026-08-10.md) for implementation details.
 
 The installation flow handles all of the following:
 
@@ -147,7 +115,7 @@ You do not need to select a Worker manually. Describe the objective normally and
 At this pinned commit, find the setting's default and every call site. Cite a line for each claim.
 ```
 
-This user request itself contains the source boundary and acceptance, so DeepSeek can inherit it natively.
+With fixed sources and acceptance, this fits DeepSeek.
 
 ```text
 Have DeepSeek search for the small set of webpages that actually matters, prefer primary sources,
@@ -155,14 +123,14 @@ and return exact URLs, claims, figures, dates, and evidence limitations;
 then verify the decisive original sources and give me the conclusion.
 ```
 
-This request is already a complete research contract. DeepSeek can inherit, search, read, and reduce it natively; Sol then verifies and synthesizes.
+This is the standard split for context-heavy web work: DeepSeek searches, reads, and reduces; Sol verifies and synthesizes.
 
 ```text
 Read the full service directory and migration note, find every legacy configuration call site,
 complete the migration inside the assigned files, and run the target tests.
 ```
 
-This fits native DeepSeek inheritance when the user request itself makes scope, write ownership, and acceptance explicit.
+This fits DeepSeek when the material is large but scope, write ownership, and acceptance are explicit.
 
 ```text
 Diagnose this intermittent concurrency leak across scheduling, cancellation, and cleanup.
@@ -176,25 +144,6 @@ Decide whether this requirement justifies changing the architecture, then recomm
 ```
 
 This stays with Sol because a Worker must not redefine the parent objective or own the final decision.
-
-<details>
-<summary>See the task contract Sol gives a Worker</summary>
-
-```text
-Worker and mode:
-Objective:
-Scope and owned paths:
-Relevant facts / source pins:
-Non-goals:
-Acceptance criteria:
-Verification:
-State-based stop condition:
-Return format:
-```
-
-This is not another user-facing process. It is the minimum packet for Luna and for DeepSeek after dynamic handoff is repaired. Current DeepSeek cannot reliably receive this private packet and inherits only the current user request; Sol fills gaps or selects Luna instead of letting a Worker widen scope.
-
-</details>
 
 ## Installation boundaries and project files
 
