@@ -81,11 +81,17 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
+这条终端命令只安装和迁移仓库中的三个文件；它不会配置或验证 provider、凭据、模型目录或真实路由。需要完整安装时，请使用上方交给 Codex 的提示词。
+
+安装器会先在目标目录暂存并备份，再替换文件；普通命令失败或 `INT`/`TERM`/`HUP` 会回滚。三个最终文件位于两棵目录树，因此断电或 `SIGKILL` 后不声称跨目录全局原子；最终目标可能保留完整的新旧文件，隐藏的恢复文件也可能残留，重新运行会重新核验并收敛最终三个目标。
+
+Windows 请在 Git Bash/MSYS Bash 或 WSL 的 Bash 中运行；它不是原生 PowerShell 脚本。Git Bash 请使用 `/c/Users/...` 这类 POSIX 路径（从 Windows 继承到 `HOME` 或 `CODEX_HOME` 的 `C:/...` 会在 MSYS 环境中转换）；WSL 请使用其自身的 POSIX 路径，例如 `/mnt/c/...`。在真实 Windows 安装链路跑通前，这只是兼容路径，不是已验收的平台支持声明。
+
 ### DeepSeek 官方直连
 
 DeepSeek Worker 只使用 **DeepSeek V4 Flash 官方 API**。请求从 Codex 直接进入 DeepSeek Responses API，原生支持 Codex 内置工具和网页搜索，不需要 LiteLLM、OpenCode Go proxy 或其他常驻桥接进程。
 
-直接运行安装器即可；保留的显式参数只用于兼容已有安装命令：
+终端安装器只负责文件安装；保留的显式参数只用于兼容已有安装命令：
 
 ```bash
 bash scripts/install.sh --deepseek-provider deepseek-api
@@ -95,7 +101,7 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 > 当前 Codex 的跨 provider 交接仍有限制，因此 DeepSeek 只在用户请求本身已经完整时启用；它仍是原生子代理，不使用 API runner 或常驻桥接。详细验收边界见[记录](benchmarks/official-deepseek-acceptance-2026-08-10.md)。
 
-安装流程会自动完成这些工作：
+交给 Codex 安装 Agent 时，安装流程会自动完成这些工作：
 
 1. 安装 `deepseek_worker`、`luna_worker` 和 `sol-worker-routing` Skill。
 2. 检查官方 DeepSeek 上游、模型目录和凭据，并用一个答案明确的有界任务验证真实路由。

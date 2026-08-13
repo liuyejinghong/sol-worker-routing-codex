@@ -82,11 +82,17 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
+This terminal command only installs and migrates the three repository files. It does not configure or validate the provider, credential, model catalog, or a real route; use the Codex prompt above for the complete installation contract.
+
+The installer stages and backs up files in their target directories before replacement, then rolls back ordinary command failures and `INT`/`TERM`/`HUP`. The three final files live in two directory trees, so it does not claim a cross-directory transaction after power loss or `SIGKILL`; final targets may be complete old/new files and hidden recovery files may remain, while a rerun revalidates and converges the three final targets.
+
+On Windows, run it in Git Bash/MSYS Bash or WSL Bash; it is not a native PowerShell script. Use Git Bash POSIX paths such as `/c/Users/...` (a `C:/...` value inherited into `HOME` or `CODEX_HOME` is converted only in an MSYS environment); use WSL's own POSIX paths such as `/mnt/c/...`. Until a real Windows installation path is exercised, this is a compatibility path rather than a verified platform-support claim.
+
 ### Direct official DeepSeek route
 
 The DeepSeek Worker uses only the **official DeepSeek V4 Flash API**. Codex sends requests directly to the DeepSeek Responses API, with native built-in tools and web search. No LiteLLM process, OpenCode Go proxy, or other resident bridge is required.
 
-Run the installer directly. The explicit option remains only for compatibility with existing installation commands:
+The terminal installer only handles file installation. The explicit option remains only for compatibility with existing installation commands:
 
 ```bash
 bash scripts/install.sh --deepseek-provider deepseek-api
@@ -96,7 +102,7 @@ The installation Agent checks the existing official provider and credential, ins
 
 > Codex still has a cross-provider handoff limitation, so DeepSeek is used only when the user request is already complete. It remains a native subagent; this project does not use an API runner or resident bridge. See the [acceptance record](benchmarks/official-deepseek-acceptance-2026-08-10.md) for implementation details.
 
-The installation flow handles all of the following:
+When Codex runs the installation Agent, the installation flow handles all of the following:
 
 1. Install `deepseek_worker`, `luna_worker`, and the `sol-worker-routing` Skill.
 2. Inspect the official DeepSeek upstream, model catalog, and credential, then verify them with an obvious bounded task.

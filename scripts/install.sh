@@ -3,7 +3,28 @@ set -euo pipefail
 
 installer_script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 installer_repo_root="$(cd -- "${installer_script_dir}/.." && pwd)"
-installer_home_dir="${HOME:?HOME is not set}"
+installer_host_os="$(uname -s 2>/dev/null || true)"
+
+installer_normalize_path() {
+  local installer_path="$1"
+
+  case "${installer_host_os}" in
+    MINGW*|MSYS*|CYGWIN*)
+      if [[ "${installer_path}" =~ ^[A-Za-z]:[\\/].* ]]; then
+        if ! command -v cygpath >/dev/null 2>&1; then
+          echo "Error: Windows drive paths require cygpath in Git Bash/MSYS; use a POSIX path such as /c/Users/you." >&2
+          return 1
+        fi
+        cygpath -u "${installer_path}"
+        return
+      fi
+      ;;
+  esac
+
+  printf '%s\n' "${installer_path}"
+}
+
+installer_home_dir="$(installer_normalize_path "${HOME:?HOME is not set}")" || exit 1
 installer_requested_deepseek_provider="deepseek-api"
 
 while [[ "$#" -gt 0 ]]; do
@@ -46,7 +67,7 @@ if [[ "${installer_home_dir}" != /* ]]; then
 fi
 
 if [[ -n "${CODEX_HOME:-}" ]]; then
-  installer_codex_dir="${CODEX_HOME}"
+  installer_codex_dir="$(installer_normalize_path "${CODEX_HOME}")" || exit 1
 else
   installer_codex_dir="${installer_home_dir}/.codex"
 fi
@@ -75,8 +96,23 @@ installer_legacy_skill_dirs=(
   "${installer_legacy_user_skill_dir}"
   "${installer_legacy_codex_skill_dir}"
 )
+installer_install_pairs=(
+  "${installer_luna_agent_source}|${installer_luna_agent_target}"
+  "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}"
+  "${installer_skill_source}|${installer_skill_target}"
+)
+installer_guarded_dirs=(
+  "${installer_codex_dir}"
+  "${installer_agent_dir}"
+  "${installer_user_agents_dir}"
+  "${installer_user_skills_dir}"
+  "${installer_skill_dir}"
+  "${installer_skill_scripts_dir}"
+  "${installer_legacy_user_skill_dir}"
+  "${installer_legacy_codex_skills_dir}"
+  "${installer_legacy_codex_skill_dir}"
+)
 
-installer_effective_deepseek_provider="deepseek-api"
 # Exact Skill contents from v0.4.1 and the pre-release v0.5.0 source. These
 # digests are only deletion proofs for the renamed legacy path.
 installer_known_legacy_skill_digests=(
@@ -106,6 +142,17 @@ installer_known_removed_runner_digests=(
   "45114d158faf6016950b70c21087d33587ab7098daf835ce62e9eb69667abf77"
 )
 installer_conflict=0
+installer_staged_sources=()
+installer_staged_targets=()
+installer_staged_files=()
+installer_target_backup_files=()
+installer_target_existed=()
+installer_migration_targets=()
+installer_migration_backup_files=()
+installer_removed_migration_indexes=()
+installer_committed_target_indexes=()
+installer_transaction_started=0
+installer_transaction_complete=0
 
 installer_sha256() {
   if command -v shasum >/dev/null 2>&1; then
@@ -170,17 +217,288 @@ installer_target_is_accepted() {
   return 1
 }
 
-for installer_dir in \
-  "${installer_codex_dir}" \
-  "${installer_agent_dir}" \
-  "${installer_user_agents_dir}" \
-  "${installer_user_skills_dir}" \
-  "${installer_skill_dir}" \
-  "${installer_skill_scripts_dir}" \
-  "${installer_legacy_user_skill_dir}" \
-  "${installer_legacy_codex_skills_dir}" \
-  "${installer_legacy_codex_skill_dir}"
-do
+installer_assert_guarded_paths_safe() {
+  local installer_dir
+
+  for installer_dir in "${installer_guarded_dirs[@]}"; do
+    if [[ -L "${installer_dir}" ]]; then
+      echo "Error: installer path changed to a symbolic link during installation; refusing to write: ${installer_dir}" >&2
+      return 1
+    fi
+  done
+
+  return 0
+}
+
+installer_assert_target_still_accepted() {
+  local installer_source="$1"
+  local installer_target="$2"
+
+  installer_assert_guarded_paths_safe || return 1
+  if [[ -L "${installer_target}" ]]; then
+    echo "Error: installer target changed to a symbolic link during installation; refusing to write: ${installer_target}" >&2
+    return 1
+  fi
+  if [[ -e "${installer_target}" ]] && ! installer_target_is_accepted "${installer_source}" "${installer_target}"; then
+    echo "Error: installer target changed to unknown content during installation; refusing to overwrite: ${installer_target}" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+installer_cleanup_staged_files() {
+  local installer_staged_file
+  local installer_cleanup_failed=0
+
+  for installer_staged_file in "${installer_staged_files[@]-}"; do
+    if [[ -e "${installer_staged_file}" || -L "${installer_staged_file}" ]]; then
+      if ! rm -f -- "${installer_staged_file}"; then
+        echo "Error: failed to remove installer staging file: ${installer_staged_file}" >&2
+        installer_cleanup_failed=1
+      fi
+    fi
+  done
+
+  [[ "${installer_cleanup_failed}" -eq 0 ]]
+}
+
+installer_cleanup_backup_files() {
+  local installer_backup_file
+  local installer_cleanup_failed=0
+
+  for installer_backup_file in "${installer_target_backup_files[@]-}" "${installer_migration_backup_files[@]-}"; do
+    if [[ -e "${installer_backup_file}" || -L "${installer_backup_file}" ]]; then
+      if ! rm -f -- "${installer_backup_file}"; then
+        echo "Error: failed to remove installer backup file: ${installer_backup_file}" >&2
+        installer_cleanup_failed=1
+      fi
+    fi
+  done
+
+  [[ "${installer_cleanup_failed}" -eq 0 ]]
+}
+
+installer_report_recovery_backups() {
+  local installer_backup_file
+
+  for installer_backup_file in "${installer_target_backup_files[@]-}" "${installer_migration_backup_files[@]-}"; do
+    if [[ -e "${installer_backup_file}" || -L "${installer_backup_file}" ]]; then
+      echo "Recovery backup preserved: ${installer_backup_file}" >&2
+    fi
+  done
+}
+
+installer_stage_target() {
+  local installer_source="$1"
+  local installer_target="$2"
+  local installer_target_dir
+  local installer_target_name
+  local installer_staged_file
+
+  installer_assert_target_still_accepted "${installer_source}" "${installer_target}" || return 1
+  installer_target_dir="$(dirname -- "${installer_target}")"
+  installer_target_name="$(basename -- "${installer_target}")"
+  installer_staged_file="$(mktemp "${installer_target_dir}/.${installer_target_name}.install.XXXXXX")" || return 1
+  installer_staged_files+=("${installer_staged_file}")
+  install -m 0644 "${installer_source}" "${installer_staged_file}"
+  cmp -s "${installer_source}" "${installer_staged_file}"
+  installer_staged_sources+=("${installer_source}")
+  installer_staged_targets+=("${installer_target}")
+}
+
+installer_backup_staged_target() {
+  local installer_index="$1"
+  local installer_target="${installer_staged_targets[installer_index]}"
+  local installer_target_dir
+  local installer_target_name
+  local installer_backup_file
+
+  installer_target_backup_files[installer_index]=""
+  installer_target_existed[installer_index]=0
+  installer_assert_target_still_accepted "${installer_staged_sources[installer_index]}" "${installer_target}" || return 1
+  if [[ ! -e "${installer_target}" ]]; then
+    return 0
+  fi
+
+  installer_target_dir="$(dirname -- "${installer_target}")"
+  installer_target_name="$(basename -- "${installer_target}")"
+  installer_backup_file="$(mktemp "${installer_target_dir}/.${installer_target_name}.install-backup.XXXXXX")" || return 1
+  installer_target_backup_files[installer_index]="${installer_backup_file}"
+  installer_target_existed[installer_index]=1
+  cp -p "${installer_target}" "${installer_backup_file}"
+  cmp -s "${installer_target}" "${installer_backup_file}"
+}
+
+installer_assert_staged_target_unchanged() {
+  local installer_index="$1"
+  local installer_source="${installer_staged_sources[installer_index]}"
+  local installer_target="${installer_staged_targets[installer_index]}"
+  local installer_backup_file="${installer_target_backup_files[installer_index]}"
+
+  installer_assert_target_still_accepted "${installer_source}" "${installer_target}" || return 1
+  if [[ "${installer_target_existed[installer_index]}" -eq 1 ]]; then
+    if ! cmp -s "${installer_target}" "${installer_backup_file}"; then
+      echo "Error: installer target changed during installation; refusing to overwrite: ${installer_target}" >&2
+      return 1
+    fi
+  elif [[ -e "${installer_target}" || -L "${installer_target}" ]]; then
+    echo "Error: installer target appeared during installation; refusing to overwrite: ${installer_target}" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+installer_stage_migration_removal() {
+  local installer_target="$1"
+  local installer_validator="$2"
+  local installer_description="$3"
+  local installer_target_dir
+  local installer_target_name
+  local installer_backup_file
+
+  if [[ ! -e "${installer_target}" ]]; then
+    return 0
+  fi
+  installer_assert_guarded_paths_safe || return 1
+  if [[ -L "${installer_target}" || ! -f "${installer_target}" ]] || ! "${installer_validator}" "${installer_target}"; then
+    echo "Error: ${installer_description} changed during installation; refusing to remove: ${installer_target}" >&2
+    return 1
+  fi
+
+  installer_target_dir="$(dirname -- "${installer_target}")"
+  installer_target_name="$(basename -- "${installer_target}")"
+  installer_backup_file="$(mktemp "${installer_target_dir}/.${installer_target_name}.install-backup.XXXXXX")" || return 1
+  installer_migration_targets+=("${installer_target}")
+  installer_migration_backup_files+=("${installer_backup_file}")
+  cp -p "${installer_target}" "${installer_backup_file}"
+  cmp -s "${installer_target}" "${installer_backup_file}"
+}
+
+installer_assert_staged_migration_unchanged() {
+  local installer_index="$1"
+  local installer_target="${installer_migration_targets[installer_index]}"
+  local installer_backup_file="${installer_migration_backup_files[installer_index]}"
+
+  installer_assert_guarded_paths_safe || return 1
+  if [[ -L "${installer_target}" || ! -f "${installer_target}" ]] || ! cmp -s "${installer_target}" "${installer_backup_file}"; then
+    echo "Error: migration source changed during installation; refusing to remove: ${installer_target}" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+installer_rollback_transaction() {
+  local installer_index
+  local installer_reverse_position
+  local installer_target
+  local installer_backup_file
+  local installer_source
+  local installer_rollback_failed=0
+
+  for ((installer_reverse_position=${#installer_removed_migration_indexes[@]} - 1; installer_reverse_position >= 0; installer_reverse_position--)); do
+    installer_index="${installer_removed_migration_indexes[installer_reverse_position]}"
+    installer_target="${installer_migration_targets[installer_index]}"
+    installer_backup_file="${installer_migration_backup_files[installer_index]}"
+    if ! installer_assert_guarded_paths_safe || [[ -L "${installer_target}" ]]; then
+      echo "Error: cannot safely restore removed migration file: ${installer_target}" >&2
+      installer_rollback_failed=1
+      continue
+    fi
+    if [[ -e "${installer_target}" ]]; then
+      if cmp -s "${installer_target}" "${installer_backup_file}"; then
+        continue
+      fi
+      echo "Error: cannot safely restore removed migration file: ${installer_target}" >&2
+      installer_rollback_failed=1
+      continue
+    fi
+    if mv -f -- "${installer_backup_file}" "${installer_target}"; then
+      installer_migration_backup_files[installer_index]=""
+    else
+      echo "Error: failed to restore removed migration file: ${installer_target}" >&2
+      installer_rollback_failed=1
+    fi
+  done
+
+  for ((installer_reverse_position=${#installer_committed_target_indexes[@]} - 1; installer_reverse_position >= 0; installer_reverse_position--)); do
+    installer_index="${installer_committed_target_indexes[installer_reverse_position]}"
+    installer_target="${installer_staged_targets[installer_index]}"
+    installer_source="${installer_staged_sources[installer_index]}"
+    installer_backup_file="${installer_target_backup_files[installer_index]}"
+    if ! installer_assert_guarded_paths_safe || [[ -L "${installer_target}" ]]; then
+      echo "Error: cannot safely roll back installer target: ${installer_target}" >&2
+      installer_rollback_failed=1
+      continue
+    fi
+    if ! cmp -s "${installer_source}" "${installer_target}"; then
+      if [[ "${installer_target_existed[installer_index]}" -eq 1 ]] && cmp -s "${installer_target}" "${installer_backup_file}"; then
+        continue
+      fi
+      if [[ "${installer_target_existed[installer_index]}" -eq 0 ]] && [[ ! -e "${installer_target}" ]]; then
+        continue
+      fi
+      echo "Error: cannot safely roll back installer target: ${installer_target}" >&2
+      installer_rollback_failed=1
+      continue
+    fi
+    if [[ "${installer_target_existed[installer_index]}" -eq 1 ]]; then
+      if mv -f -- "${installer_backup_file}" "${installer_target}"; then
+        installer_target_backup_files[installer_index]=""
+      else
+        echo "Error: failed to restore installer target: ${installer_target}" >&2
+        installer_rollback_failed=1
+      fi
+    elif rm -- "${installer_target}"; then
+      :
+    else
+      echo "Error: failed to remove newly installed target during rollback: ${installer_target}" >&2
+      installer_rollback_failed=1
+    fi
+  done
+
+  [[ "${installer_rollback_failed}" -eq 0 ]]
+}
+
+installer_on_exit() {
+  local installer_status="$?"
+  local installer_rollback_complete=1
+  local installer_cleanup_failed=0
+
+  trap - EXIT
+  trap '' HUP INT TERM
+  if [[ "${installer_status}" -ne 0 && "${installer_transaction_started}" -eq 1 && "${installer_transaction_complete}" -eq 0 ]]; then
+    if ! installer_rollback_transaction; then
+      echo "Error: installation failed and rollback was incomplete; inspect the reported paths before retrying." >&2
+      installer_rollback_complete=0
+    fi
+  fi
+  if ! installer_cleanup_staged_files; then
+    echo "Error: installation recovery left staging files behind; inspect the reported paths before retrying." >&2
+    installer_cleanup_failed=1
+  fi
+  if [[ "${installer_rollback_complete}" -eq 1 ]]; then
+    if ! installer_cleanup_backup_files; then
+      echo "Error: installation recovery left backup files behind; inspect the reported paths before retrying." >&2
+      installer_report_recovery_backups
+      installer_cleanup_failed=1
+    fi
+  else
+    echo "Recovery backups were preserved because rollback did not complete." >&2
+    installer_report_recovery_backups
+  fi
+  if [[ "${installer_cleanup_failed}" -ne 0 ]]; then
+    echo "The original installation error is unchanged; recovery artifacts require manual inspection." >&2
+  fi
+  exit "${installer_status}"
+}
+
+trap installer_on_exit EXIT
+trap 'exit 1' HUP INT TERM
+
+for installer_dir in "${installer_guarded_dirs[@]}"; do
   if [[ -L "${installer_dir}" ]]; then
     echo "Conflict: installer path uses a symbolic link and requires manual migration: ${installer_dir}" >&2
     installer_conflict=1
@@ -208,14 +526,13 @@ do
   fi
 done
 
-for installer_pair in \
-  "${installer_luna_agent_source}|${installer_luna_agent_target}" \
-  "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}" \
-  "${installer_skill_source}|${installer_skill_target}"
-do
+for installer_pair in "${installer_install_pairs[@]}"; do
   installer_source="${installer_pair%%|*}"
   installer_target="${installer_pair#*|}"
-  if [[ ( -e "${installer_target}" || -L "${installer_target}" ) ]] && ! installer_target_is_accepted "${installer_source}" "${installer_target}"; then
+  if [[ -L "${installer_target}" ]]; then
+    continue
+  fi
+  if [[ -e "${installer_target}" ]] && ! installer_target_is_accepted "${installer_source}" "${installer_target}"; then
     echo "Conflict: ${installer_target} already exists with different content." >&2
     installer_conflict=1
   fi
@@ -248,51 +565,91 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
-if [[ -e "${installer_removed_runner_target}" ]]; then
-  if [[ -L "${installer_skill_scripts_dir}" || -L "${installer_removed_runner_target}" || ! -f "${installer_removed_runner_target}" ]] || ! installer_is_known_removed_runner "${installer_removed_runner_target}"; then
-    echo "Error: removed DeepSeek runner changed during installation; refusing to remove: ${installer_removed_runner_target}" >&2
-    exit 3
-  fi
-  rm -- "${installer_removed_runner_target}"
-  rmdir -- "${installer_skill_scripts_dir}" 2>/dev/null || true
-  echo "Migrated: removed known pre-release DeepSeek runner at ${installer_removed_runner_target}"
+if ! command -v mktemp >/dev/null 2>&1; then
+  echo "Error: mktemp is required for staged installation and rollback." >&2
+  exit 1
 fi
 
+installer_assert_guarded_paths_safe || exit 3
 mkdir -p -- "${installer_agent_dir}" "${installer_skill_dir}"
+installer_assert_guarded_paths_safe || exit 3
 
-for installer_pair in \
-  "${installer_luna_agent_source}|${installer_luna_agent_target}" \
-  "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}" \
-  "${installer_skill_source}|${installer_skill_target}"
-do
+for installer_pair in "${installer_install_pairs[@]}"; do
   installer_source="${installer_pair%%|*}"
   installer_target="${installer_pair#*|}"
-  if [[ ! -e "${installer_target}" && ! -L "${installer_target}" ]]; then
-    install -m 0644 "${installer_source}" "${installer_target}"
-    echo "Installed: ${installer_target}"
-  elif ! cmp -s "${installer_source}" "${installer_target}"; then
-    install -m 0644 "${installer_source}" "${installer_target}"
-    echo "Updated known prior release: ${installer_target}"
-  else
+  installer_assert_target_still_accepted "${installer_source}" "${installer_target}" || exit 3
+  if cmp -s "${installer_source}" "${installer_target}"; then
     echo "Unchanged: ${installer_target}"
+  else
+    installer_stage_target "${installer_source}" "${installer_target}"
   fi
+done
+
+# Save every changed target before replacing anything. A normal command failure
+# or termination signal restores the pre-install state; a power loss can still
+# leave complete old/new files, which a rerun will reconcile.
+for installer_index in "${!installer_staged_targets[@]}"; do
+  installer_backup_staged_target "${installer_index}"
+done
+
+installer_stage_migration_removal \
+  "${installer_removed_runner_target}" \
+  installer_is_known_removed_runner \
+  "removed DeepSeek runner"
+
+for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
+  installer_stage_migration_removal \
+    "${installer_legacy_skill_dir}/SKILL.md" \
+    installer_is_known_legacy_skill \
+    "legacy Skill"
+done
+
+for installer_index in "${!installer_migration_targets[@]}"; do
+  installer_assert_staged_migration_unchanged "${installer_index}"
+done
+
+installer_transaction_started=1
+
+for installer_index in "${!installer_staged_targets[@]}"; do
+  installer_source="${installer_staged_sources[installer_index]}"
+  installer_target="${installer_staged_targets[installer_index]}"
+  installer_staged_file="${installer_staged_files[installer_index]}"
+  installer_assert_staged_target_unchanged "${installer_index}"
+  installer_committed_target_indexes+=("${installer_index}")
+  mv -f -- "${installer_staged_file}" "${installer_target}"
+  installer_staged_files[installer_index]=""
+  cmp -s "${installer_source}" "${installer_target}"
+  echo "Installed or updated: ${installer_target}"
+done
+
+for installer_pair in "${installer_install_pairs[@]}"; do
+  installer_source="${installer_pair%%|*}"
+  installer_target="${installer_pair#*|}"
   cmp -s "${installer_source}" "${installer_target}"
 done
 
-for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
-  installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
-  installer_legacy_parent_dir="$(dirname -- "${installer_legacy_skill_dir}")"
-  if [[ -e "${installer_legacy_skill_target}" ]]; then
-    if [[ -L "${installer_legacy_parent_dir}" || -L "${installer_legacy_skill_dir}" || -L "${installer_legacy_skill_target}" || ! -f "${installer_legacy_skill_target}" ]] || ! installer_is_known_legacy_skill "${installer_legacy_skill_target}"; then
-      echo "Error: legacy Skill changed during installation; refusing to remove: ${installer_legacy_skill_target}" >&2
-      exit 3
-    fi
-    rm -- "${installer_legacy_skill_target}"
-    rmdir -- "${installer_legacy_skill_dir}" 2>/dev/null || true
-    echo "Migrated: removed known legacy Skill at ${installer_legacy_skill_target}"
-  fi
+for installer_index in "${!installer_migration_targets[@]}"; do
+  installer_assert_staged_migration_unchanged "${installer_index}"
+  installer_target="${installer_migration_targets[installer_index]}"
+  installer_removed_migration_indexes+=("${installer_index}")
+  rm -- "${installer_target}"
+  echo "Migrated: removed known legacy file at ${installer_target}"
 done
 
+installer_transaction_complete=1
+installer_cleanup_failed=0
+if ! installer_cleanup_staged_files; then
+  installer_cleanup_failed=1
+fi
+if ! installer_cleanup_backup_files; then
+  installer_cleanup_failed=1
+fi
+if [[ "${installer_cleanup_failed}" -ne 0 ]]; then
+  echo "Error: installed targets are verified, but recovery-file cleanup failed; inspect the reported paths before retrying." >&2
+  exit 4
+fi
+
 echo "Verified: installed files match the repository sources."
-echo "Installed DeepSeek Agent source profile: ${installer_effective_deepseek_provider}"
+echo "Installed DeepSeek Worker source profile; requested provider mode: ${installer_requested_deepseek_provider}."
+echo "Not validated by this script: provider, credential, model catalog, direct tool result, or native web-search route."
 echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."
