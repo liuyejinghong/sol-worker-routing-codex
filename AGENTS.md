@@ -18,6 +18,8 @@ ${CODEX_HOME:-$HOME/.codex}/agents/deepseek-worker.toml
 $HOME/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
+During one installer run, hidden same-directory staging and backup files may be created beside those targets or a known removable legacy file. They are transient recovery state, must be removed on successful completion and completed rollback; if rollback cannot complete, preserve and report the backup paths for recovery. They are not installed outputs. Do not create any other durable target.
+
 Provider setup is owned by the installing Agent, not by `scripts/install.sh`. First inspect the existing `deepseek_worker` and run a real bounded route probe. If it succeeds, preserve the provider and credential configuration exactly as it is; do not infer failure from the absence of one environment variable, keychain item, command, or platform-specific backend.
 
 Only when the provider is absent or the real invocation fails may the Agent add or repair it. Use a provider and credential mechanism supported by the current Codex client and host environment. Install the official DeepSeek model catalog at `$HOME/.codex/model-catalogs/deepseek-official.json`, the exact path referenced by the checked-in Agent profile even when `CODEX_HOME` is customized, and verify one direct tool result plus one native web-search result. OpenCode Go is intentionally unsupported until it exposes the Codex Responses and tool contract directly; do not install LiteLLM or another Responses-to-Chat bridge. Limit provider changes to the DeepSeek section and its credential reference, preserve all unrelated settings, back up `config.toml`, and never hard-code an operating-system credential store in this repository.
@@ -27,6 +29,10 @@ The installer may remove an old `sol-luna-workflow` Skill from either `$HOME/.ag
 The installer may also remove `$HOME/.agents/skills/sol-worker-routing/scripts/run-deepseek-worker.sh` only when it exactly matches the documented pre-release runner that this release removes, and neither it nor its parent directory is a symbolic link. Unknown content must stop installation before any write.
 
 Use `$CODEX_HOME` for the Agent when it is set; otherwise use `$HOME/.codex`. User-authored Skills use `$HOME/.agents/skills`. Run `bash scripts/install.sh` from this repository. Do not reproduce the copy or migration logic with broader commands.
+
+The three final files live in two directory trees, so the installer must not claim a cross-directory power-loss transaction. It must stage before replacement, back up pre-existing accepted files, and roll back a normal command failure or `INT`/`TERM`/`HUP`; after power loss or `SIGKILL`, final targets may be complete old/new files and hidden recovery artifacts may remain. A verified re-run converges the final targets.
+
+Recheck managed paths and accepted content immediately before each staged write, replacement, rollback, or legacy removal. These checks stop changes the installer observes; a portable Bash script must not claim an adversarial no-follow guarantee against a concurrent parent-directory replacement.
 
 ## Prohibited changes
 
