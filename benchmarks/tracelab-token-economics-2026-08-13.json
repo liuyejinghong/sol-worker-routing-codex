@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "source": {
+    "label": "TraceLab v0.0.1 sanitized coding-agent trace",
+    "url": "https://github.com/uw-syfi/TraceLab/releases/download/v0.0.1/syfi_coding_trace.jsonl.gz",
+    "local_input": "syfi_coding_trace.jsonl.gz",
+    "expected_sha256": "9d265eae69a31cae203848bea936f018148eed7ca8bf56050c5abe96da0b4e6b",
+    "observed_sha256": "9d265eae69a31cae203848bea936f018148eed7ca8bf56050c5abe96da0b4e6b",
+    "partial_stream_sha256": null,
+    "complete_release": true,
+    "stream_row_limit": null,
+    "release_checksum_matches": true
+  },
+  "record_count": 357161,
+  "session_count": 4265,
+  "token_totals": {
+    "steps": 357161,
+    "tools": 432510,
+    "input_tokens_total": 54898360619,
+    "prefix_tokens": 52562847366,
+    "newly_append_tokens": 2335513253,
+    "output_tokens": 186943996,
+    "reasoning_output_tokens": 36813157,
+    "reported_input_rows": 357161,
+    "input_total_mismatches": 0
+  },
+  "input_composition_percent": {
+    "prefix_tokens": 95.746,
+    "newly_append_tokens": 4.254
+  },
+  "per_step_percentiles": {
+    "prefix_tokens": {
+      "p50": 118656,
+      "p90": 247834,
+      "p99": 816664
+    },
+    "newly_append_tokens": {
+      "p50": 875,
+      "p90": 7119,
+      "p99": 144704
+    },
+    "output_tokens": {
+      "p50": 214,
+      "p90": 1169,
+      "p99": 5051
+    },
+    "tool_calls": {
+      "p50": 1,
+      "p90": 2,
+      "p99": 4
+    }
+  },
+  "per_session_input_token_percentiles": {
+    "p50": 719715,
+    "p90": 18512039,
+    "p99": 243339758
+  },
+  "provider_breakdown": {
+    "claude": {
+      "steps": 140338,
+      "tools": 142388,
+      "input_tokens_total": 28466201684,
+      "prefix_tokens": 27276213126,
+      "newly_append_tokens": 1189988558,
+      "output_tokens": 96890838,
+      "reasoning_output_tokens": 0,
+      "reported_input_rows": 140338,
+      "input_total_mismatches": 0
+    },
+    "codex": {
+      "steps": 216823,
+      "tools": 290122,
+      "input_tokens_total": 26432158935,
+      "prefix_tokens": 25286634240,
+      "newly_append_tokens": 1145524695,
+      "output_tokens": 90053158,
+      "reasoning_output_tokens": 36813157,
+      "reported_input_rows": 216823,
+      "input_total_mismatches": 0
+    }
+  },
+  "observed_top_level_fields": [
+    "claude_cache_creation_input_tokens",
+    "claude_cache_read_input_tokens",
+    "claude_uncached_input_tokens",
+    "current_input_chars",
+    "current_input_event_count",
+    "current_tool_result_chars",
+    "current_tool_result_count",
+    "current_user_message_chars",
+    "current_user_message_count",
+    "first_input_event_type",
+    "input_tokens_total",
+    "model",
+    "newly_append_tokens",
+    "output_tokens",
+    "prefix_tokens",
+    "project",
+    "provider",
+    "reasoning_output_tokens",
+    "round_id",
+    "round_index",
+    "session_id",
+    "store",
+    "timing_events",
+    "tools",
+    "trace_key",
+    "turn_id",
+    "user"
+  ]
+}

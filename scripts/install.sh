@@ -79,6 +79,7 @@ fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
 installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
+installer_deepseek_pro_agent_source="${installer_repo_root}/agents/deepseek-pro-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
@@ -90,6 +91,7 @@ installer_legacy_codex_skills_dir="${installer_codex_dir}/skills"
 installer_legacy_codex_skill_dir="${installer_legacy_codex_skills_dir}/sol-luna-workflow"
 installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
+installer_deepseek_pro_agent_target="${installer_agent_dir}/deepseek-pro-worker.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
 installer_removed_runner_target="${installer_skill_scripts_dir}/run-deepseek-worker.sh"
 installer_legacy_skill_dirs=(
@@ -99,6 +101,7 @@ installer_legacy_skill_dirs=(
 installer_install_pairs=(
   "${installer_luna_agent_source}|${installer_luna_agent_target}"
   "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}"
+  "${installer_deepseek_pro_agent_source}|${installer_deepseek_pro_agent_target}"
   "${installer_skill_source}|${installer_skill_target}"
 )
 installer_guarded_dirs=(
@@ -122,6 +125,7 @@ installer_known_legacy_skill_digests=(
 # Exact installed Skill content from the previous repository release. This is
 # the only in-place upgrade source accepted for the current Skill path.
 installer_known_current_skill_digests=(
+  "f0f5b4ccc60365268f1c63ddfc0d967069a647293be97b3eb954355d786aa498"
   "b1eb8288545514c4fcaeb74b37f9a69ea129e5f3bb2fb91eaadee97ac85baec5"
   "468a66d39f195d736e087bd5a93b3dc596bc9196a7b847cc0681a8dcf9c8b864"
   "1565fc570b2f211f78fb76fe2b17bd2f8bb6a6ad9ac71827479681c3208e41f2"
@@ -129,6 +133,7 @@ installer_known_current_skill_digests=(
   "4697d4c44a11ca3efcd731f607d16b353bf8efb1e87112732bc3b4794996d055"
   "014de56a672fa868cc24318e6124ce2706f750979d038a7f4a9ac986e19fb18a"
   "375a39d9c168d689ee5ab32dc9622a2493eef3db1f4dc1247ebe35cf93a9e1c2"
+  "e255886bddead4c5b7911d43c7853fe5175ceeea3bd235e00f6a2b3540fd1322"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -518,6 +523,7 @@ fi
 for installer_target in \
   "${installer_luna_agent_target}" \
   "${installer_deepseek_agent_target}" \
+  "${installer_deepseek_pro_agent_target}" \
   "${installer_skill_target}"
 do
   if [[ -L "${installer_target}" ]]; then
@@ -561,7 +567,7 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_luna_agent_source}" "${installer_deepseek_agent_source}"
+    "${installer_luna_agent_source}" "${installer_deepseek_agent_source}" "${installer_deepseek_pro_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
@@ -650,6 +656,6 @@ if [[ "${installer_cleanup_failed}" -ne 0 ]]; then
 fi
 
 echo "Verified: installed files match the repository sources."
-echo "Installed DeepSeek Worker source profile; requested provider mode: ${installer_requested_deepseek_provider}."
+echo "Installed DeepSeek Worker source profiles (Flash and Pro); requested provider mode: ${installer_requested_deepseek_provider}."
 echo "Not validated by this script: provider, credential, model catalog, direct tool result, or native web-search route."
 echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."
