@@ -2,6 +2,13 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.9.0 - 2026-08-16
+
+1. 新增独立 `luna_medium_worker`（`gpt-5.6-luna` / `medium`），保留现有 `luna_worker` 作为不可替代的 Luna Max 深度 lane
+2. 将路由收敛为显式升级：Medium 只接收路径、所有权、非目标与验收已固定的私有任务包；发现隐蔽耦合、根因未定或更广决策时返回 blocker，由 Sol 决定是否另发 Max 包
+3. 安装器与安装合同扩展为四个 Agent profile 加一个 Skill，并按 profile 分别接受已知旧内容，保持未知内容、符号链接、非普通文件、暂存、回滚和精确匹配保护
+4. 同步中英文 README 与个性化模板；当前本机已在新任务中完成 Medium 原生 route probe，但每次新安装或重大客户端变更仍须重新验证，profile 文件本身不能单独证明可用
+
 ## 0.8.0 - 2026-08-14
 
 1. 新增独立的 DeepSeek V4 Pro 0813 Worker profile；它是 Flash 之外的候选 lane，用于范围明确但首次语义判断或重做成本更高的工作，不替换 Flash 或 Luna

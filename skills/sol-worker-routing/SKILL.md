@@ -1,13 +1,13 @@
 ---
 name: sol-worker-routing
-description: Use when Sol must keep the parent goal while routing bounded work directly, to the named fast DeepSeek Flash worker, the named balanced DeepSeek Pro worker, or the named depth-first Luna Max worker.
+description: Use when Sol must keep the parent goal while routing bounded work directly, to the named fast DeepSeek Flash worker, the named balanced DeepSeek Pro worker, the named Luna Medium private-packet worker, or the named depth-first Luna Max worker.
 ---
 
 # Sol lead, adaptive bounded worker lanes
 
 Use this as a small routing overlay. Explicit user instructions, permissions, project `AGENTS.md` files, and verified facts remain authoritative. Sol owns the parent objective, decomposition, cross-task decisions, acceptance, and final answer. Workers own only their bounded packets.
 
-This is a user-chosen topology, not a claim that one model is best at every task. Do not re-run general model-tier comparisons for an eligible packet. Do not use Luna Medium as a silent substitute for `luna_worker`.
+This is a user-chosen topology, not a claim that one model is best at every task. Do not re-run general model-tier comparisons for an eligible packet. `luna_medium_worker` and `luna_worker` are separate named lanes: never silently substitute Medium for the depth-first Max worker.
 
 ## 0. Direct-execution gate
 
@@ -21,6 +21,7 @@ ambiguous, coupled, shared-state, decision-heavy       -> Sol
 read-heavy, source-pinned, mechanically checkable      -> deepseek_worker
 large-context, throughput-sensitive, bounded work       -> deepseek_worker
 bounded, semantic, retry-expensive work                  -> deepseek_pro_worker
+private, narrow, semantically clear task packet           -> luna_medium_worker
 depth-first, hidden-coupling, long-horizon semantics     -> luna_worker
 ```
 
@@ -30,9 +31,11 @@ Current Codex releases cannot deliver an OpenAI parent's encrypted V2 task paylo
 
 Use `deepseek_pro_worker` only after its separate route probe has passed. It is the balanced 1M-context lane for bounded work whose semantic density or likely retry cost is above Flash: multi-file behavior changes, difficult but isolated diagnosis, a deep first review of one PR, or a structured synthesis of conflicting evidence. Its profile uses `high` effort, not `max`; use Luna when hidden coupling or long-horizon semantics dominate. Do not choose Pro merely because the input is long, and do not use it for architecture, authorization, release, or external-state decisions.
 
-Use `luna_worker` when the task benefits more from sustained deep reasoning than from latency: subtle code review, hidden cross-module coupling, difficult failure diagnosis, or long-horizon implementation. Luna still needs explicit ownership and objective acceptance, but once dispatched it must be given time to finish.
+Use `luna_medium_worker` when the work needs a native private task packet or concise native handoff, but its paths or sources, ownership, non-goals, and acceptance are already fixed. Good fits include a specified diff review, a named-module diagnosis with a target verifier, or a constrained implementation. If it discovers hidden coupling, an unresolved root cause, or a broader decision, it must stop and return a precise blocker; Sol decides whether to retain the work or issue a new Max packet.
 
-When more than one worker could satisfy the same contract, choose Flash for context and throughput pressure, Pro for bounded high-judgment work whose expected rework justifies its incremental price, and Luna for deep semantic uncertainty. Do not duplicate the same packet merely to make workers vote. If evidence must precede implementation, use `worker evidence -> Sol decision -> worker implementation` only when the intermediate decision genuinely changes what will be built. If the named worker is unavailable or its effective route is unverified, keep the task with Sol or use another explicitly authorized lane. A profile on disk or a worker's self-report is not route proof.
+Use `luna_worker` for Luna Max when the task benefits more from sustained deep reasoning than from latency: subtle code review, hidden cross-module coupling, difficult failure diagnosis, or long-horizon implementation. Max still needs explicit ownership and objective acceptance, but once dispatched it must be given time to finish.
+
+When more than one worker could satisfy the same contract, choose Flash for context and throughput pressure, Pro for bounded high-judgment work whose expected rework justifies its incremental price, Luna Medium for a clear private packet, and Luna Max for deep semantic uncertainty. Do not duplicate the same packet merely to make workers vote. If evidence must precede implementation, use `worker evidence -> Sol decision -> worker implementation` only when the intermediate decision genuinely changes what will be built. If the named worker is unavailable or its effective route is unverified, keep the task with Sol or use another explicitly authorized lane. A profile on disk or a worker's self-report is not route proof.
 
 ## 2. DeepSeek 1M-context lanes
 
@@ -96,7 +99,7 @@ Split only at independently verifiable outcome boundaries, not by file count or 
 Send only necessary context in this shape. Current DeepSeek full-request mode is the exception: do not pretend this private packet reaches it. Its assignment is the current user request (through supported turn inheritance or an exactly matching sole initial message), while the packet remains available for Luna and for DeepSeek after the upstream handoff is repaired.
 
 ```text
-Worker and mode: deepseek_worker | deepseek_pro_worker | luna_worker; read-only | write
+Worker and mode: deepseek_worker | deepseek_pro_worker | luna_medium_worker | luna_worker; read-only | write
 Objective:
 Scope and owned paths:
 Relevant facts / source pins:
@@ -113,14 +116,15 @@ For any implementation packet, name writable paths. DeepSeek and Luna may write 
 
 - `deepseek_worker`: fast 1M-context Flash general lane. In full-request mode it may analyze and implement only when the user's current request already grants that complete scope; it owns no parent architecture, policy, release, account, or authorization decision.
 - `deepseek_pro_worker`: balanced 1M-context Pro lane for bounded, retry-expensive semantic work. It has the same full-request limitation and owns no parent architecture, policy, release, account, or authorization decision.
-- `luna_worker`: depth-first semantic lane. It owns the reasoning needed to finish the packet, but no parent-goal, architecture, priority, release, or authorization change.
+- `luna_medium_worker`: native Medium lane for a narrow private packet with fixed ownership and acceptance. It must return a blocker rather than broaden into hidden-coupling or architecture work.
+- `luna_worker`: native Luna Max depth-first semantic lane. It owns the reasoning needed to finish its bounded packet, but no parent-goal, architecture, priority, release, or authorization change.
 - Neither worker delegates further, changes external state, or performs unrelated cleanup.
 - Do not plan a later DeepSeek follow-up while full-request mode is active; the current cross-provider message channel is not reliable.
-- Pass later Luna workers only a concise handoff of facts, changes, verification, risks, and blockers—not a full transcript.
+- Pass later Luna workers only a concise handoff of facts, changes, verification, risks, and blockers—not a full transcript. A Medium blocker does not auto-upgrade itself; Sol selects any later Max packet explicitly.
 
 ## 6. Worker lease and interruption
 
-A dispatched worker owns an execution lease until it returns a result or a state-based stop condition occurs. Long reasoning and the absence of commentary are normal, especially for Luna Max.
+A dispatched worker owns an execution lease until it returns a result or a state-based stop condition occurs. Long reasoning and the absence of commentary are normal, especially for Luna Max; do not treat a shorter Medium lane as a timeout budget.
 
 - A wait timeout means only that the polling window ended. It is not worker failure, lack of progress, or permission to interrupt.
 - Never interrupt because a worker is silent, slower than expected, has not written files yet, or because Sol later decides the packet was larger than expected.
@@ -145,7 +149,7 @@ Default to one focused contract check plus one real-path result check. Do not re
 - Use at most one full-request DeepSeek worker (Flash or Pro) for the current user request. Do not manufacture hidden shards under full-request mode. Reconsider wider DeepSeek fan-out only after Codex repairs cross-provider dynamic task handoff.
 - Run at most two Luna workers concurrently, only with disjoint ownership. Prefer one Luna worker for any write-bearing task.
 - Shared mutable state, ordered dependencies, or overlapping writes are sequential.
-- Dispatch the named `deepseek_worker`, `deepseek_pro_worker`, or `luna_worker`, never a generic substitute. Re-check effective routing only after installation, a major client change, or observed mismatch.
+- Dispatch the named `deepseek_worker`, `deepseek_pro_worker`, `luna_medium_worker`, or `luna_worker`, never a generic substitute. Re-check effective routing only after installation, a major client change, or observed mismatch.
 
 ### Sol reasoning posture
 

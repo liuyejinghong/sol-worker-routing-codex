@@ -78,6 +78,7 @@ if [[ "${installer_codex_dir}" != /* ]]; then
 fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
+installer_luna_medium_agent_source="${installer_repo_root}/agents/luna-medium-worker.toml"
 installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
 installer_deepseek_pro_agent_source="${installer_repo_root}/agents/deepseek-pro-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
@@ -90,6 +91,7 @@ installer_legacy_user_skill_dir="${installer_user_skills_dir}/sol-luna-workflow"
 installer_legacy_codex_skills_dir="${installer_codex_dir}/skills"
 installer_legacy_codex_skill_dir="${installer_legacy_codex_skills_dir}/sol-luna-workflow"
 installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
+installer_luna_medium_agent_target="${installer_agent_dir}/luna-medium-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
 installer_deepseek_pro_agent_target="${installer_agent_dir}/deepseek-pro-worker.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
@@ -100,6 +102,7 @@ installer_legacy_skill_dirs=(
 )
 installer_install_pairs=(
   "${installer_luna_agent_source}|${installer_luna_agent_target}"
+  "${installer_luna_medium_agent_source}|${installer_luna_medium_agent_target}"
   "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}"
   "${installer_deepseek_pro_agent_source}|${installer_deepseek_pro_agent_target}"
   "${installer_skill_source}|${installer_skill_target}"
@@ -134,6 +137,7 @@ installer_known_current_skill_digests=(
   "014de56a672fa868cc24318e6124ce2706f750979d038a7f4a9ac986e19fb18a"
   "375a39d9c168d689ee5ab32dc9622a2493eef3db1f4dc1247ebe35cf93a9e1c2"
   "e255886bddead4c5b7911d43c7853fe5175ceeea3bd235e00f6a2b3540fd1322"
+  "2bd841aebe5b767a7d5a3ce9c3fac1366e09901a15060be873a155b8a7639ca7"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -142,6 +146,18 @@ installer_known_deepseek_agent_digests=(
   "5ca4b64d7fb37bdf10844bc24d434871d2f3fa38c0f12a4f2e4a51b2860e1bb8"
   "e98e09dd60ecec0ceb57064b35b9f3f196178db3e2cf19c4617347db2d983790"
   "6abaca2b89805cfcfeef02f8d8029cab529fc5d728993e5beebf9e768d9bd5cc"
+)
+# Exact accepted profile contents from supported prior releases. A target only
+# accepts its own listed content; append the prior digest before changing that
+# profile in a future release.
+installer_known_luna_agent_digests=(
+  "260d2b6a9542c56960a8ab62fd2e6f2279c3c859bec04570234a3aba89ff6cfe"
+)
+installer_known_luna_medium_agent_digests=(
+  "c579d8e0512711cd9c057fc606a54af4dab58bfcb0c70accf5f3667eed9659a5"
+)
+installer_known_deepseek_pro_agent_digests=(
+  "caa264733598b9ee88df85d374adf86cc2dfdd6df35ed086b7b68d37cf282617"
 )
 installer_known_removed_runner_digests=(
   "45114d158faf6016950b70c21087d33587ab7098daf835ce62e9eb69667abf77"
@@ -199,6 +215,36 @@ installer_is_known_deepseek_agent() {
   return 1
 }
 
+installer_is_known_luna_agent() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_luna_agent_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
+installer_is_known_luna_medium_agent() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_luna_medium_agent_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
+installer_is_known_deepseek_pro_agent() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_deepseek_pro_agent_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
 installer_is_known_removed_runner() {
   local installer_digest
   local installer_known_digest
@@ -212,14 +258,42 @@ installer_is_known_removed_runner() {
 installer_target_is_accepted() {
   local installer_source="$1"
   local installer_target="$2"
+
+  # Never let cmp or a digest read a FIFO, device, directory, or symlink.
+  # The caller may be checking a target before it has been staged, so a
+  # missing target remains simply unaccepted rather than an installer error.
+  if [[ -L "${installer_target}" || ! -f "${installer_target}" ]]; then
+    return 1
+  fi
+
   cmp -s "${installer_source}" "${installer_target}" && return 0
+  if [[ "${installer_target}" == "${installer_luna_agent_target}" ]] && installer_is_known_luna_agent "${installer_target}"; then
+    return 0
+  fi
+  if [[ "${installer_target}" == "${installer_luna_medium_agent_target}" ]] && installer_is_known_luna_medium_agent "${installer_target}"; then
+    return 0
+  fi
   if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && installer_is_known_deepseek_agent "${installer_target}"; then
+    return 0
+  fi
+  if [[ "${installer_target}" == "${installer_deepseek_pro_agent_target}" ]] && installer_is_known_deepseek_pro_agent "${installer_target}"; then
     return 0
   fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
     return 0
   fi
   return 1
+}
+
+installer_assert_target_is_regular_if_present() {
+  local installer_target="$1"
+
+  if [[ -e "${installer_target}" ]] && [[ ! -f "${installer_target}" ]]; then
+    echo "Error: installer target is not a regular file; refusing to read or overwrite: ${installer_target}" >&2
+    return 1
+  fi
+
+  return 0
 }
 
 installer_assert_guarded_paths_safe() {
@@ -244,6 +318,7 @@ installer_assert_target_still_accepted() {
     echo "Error: installer target changed to a symbolic link during installation; refusing to write: ${installer_target}" >&2
     return 1
   fi
+  installer_assert_target_is_regular_if_present "${installer_target}" || return 1
   if [[ -e "${installer_target}" ]] && ! installer_target_is_accepted "${installer_source}" "${installer_target}"; then
     echo "Error: installer target changed to unknown content during installation; refusing to overwrite: ${installer_target}" >&2
     return 1
@@ -522,12 +597,16 @@ fi
 
 for installer_target in \
   "${installer_luna_agent_target}" \
+  "${installer_luna_medium_agent_target}" \
   "${installer_deepseek_agent_target}" \
   "${installer_deepseek_pro_agent_target}" \
   "${installer_skill_target}"
 do
   if [[ -L "${installer_target}" ]]; then
     echo "Conflict: installer target uses a symbolic link and requires manual migration: ${installer_target}" >&2
+    installer_conflict=1
+  elif [[ -e "${installer_target}" ]] && [[ ! -f "${installer_target}" ]]; then
+    echo "Conflict: installer target is not a regular file and requires manual migration: ${installer_target}" >&2
     installer_conflict=1
   fi
 done
@@ -536,6 +615,9 @@ for installer_pair in "${installer_install_pairs[@]}"; do
   installer_source="${installer_pair%%|*}"
   installer_target="${installer_pair#*|}"
   if [[ -L "${installer_target}" ]]; then
+    continue
+  fi
+  if [[ -e "${installer_target}" ]] && [[ ! -f "${installer_target}" ]]; then
     continue
   fi
   if [[ -e "${installer_target}" ]] && ! installer_target_is_accepted "${installer_source}" "${installer_target}"; then
@@ -567,7 +649,7 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_luna_agent_source}" "${installer_deepseek_agent_source}" "${installer_deepseek_pro_agent_source}"
+    "${installer_luna_agent_source}" "${installer_luna_medium_agent_source}" "${installer_deepseek_agent_source}" "${installer_deepseek_pro_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
@@ -656,6 +738,6 @@ if [[ "${installer_cleanup_failed}" -ne 0 ]]; then
 fi
 
 echo "Verified: installed files match the repository sources."
-echo "Installed DeepSeek Worker source profiles (Flash and Pro); requested provider mode: ${installer_requested_deepseek_provider}."
+echo "Installed Worker source profiles (Luna Medium, Luna Max, DeepSeek Flash, and DeepSeek Pro); requested provider mode: ${installer_requested_deepseek_provider}."
 echo "Not validated by this script: provider, credential, model catalog, direct tool result, or native web-search route."
 echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."

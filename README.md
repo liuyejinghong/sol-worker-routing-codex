@@ -15,20 +15,23 @@
 
 ## 它解决什么问题
 
-`Sol Worker Routing` 不只是给 Codex 增加三个子代理。它把三件事放进同一套工作方式里：
+`Sol Worker Routing` 不只是给 Codex 增加四个子代理。它把三件事放进同一套工作方式里：
 
 - **第一性原理**：先明确最终目标、不可变事实、最小验收标准和授权边界，出现重复补丁、额外抽象或无关流程时，回到根因重新简化。
-- **按真正瓶颈分流**：Sol 保留目标和最终判断；DeepSeek V4 Flash 用速度、低成本和 1M 上下文处理大输入与强调吞吐的有界工作；DeepSeek V4 Pro 0813 处理范围已收敛、但一次错判返工更贵的中高语义任务；Luna Max 用更长时间完成隐蔽耦合与深度推理。简单任务不再消耗过多时间和 token，深度任务也不会因为暂时沉默而被提前终止。
+- **按真正瓶颈分流**：Sol 保留目标和最终判断；DeepSeek V4 Flash 用速度、低成本和 1M 上下文处理大输入与强调吞吐的有界工作；DeepSeek V4 Pro 0813 处理范围已收敛、但一次错判返工更贵的中高语义任务；Luna Medium 处理需要 Sol 私有拆包、但范围和验收已固定的窄任务；Luna Max 用更长时间完成隐蔽耦合与深度推理。简单任务不再消耗过多时间和 token，深度任务也不会因为暂时沉默而被提前终止。
 - **少一些流程，多一些有效证据**：不把 TDD、spec-first、固定审查轮次或更多工具当成目标。默认只做一次聚焦合同检查和一次真实链路结果核对；新增验证之前，先确认它保护了什么具体风险，以及失败是否真的会改变决策。
 
-Sol 始终留在主线程，负责理解目标、判断是否适合交接、检查证据和交付结果。Luna 接收 Sol 拆出的独立任务包；DeepSeek 当前只接收完整的用户请求作为唯一原生初始任务：客户端支持时用 `fork_turns="1"` 继承，否则只能逐字复制当前请求，下面会说明这项临时边界。
+Sol 始终留在主线程，负责理解目标、判断是否适合交接、检查证据和交付结果。Luna Medium 与 Luna Max 都能接收 Sol 拆出的独立任务包；Medium 只接收路径、非目标和验收已固定的窄包，发现隐蔽耦合时必须交回 Sol 决定是否升级到 Max。DeepSeek 当前只接收完整的用户请求作为唯一原生初始任务：客户端支持时用 `fork_turns="1"` 继承，否则只能逐字复制当前请求，下面会说明这项临时边界。
 
 | 执行者 | 最适合的工作 | 典型例子 |
 |---|---|---|
 | **Sol** | 极小任务、模糊问题、架构与最终决策 | 判断是否该改、整合多个结果、直接完成一步修改 |
 | **DeepSeek V4 Flash** | 大量上下文、强调速度和吞吐的有界工作 | 全库分析、长文档、批量排障、中等复杂实现、结构化数据 |
 | **DeepSeek V4 Pro 0813（本机 full-request 已验证）** | 范围明确、但语义判断密度或重做成本更高的有界工作 | 多文件行为变更、复杂但隔离的诊断、PR 深审、冲突证据综合 |
+| **Luna Medium（本机 native route 已验证）** | 需要私有任务包、但范围、路径和验收已固定的窄语义工作 | 指定 diff 审查、已知模块的目标测试排障、受限实现 |
 | **Luna Max** | 隐蔽耦合、微妙语义和长程深度推理 | 困难代码审查、复杂排障、关键实现、跨模块语义判断 |
+
+本工作区已在一个新 Codex 任务中通过 `luna_medium_worker` 的原生 route probe：客户端按该名称创建子代理，并回传 `MEDIUM_ROUTE_PROBE=PASS; 7*8=56`。这只证明当前客户端与该 profile 的命名路由和结果回传可用；每次新安装或重大客户端变更仍须重新 probe。
 
 ## 同类任务，成本差多少
 
@@ -51,7 +54,7 @@ Sol 始终留在主线程，负责理解目标、判断是否适合交接、检�
 
 我们验证了公开 TraceLab v0.0.1 的 **357,161** 个真实工程 Agent 步骤：总输入的 **95.746%** 是已有上下文前缀，而不是新追加内容。实际工程成本的主要风险往往是重复建立上下文、无界工具回显、交接与失败重做，而不是最终回答多几百个 token。
 
-因此，项目按“通过验收的一次完成成本”而非单价分流：Flash 负责边界清晰、可机械验证的高吞吐工作；Pro 仅在更高的首次判断质量能避免一次重做时介入；Luna 留给隐藏耦合与深度语义；Sol 保留目标、授权和最终判断。完整的公开数据复算、价格公式、厂商能力证据、社区限制与 Pro 验收门槛见[平衡型路由评估](benchmarks/agent-routing-evaluation-2026-08-13.md)。本工作区已通过一条完整、自包含任务的 Pro 原生 route probe；其只证明该受限 lane，不证明私有动态任务包或后续追问可用，见[测试记录](benchmarks/deepseek-pro-route-probe-2026-08-13.md)。
+因此，项目按“通过验收的一次完成成本”而非单价分流：Flash 负责边界清晰、可机械验证的高吞吐工作；Pro 仅在更高的首次判断质量能避免一次重做时介入；Luna Medium 仅处理私有拆包但合同已清楚的工作，Luna Max 留给隐藏耦合与深度语义；Sol 保留目标、授权和最终判断。完整的公开数据复算、价格公式、厂商能力证据、社区限制与 Pro 验收门槛见[平衡型路由评估](benchmarks/agent-routing-evaluation-2026-08-13.md)。本工作区已通过一条完整、自包含任务的 Pro 原生 route probe；其只证明该受限 lane，不证明私有动态任务包或后续追问可用，见[测试记录](benchmarks/deepseek-pro-route-probe-2026-08-13.md)。
 
 ## 路由是怎样工作的
 
@@ -61,17 +64,19 @@ flowchart LR
     S -->|"一步即可完成"| D["Sol 直接完成"]
     S -->|"大上下文、强调吞吐"| DS["DeepSeek V4 Flash<br/>快速通用 Worker"]
     S -->|"范围明确、重做昂贵"| DP["DeepSeek V4 Pro 0813<br/>平衡语义 Worker"]
+    S -->|"私有拆包、范围固定"| LM["Luna Medium<br/>窄语义 Worker"]
     S -->|"隐蔽耦合、深度推理"| L["Luna Max<br/>深度 Worker"]
     D --> O["最终结果"]
     DS --> S
     DP --> S
+    LM --> S
     L --> S
     S --> O
 ```
 
-Flash、Pro 与 Luna Max 是并列的叶子 Worker，不是前后级关系。Sol 负责全部任务识别、材料发现、拆分、分发、验收和最终结论。日常推荐使用 `gpt-5.6-sol` 的 **medium**：它足以完成大多数路由与整合，又不会让主线程成本吞掉分流节省；只有架构模糊、证据冲突、高风险决策或复杂整合时再切到 high。Skill 只能规定这套策略，不能替使用者改变当前任务选择的模型档位。
+Flash、Pro、Luna Medium 与 Luna Max 是并列的叶子 Worker，不是前后级关系。Sol 负责全部任务识别、材料发现、拆分、分发、验收和最终结论。Medium 不是 Max 的自动降级：只有私有任务包的范围、所有权和验收都已固定时才可选择；发现隐蔽耦合就返回 blocker，由 Sol 明确选择后续 Max 包。日常推荐使用 `gpt-5.6-sol` 的 **medium**：它足以完成大多数路由与整合，又不会让主线程成本吞掉分流节省；只有架构模糊、证据冲突、高风险决策或复杂整合时再切到 high。Skill 只能规定这套策略，不能替使用者改变当前任务选择的模型档位。
 
-这个分工还有三个简单原则：Sol 一步能完成的任务不做多余交接；Flash 用 1M 上下文承接大型代码库、长文档、批量数据和高网页吞吐；Pro 用于范围明确但一次重做昂贵的语义工作；Luna 则获得完成深度推理所需的时间。
+这个分工还有四个简单原则：Sol 一步能完成的任务不做多余交接；Flash 用 1M 上下文承接大型代码库、长文档、批量数据和高网页吞吐；Pro 用于范围明确但一次重做昂贵的语义工作；需要私有拆包但合同清楚时才用 Luna Medium；Luna Max 则获得完成深度推理所需的时间。
 
 ## 安装
 
@@ -92,9 +97,9 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-这条终端命令只安装和迁移仓库中的四个文件；它不会配置或验证 provider、凭据、模型目录或真实路由。需要完整安装时，请使用上方交给 Codex 的提示词。
+这条终端命令只安装和迁移仓库中的五个文件；它不会配置或验证 provider、凭据、模型目录或真实路由。需要完整安装时，请使用上方交给 Codex 的提示词。
 
-安装器会先在目标目录暂存并备份，再替换文件；普通命令失败或 `INT`/`TERM`/`HUP` 会回滚。四个最终文件位于两棵目录树，因此断电或 `SIGKILL` 后不声称跨目录全局原子；最终目标可能保留完整的新旧文件，隐藏的恢复文件也可能残留，重新运行会重新核验并收敛最终四个目标。
+安装器会先在目标目录暂存并备份，再替换文件；普通命令失败或 `INT`/`TERM`/`HUP` 会回滚。五个最终文件位于两棵目录树，因此断电或 `SIGKILL` 后不声称跨目录全局原子；最终目标可能保留完整的新旧文件，隐藏的恢复文件也可能残留，重新运行会重新核验并收敛最终五个目标。
 
 Windows 请在 Git Bash/MSYS Bash 或 WSL 的 Bash 中运行；它不是原生 PowerShell 脚本。Git Bash 请使用 `/c/Users/...` 这类 POSIX 路径（从 Windows 继承到 `HOME` 或 `CODEX_HOME` 的 `C:/...` 会在 MSYS 环境中转换）；WSL 请使用其自身的 POSIX 路径，例如 `/mnt/c/...`。在真实 Windows 安装链路跑通前，这只是兼容路径，不是已验收的平台支持声明。
 
@@ -114,7 +119,7 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 交给 Codex 安装 Agent 时，安装流程会自动完成这些工作：
 
-1. 安装 `deepseek_worker`（Flash）、`deepseek_pro_worker`（Pro）、`luna_worker` 和 `sol-worker-routing` Skill。
+1. 安装 `deepseek_worker`（Flash）、`deepseek_pro_worker`（Pro）、`luna_medium_worker`（Medium）、`luna_worker`（Max）和 `sol-worker-routing` Skill。
 2. 检查官方 DeepSeek 上游、模型目录和凭据，并用一个答案明确的有界任务验证每个新声明的真实路由。
 3. 路由可用时完整保留现有配置，不因为某个环境变量或凭据后端不可见而重装。
 4. 只有真实调用失败时，才根据当前 Codex 客户端与操作系统支持的方式修复 provider 和认证。
@@ -152,6 +157,12 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 范围已经固定，但第一次语义判断的质量会避免整轮返工时，适合交给已通过 route probe 的 DeepSeek V4 Pro 0813。
 
 ```text
+只检查指定 diff 的行为合同，最多返回三项可定位风险；不要扩展到未指定模块。每项必须能用现有测试或只读证据验证。
+```
+
+当 Sol 需要私有拆包、但路径、所有权和验收已经固定时，适合 Luna Medium。它一旦发现隐藏耦合或需要更广的根因判断，必须停止并把 blocker 交回 Sol，而不是自行升级范围。
+
+```text
 排查这个偶发并发泄漏。它跨越调度、取消和资源释放路径，需要解释隐藏耦合，完成最小修复并证明不会破坏重入语义。
 ```
 
@@ -165,11 +176,12 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 ## 安装边界与项目文件
 
-仓库安装器只写入三个 Agent 配置和一个 Skill；已知上一版 Skill 可以安全升级，遇到其他不同内容会在覆盖前停止：
+仓库安装器只写入四个 Agent 配置和一个 Skill；每个 profile 只接受自己的已知旧版本内容，遇到其他不同内容会在覆盖前停止：
 
 ```text
 ~/.codex/agents/deepseek-worker.toml
 ~/.codex/agents/deepseek-pro-worker.toml
+~/.codex/agents/luna-medium-worker.toml
 ~/.codex/agents/luna-worker.toml
 ~/.agents/skills/sol-worker-routing/SKILL.md
 ```
@@ -178,7 +190,7 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 |---|---|
 | [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
-| [`agents/`](agents/) | DeepSeek Flash、DeepSeek Pro 0813 与 Luna Max 的 Worker 配置 |
+| [`agents/`](agents/) | DeepSeek Flash、DeepSeek Pro 0813、Luna Medium 与 Luna Max 的 Worker 配置 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |
 | [`benchmarks/`](benchmarks/) | 基准案例、原始数据与完整报告 |
 
