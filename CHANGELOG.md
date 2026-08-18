@@ -2,6 +2,14 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.10.0 - 2026-08-18
+
+1. 新增 `spark_scout`（`gpt-5.3-codex-spark` / `xhigh` / read-only）证据侦察 lane；它只返回结论、精确证据、不确定性、blocker 与窄后续检查，不拥有写入、架构、发布、风控或最终判断
+2. `sol-worker-routing` 增加软禁用优先级、硬禁用可发现性和真实 route qualification 的路由治理；支持“本次不用 DeepSeek / Spark / 子代理”等任务级限制
+3. 安装器增加 `--lane-status`、`--enable-lane` 与 `--disable-lane`，以 `<profile>.toml` / `.toml.disabled` 保存可逆状态；`deepseek` 同时操作 Flash 与 Pro，`all` 仅覆盖五个 Worker，停用 DeepSeek 不修改 Provider、凭据或模型目录
+4. 识别 v0.4、v0.5-v0.7、v0.8 和 v0.9 老安装拓扑：保留已有状态，新引入 lane 默认 disabled；缺失应有 profile、未知内容、双状态、符号链接和非普通文件一律 fail closed
+5. 同步安装合同、中英文 README 与个性化模板；安装和 profile 文件仍不替代每条新启用 lane 的真实 route probe
+
 ## 0.9.0 - 2026-08-16
 
 1. 新增独立 `luna_medium_worker`（`gpt-5.6-luna` / `medium`），保留现有 `luna_worker` 作为不可替代的 Luna Max 深度 lane

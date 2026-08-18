@@ -24,8 +24,25 @@ installer_normalize_path() {
   printf '%s\n' "${installer_path}"
 }
 
-installer_home_dir="$(installer_normalize_path "${HOME:?HOME is not set}")" || exit 1
+if [[ -n "${SOL_WORKER_ROUTING_TEST_HOME:-}" ]]; then
+  installer_home_input="${SOL_WORKER_ROUTING_TEST_HOME}"
+else
+  installer_home_input="${HOME:?HOME is not set}"
+fi
+installer_home_dir="$(installer_normalize_path "${installer_home_input}")" || exit 1
 installer_requested_deepseek_provider="deepseek-api"
+installer_mode="install"
+installer_requested_lane=""
+
+installer_set_mode() {
+  local installer_next_mode="$1"
+
+  if [[ "${installer_mode}" != "install" && "${installer_mode}" != "${installer_next_mode}" ]]; then
+    echo "Error: choose only one of --lane-status, --enable-lane, or --disable-lane." >&2
+    exit 64
+  fi
+  installer_mode="${installer_next_mode}"
+}
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
@@ -38,8 +55,47 @@ while [[ "$#" -gt 0 ]]; do
       installer_requested_deepseek_provider="${1#*=}"
       shift
       ;;
+    --lane-status)
+      installer_set_mode "status"
+      shift
+      ;;
+    --enable-lane)
+      [[ "$#" -ge 2 ]] || { echo "Error: --enable-lane requires a lane name." >&2; exit 64; }
+      installer_set_mode "enable"
+      [[ -z "${installer_requested_lane}" ]] || { echo "Error: specify one lane selection." >&2; exit 64; }
+      installer_requested_lane="$2"
+      shift 2
+      ;;
+    --enable-lane=*)
+      installer_set_mode "enable"
+      [[ -z "${installer_requested_lane}" ]] || { echo "Error: specify one lane selection." >&2; exit 64; }
+      installer_requested_lane="${1#*=}"
+      shift
+      ;;
+    --disable-lane)
+      [[ "$#" -ge 2 ]] || { echo "Error: --disable-lane requires a lane name." >&2; exit 64; }
+      installer_set_mode "disable"
+      [[ -z "${installer_requested_lane}" ]] || { echo "Error: specify one lane selection." >&2; exit 64; }
+      installer_requested_lane="$2"
+      shift 2
+      ;;
+    --disable-lane=*)
+      installer_set_mode "disable"
+      [[ -z "${installer_requested_lane}" ]] || { echo "Error: specify one lane selection." >&2; exit 64; }
+      installer_requested_lane="${1#*=}"
+      shift
+      ;;
     -h|--help)
-      echo "Usage: bash scripts/install.sh [--deepseek-provider deepseek-api]"
+      cat <<'EOF'
+Usage:
+  bash scripts/install.sh [--deepseek-provider deepseek-api]
+  bash scripts/install.sh --lane-status
+  bash scripts/install.sh --enable-lane <lane|deepseek|all>
+  bash scripts/install.sh --disable-lane <lane|deepseek|all>
+
+Lanes: spark_scout, deepseek_worker, deepseek_pro_worker,
+       luna_medium_worker, luna_worker.
+EOF
       exit 0
       ;;
     *)
@@ -81,6 +137,7 @@ installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
 installer_luna_medium_agent_source="${installer_repo_root}/agents/luna-medium-worker.toml"
 installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
 installer_deepseek_pro_agent_source="${installer_repo_root}/agents/deepseek-pro-worker.toml"
+installer_spark_scout_agent_source="${installer_repo_root}/agents/spark-scout.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
@@ -94,6 +151,7 @@ installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
 installer_luna_medium_agent_target="${installer_agent_dir}/luna-medium-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
 installer_deepseek_pro_agent_target="${installer_agent_dir}/deepseek-pro-worker.toml"
+installer_spark_scout_agent_target="${installer_agent_dir}/spark-scout.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
 installer_removed_runner_target="${installer_skill_scripts_dir}/run-deepseek-worker.sh"
 installer_legacy_skill_dirs=(
@@ -107,6 +165,15 @@ installer_install_pairs=(
   "${installer_deepseek_pro_agent_source}|${installer_deepseek_pro_agent_target}"
   "${installer_skill_source}|${installer_skill_target}"
 )
+installer_lanes=(
+  "spark_scout"
+  "deepseek_worker"
+  "deepseek_pro_worker"
+  "luna_medium_worker"
+  "luna_worker"
+)
+installer_state_removal_targets=()
+installer_state_removal_descriptions=()
 installer_guarded_dirs=(
   "${installer_codex_dir}"
   "${installer_agent_dir}"
@@ -137,6 +204,7 @@ installer_known_current_skill_digests=(
   "014de56a672fa868cc24318e6124ce2706f750979d038a7f4a9ac986e19fb18a"
   "375a39d9c168d689ee5ab32dc9622a2493eef3db1f4dc1247ebe35cf93a9e1c2"
   "e255886bddead4c5b7911d43c7853fe5175ceeea3bd235e00f6a2b3540fd1322"
+  "f5a5a26baf0827f1f92cde79745b87b327535948de3ce56d1c38e09f924e852c"
   "2bd841aebe5b767a7d5a3ce9c3fac1366e09901a15060be873a155b8a7639ca7"
 )
 installer_known_deepseek_agent_digests=(
@@ -146,11 +214,13 @@ installer_known_deepseek_agent_digests=(
   "5ca4b64d7fb37bdf10844bc24d434871d2f3fa38c0f12a4f2e4a51b2860e1bb8"
   "e98e09dd60ecec0ceb57064b35b9f3f196178db3e2cf19c4617347db2d983790"
   "6abaca2b89805cfcfeef02f8d8029cab529fc5d728993e5beebf9e768d9bd5cc"
+  "623764be77c410dd4029c44d77390fd355f535dd8bb49198c1629e028e49481a"
 )
 # Exact accepted profile contents from supported prior releases. A target only
 # accepts its own listed content; append the prior digest before changing that
 # profile in a future release.
 installer_known_luna_agent_digests=(
+  "86021a3589f2676e8512d71a7aa16c9942d7109b6cc61b13dd37960abbeb2296"
   "260d2b6a9542c56960a8ab62fd2e6f2279c3c859bec04570234a3aba89ff6cfe"
 )
 installer_known_luna_medium_agent_digests=(
@@ -255,9 +325,43 @@ installer_is_known_removed_runner() {
   return 1
 }
 
+installer_lane_source() {
+  case "$1" in
+    spark_scout) printf '%s\n' "${installer_spark_scout_agent_source}" ;;
+    deepseek_worker) printf '%s\n' "${installer_deepseek_agent_source}" ;;
+    deepseek_pro_worker) printf '%s\n' "${installer_deepseek_pro_agent_source}" ;;
+    luna_medium_worker) printf '%s\n' "${installer_luna_medium_agent_source}" ;;
+    luna_worker) printf '%s\n' "${installer_luna_agent_source}" ;;
+    *) return 64 ;;
+  esac
+}
+
+installer_lane_target() {
+  case "$1" in
+    spark_scout) printf '%s\n' "${installer_spark_scout_agent_target}" ;;
+    deepseek_worker) printf '%s\n' "${installer_deepseek_agent_target}" ;;
+    deepseek_pro_worker) printf '%s\n' "${installer_deepseek_pro_agent_target}" ;;
+    luna_medium_worker) printf '%s\n' "${installer_luna_medium_agent_target}" ;;
+    luna_worker) printf '%s\n' "${installer_luna_agent_target}" ;;
+    *) return 64 ;;
+  esac
+}
+
+installer_lane_disabled_target() {
+  printf '%s.disabled\n' "$(installer_lane_target "$1")"
+}
+
+installer_target_base_path() {
+  case "$1" in
+    *.toml.disabled) printf '%s\n' "${1%.disabled}" ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
 installer_target_is_accepted() {
   local installer_source="$1"
   local installer_target="$2"
+  local installer_target_base
 
   # Never let cmp or a digest read a FIFO, device, directory, or symlink.
   # The caller may be checking a target before it has been staged, so a
@@ -267,21 +371,104 @@ installer_target_is_accepted() {
   fi
 
   cmp -s "${installer_source}" "${installer_target}" && return 0
-  if [[ "${installer_target}" == "${installer_luna_agent_target}" ]] && installer_is_known_luna_agent "${installer_target}"; then
+  installer_target_base="$(installer_target_base_path "${installer_target}")"
+  if [[ "${installer_target_base}" == "${installer_luna_agent_target}" ]] && installer_is_known_luna_agent "${installer_target}"; then
     return 0
   fi
-  if [[ "${installer_target}" == "${installer_luna_medium_agent_target}" ]] && installer_is_known_luna_medium_agent "${installer_target}"; then
+  if [[ "${installer_target_base}" == "${installer_luna_medium_agent_target}" ]] && installer_is_known_luna_medium_agent "${installer_target}"; then
     return 0
   fi
-  if [[ "${installer_target}" == "${installer_deepseek_agent_target}" ]] && installer_is_known_deepseek_agent "${installer_target}"; then
+  if [[ "${installer_target_base}" == "${installer_deepseek_agent_target}" ]] && installer_is_known_deepseek_agent "${installer_target}"; then
     return 0
   fi
-  if [[ "${installer_target}" == "${installer_deepseek_pro_agent_target}" ]] && installer_is_known_deepseek_pro_agent "${installer_target}"; then
+  if [[ "${installer_target_base}" == "${installer_deepseek_pro_agent_target}" ]] && installer_is_known_deepseek_pro_agent "${installer_target}"; then
     return 0
   fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
     return 0
   fi
+  return 1
+}
+
+installer_detect_lane_state() {
+  local installer_lane="$1"
+  local installer_source
+  local installer_target
+  local installer_disabled_target
+
+  installer_source="$(installer_lane_source "${installer_lane}")" || return 1
+  installer_target="$(installer_lane_target "${installer_lane}")" || return 1
+  installer_disabled_target="$(installer_lane_disabled_target "${installer_lane}")" || return 1
+  if [[ -L "${installer_target}" || -L "${installer_disabled_target}" ]]; then
+    printf '%s\n' "conflict-nonregular"
+  elif [[ -e "${installer_target}" && ! -f "${installer_target}" ]] || [[ -e "${installer_disabled_target}" && ! -f "${installer_disabled_target}" ]]; then
+    printf '%s\n' "conflict-nonregular"
+  elif [[ -e "${installer_target}" && -e "${installer_disabled_target}" ]]; then
+    printf '%s\n' "conflict-dual"
+  elif [[ -e "${installer_target}" ]]; then
+    if installer_target_is_accepted "${installer_source}" "${installer_target}"; then
+      printf '%s\n' "enabled"
+    else
+      printf '%s\n' "conflict-unknown"
+    fi
+  elif [[ -e "${installer_disabled_target}" ]]; then
+    if installer_target_is_accepted "${installer_source}" "${installer_disabled_target}"; then
+      printf '%s\n' "disabled"
+    else
+      printf '%s\n' "conflict-unknown"
+    fi
+  else
+    printf '%s\n' "missing"
+  fi
+}
+
+installer_current_skill_generation() {
+  local installer_digest
+
+  [[ -f "${installer_skill_target}" && ! -L "${installer_skill_target}" ]] || return 1
+  installer_digest="$(installer_sha256 "${installer_skill_target}")" || return 1
+  case "${installer_digest}" in
+    f5a5a26baf0827f1f92cde79745b87b327535948de3ce56d1c38e09f924e852c)
+      printf '%s\n' "v0.9"
+      ;;
+    2bd841aebe5b767a7d5a3ce9c3fac1366e09901a15060be873a155b8a7639ca7)
+      printf '%s\n' "v0.8"
+      ;;
+    *)
+      if cmp -s "${installer_skill_source}" "${installer_skill_target}"; then
+        printf '%s\n' "current"
+      elif installer_is_known_current_skill "${installer_skill_target}"; then
+        printf '%s\n' "v0.5-v0.7"
+      else
+        return 1
+      fi
+      ;;
+  esac
+}
+
+installer_generation_requires_lane() {
+  case "$1:$2" in
+    legacy-v0.4:luna_worker|v0.5-v0.7:deepseek_worker|v0.5-v0.7:luna_worker|v0.8:deepseek_worker|v0.8:deepseek_pro_worker|v0.8:luna_worker|v0.9:deepseek_worker|v0.9:deepseek_pro_worker|v0.9:luna_medium_worker|v0.9:luna_worker|current:spark_scout|current:deepseek_worker|current:deepseek_pro_worker|current:luna_medium_worker|current:luna_worker)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+installer_is_known_managed_lane_file() {
+  local installer_target="$1"
+  local installer_target_base
+  local installer_lane
+
+  installer_target_base="$(installer_target_base_path "${installer_target}")"
+  for installer_lane in "${installer_lanes[@]}"; do
+    if [[ "${installer_target_base}" == "$(installer_lane_target "${installer_lane}")" ]]; then
+      installer_target_is_accepted "$(installer_lane_source "${installer_lane}")" "${installer_target}"
+      return
+    fi
+  done
   return 1
 }
 
@@ -575,8 +762,204 @@ installer_on_exit() {
   exit "${installer_status}"
 }
 
+installer_expand_lane_request() {
+  installer_selected_lanes=()
+  case "$1" in
+    spark_scout|deepseek_worker|deepseek_pro_worker|luna_medium_worker|luna_worker)
+      installer_selected_lanes+=("$1")
+      ;;
+    deepseek)
+      installer_selected_lanes+=("deepseek_worker" "deepseek_pro_worker")
+      ;;
+    all)
+      installer_selected_lanes=("${installer_lanes[@]}")
+      ;;
+    *)
+      echo "Error: unknown lane selection: $1" >&2
+      return 64
+      ;;
+  esac
+}
+
+installer_plan_lane_state() {
+  local installer_lane="$1"
+  local installer_state="$2"
+  local installer_source
+  local installer_target
+  local installer_opposite_target
+
+  installer_source="$(installer_lane_source "${installer_lane}")" || return 1
+  if [[ "${installer_state}" == "enabled" ]]; then
+    installer_target="$(installer_lane_target "${installer_lane}")"
+    installer_opposite_target="$(installer_lane_disabled_target "${installer_lane}")"
+  else
+    installer_target="$(installer_lane_disabled_target "${installer_lane}")"
+    installer_opposite_target="$(installer_lane_target "${installer_lane}")"
+  fi
+  installer_install_pairs+=("${installer_source}|${installer_target}")
+  installer_planned_lanes+=("${installer_lane}")
+  installer_planned_states+=("${installer_state}")
+  if [[ -e "${installer_opposite_target}" || -L "${installer_opposite_target}" ]]; then
+    installer_state_removal_targets+=("${installer_opposite_target}")
+    installer_state_removal_descriptions+=("opposite ${installer_lane} state")
+  fi
+}
+
+installer_detect_legacy_generation() {
+  local installer_legacy_skill_dir
+  local installer_legacy_skill_target
+  local installer_found=0
+
+  for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
+    installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
+    if [[ -L "${installer_legacy_skill_target}" ]] || [[ -e "${installer_legacy_skill_target}" && ! -f "${installer_legacy_skill_target}" ]]; then
+      echo "Error: legacy Skill is not a regular file: ${installer_legacy_skill_target}" >&2
+      return 1
+    fi
+    if [[ -e "${installer_legacy_skill_target}" ]]; then
+      if ! installer_is_known_legacy_skill "${installer_legacy_skill_target}"; then
+        echo "Error: legacy Skill has unknown content: ${installer_legacy_skill_target}" >&2
+        return 1
+      fi
+      installer_found=$((installer_found + 1))
+    fi
+  done
+  if [[ "${installer_found}" -gt 1 ]]; then
+    echo "Error: multiple legacy Skill copies require manual migration." >&2
+    return 1
+  fi
+  if [[ "${installer_found}" -eq 1 ]]; then
+    printf '%s\n' "legacy-v0.4"
+  fi
+}
+
+installer_prepare_install_pairs() {
+  local installer_generation
+  local installer_legacy_generation
+  local installer_lane
+  local installer_state
+  local installer_any_lane=0
+  local installer_desired_state
+
+  installer_install_pairs=()
+  installer_state_removal_targets=()
+  installer_state_removal_descriptions=()
+  installer_planned_lanes=()
+  installer_planned_states=()
+
+  case "${installer_mode}" in
+    enable|disable)
+      installer_expand_lane_request "${installer_requested_lane}" || return 1
+      if [[ "${installer_mode}" == "enable" ]]; then
+        installer_desired_state="enabled"
+      else
+        installer_desired_state="disabled"
+      fi
+      for installer_lane in "${installer_selected_lanes[@]}"; do
+        installer_state="$(installer_detect_lane_state "${installer_lane}")"
+        case "${installer_state}" in
+          enabled|disabled|missing) installer_plan_lane_state "${installer_lane}" "${installer_desired_state}" ;;
+          *)
+            echo "Error: ${installer_lane} state is ${installer_state}; resolve it before changing the lane." >&2
+            return 1
+            ;;
+        esac
+      done
+      return 0
+      ;;
+    install)
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+
+  if [[ -L "${installer_skill_target}" ]] || [[ -e "${installer_skill_target}" && ! -f "${installer_skill_target}" ]]; then
+    echo "Error: current Skill is not a regular file: ${installer_skill_target}" >&2
+    return 1
+  elif [[ -e "${installer_skill_target}" ]]; then
+    if ! installer_is_known_current_skill "${installer_skill_target}" && ! cmp -s "${installer_skill_source}" "${installer_skill_target}"; then
+      echo "Error: current Skill has unknown content: ${installer_skill_target}" >&2
+      return 1
+    fi
+    installer_generation="$(installer_current_skill_generation)" || { echo "Error: current Skill cannot be mapped to a supported topology." >&2; return 1; }
+  else
+    installer_legacy_generation="$(installer_detect_legacy_generation)" || return 1
+    if [[ -n "${installer_legacy_generation}" ]]; then
+      installer_generation="${installer_legacy_generation}"
+    else
+      for installer_lane in "${installer_lanes[@]}"; do
+        installer_state="$(installer_detect_lane_state "${installer_lane}")"
+        [[ "${installer_state}" == "missing" ]] || installer_any_lane=1
+      done
+      if [[ "${installer_any_lane}" -ne 0 ]]; then
+        echo "Error: managed profiles exist but the current Skill is missing; refusing to guess whether this is a partial installation." >&2
+        return 1
+      fi
+      installer_generation="fresh"
+    fi
+  fi
+
+  for installer_lane in "${installer_lanes[@]}"; do
+    installer_state="$(installer_detect_lane_state "${installer_lane}")"
+    case "${installer_state}" in
+      enabled|disabled)
+        installer_plan_lane_state "${installer_lane}" "${installer_state}"
+        ;;
+      missing)
+        if [[ "${installer_generation}" == "fresh" ]]; then
+          installer_plan_lane_state "${installer_lane}" "enabled"
+        elif installer_generation_requires_lane "${installer_generation}" "${installer_lane}"; then
+          echo "Error: ${installer_lane} is missing from the recognized ${installer_generation} installation; choose --enable-lane or --disable-lane explicitly." >&2
+          return 1
+        else
+          installer_plan_lane_state "${installer_lane}" "disabled"
+        fi
+        ;;
+      *)
+        echo "Error: ${installer_lane} state is ${installer_state}; resolve it before upgrading." >&2
+        return 1
+        ;;
+    esac
+  done
+  installer_install_pairs+=("${installer_skill_source}|${installer_skill_target}")
+}
+
+installer_report_lane_status() {
+  local installer_lane
+  local installer_state
+  local installer_status_conflict=0
+
+  for installer_lane in "${installer_lanes[@]}"; do
+    installer_state="$(installer_detect_lane_state "${installer_lane}")"
+    printf '%s\t%s\n' "${installer_lane}" "${installer_state}"
+    [[ "${installer_state}" == conflict-* ]] && installer_status_conflict=1
+  done
+  if [[ -L "${installer_skill_target}" ]] || [[ -e "${installer_skill_target}" && ! -f "${installer_skill_target}" ]]; then
+    printf '%s\t%s\n' "skill" "conflict-nonregular"
+    installer_status_conflict=1
+  elif [[ -e "${installer_skill_target}" ]]; then
+    if installer_is_known_current_skill "${installer_skill_target}" || cmp -s "${installer_skill_source}" "${installer_skill_target}"; then
+      printf '%s\t%s\n' "skill" "accepted"
+    else
+      printf '%s\t%s\n' "skill" "conflict-unknown"
+      installer_status_conflict=1
+    fi
+  else
+    printf '%s\t%s\n' "skill" "missing"
+  fi
+  [[ "${installer_status_conflict}" -eq 0 ]]
+}
+
 trap installer_on_exit EXIT
 trap 'exit 1' HUP INT TERM
+
+if [[ "${installer_mode}" == "status" ]]; then
+  installer_report_lane_status
+  exit 0
+fi
+
+installer_prepare_install_pairs || exit 2
 
 for installer_dir in "${installer_guarded_dirs[@]}"; do
   if [[ -L "${installer_dir}" ]]; then
@@ -585,31 +968,41 @@ for installer_dir in "${installer_guarded_dirs[@]}"; do
   fi
 done
 
-if [[ -L "${installer_removed_runner_target}" ]]; then
-  echo "Conflict: removed DeepSeek runner uses a symbolic link and requires manual cleanup: ${installer_removed_runner_target}" >&2
-  installer_conflict=1
-elif [[ -e "${installer_removed_runner_target}" ]]; then
-  if [[ ! -f "${installer_removed_runner_target}" ]] || ! installer_is_known_removed_runner "${installer_removed_runner_target}"; then
-    echo "Conflict: removed DeepSeek runner has unknown content and requires manual cleanup: ${installer_removed_runner_target}" >&2
+if [[ "${installer_mode}" == "install" ]]; then
+  if [[ -L "${installer_removed_runner_target}" ]]; then
+    echo "Conflict: removed DeepSeek runner uses a symbolic link and requires manual cleanup: ${installer_removed_runner_target}" >&2
     installer_conflict=1
+  elif [[ -e "${installer_removed_runner_target}" ]]; then
+    if [[ ! -f "${installer_removed_runner_target}" ]] || ! installer_is_known_removed_runner "${installer_removed_runner_target}"; then
+      echo "Conflict: removed DeepSeek runner has unknown content and requires manual cleanup: ${installer_removed_runner_target}" >&2
+      installer_conflict=1
+    fi
   fi
 fi
 
-for installer_target in \
-  "${installer_luna_agent_target}" \
-  "${installer_luna_medium_agent_target}" \
-  "${installer_deepseek_agent_target}" \
-  "${installer_deepseek_pro_agent_target}" \
-  "${installer_skill_target}"
-do
-  if [[ -L "${installer_target}" ]]; then
-    echo "Conflict: installer target uses a symbolic link and requires manual migration: ${installer_target}" >&2
-    installer_conflict=1
-  elif [[ -e "${installer_target}" ]] && [[ ! -f "${installer_target}" ]]; then
-    echo "Conflict: installer target is not a regular file and requires manual migration: ${installer_target}" >&2
-    installer_conflict=1
-  fi
-done
+if [[ "${installer_mode}" == "install" ]]; then
+  for installer_target in \
+    "${installer_luna_agent_target}" \
+    "${installer_luna_agent_target}.disabled" \
+    "${installer_luna_medium_agent_target}" \
+    "${installer_luna_medium_agent_target}.disabled" \
+    "${installer_deepseek_agent_target}" \
+    "${installer_deepseek_agent_target}.disabled" \
+    "${installer_deepseek_pro_agent_target}" \
+    "${installer_deepseek_pro_agent_target}.disabled" \
+    "${installer_spark_scout_agent_target}" \
+    "${installer_spark_scout_agent_target}.disabled" \
+    "${installer_skill_target}"
+  do
+    if [[ -L "${installer_target}" ]]; then
+      echo "Conflict: installer target uses a symbolic link and requires manual migration: ${installer_target}" >&2
+      installer_conflict=1
+    elif [[ -e "${installer_target}" ]] && [[ ! -f "${installer_target}" ]]; then
+      echo "Conflict: installer target is not a regular file and requires manual migration: ${installer_target}" >&2
+      installer_conflict=1
+    fi
+  done
+fi
 
 for installer_pair in "${installer_install_pairs[@]}"; do
   installer_source="${installer_pair%%|*}"
@@ -626,21 +1019,23 @@ for installer_pair in "${installer_install_pairs[@]}"; do
   fi
 done
 
-for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
-  installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
-  if [[ -L "${installer_legacy_skill_target}" ]]; then
-    echo "Conflict: legacy Skill uses a symbolic link and requires manual migration: ${installer_legacy_skill_target}" >&2
-    installer_conflict=1
-  elif [[ -e "${installer_legacy_skill_target}" ]]; then
-    if [[ ! -f "${installer_legacy_skill_target}" ]]; then
-      echo "Conflict: legacy Skill is not a regular file: ${installer_legacy_skill_target}" >&2
+if [[ "${installer_mode}" == "install" ]]; then
+  for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
+    installer_legacy_skill_target="${installer_legacy_skill_dir}/SKILL.md"
+    if [[ -L "${installer_legacy_skill_target}" ]]; then
+      echo "Conflict: legacy Skill uses a symbolic link and requires manual migration: ${installer_legacy_skill_target}" >&2
       installer_conflict=1
-    elif ! installer_is_known_legacy_skill "${installer_legacy_skill_target}"; then
-      echo "Conflict: legacy Skill has unknown content and requires manual migration: ${installer_legacy_skill_target}" >&2
-      installer_conflict=1
+    elif [[ -e "${installer_legacy_skill_target}" ]]; then
+      if [[ ! -f "${installer_legacy_skill_target}" ]]; then
+        echo "Conflict: legacy Skill is not a regular file: ${installer_legacy_skill_target}" >&2
+        installer_conflict=1
+      elif ! installer_is_known_legacy_skill "${installer_legacy_skill_target}"; then
+        echo "Conflict: legacy Skill has unknown content and requires manual migration: ${installer_legacy_skill_target}" >&2
+        installer_conflict=1
+      fi
     fi
-  fi
-done
+  done
+fi
 
 if [[ "${installer_conflict}" -ne 0 ]]; then
   echo "No files were changed. Resolve the conflict explicitly, then run the installer again." >&2
@@ -649,7 +1044,7 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_luna_agent_source}" "${installer_luna_medium_agent_source}" "${installer_deepseek_agent_source}" "${installer_deepseek_pro_agent_source}"
+    "${installer_spark_scout_agent_source}" "${installer_luna_agent_source}" "${installer_luna_medium_agent_source}" "${installer_deepseek_agent_source}" "${installer_deepseek_pro_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
@@ -680,17 +1075,26 @@ for installer_index in "${!installer_staged_targets[@]}"; do
   installer_backup_staged_target "${installer_index}"
 done
 
-installer_stage_migration_removal \
-  "${installer_removed_runner_target}" \
-  installer_is_known_removed_runner \
-  "removed DeepSeek runner"
-
-for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
+for installer_index in "${!installer_state_removal_targets[@]}"; do
   installer_stage_migration_removal \
-    "${installer_legacy_skill_dir}/SKILL.md" \
-    installer_is_known_legacy_skill \
-    "legacy Skill"
+    "${installer_state_removal_targets[installer_index]}" \
+    installer_is_known_managed_lane_file \
+    "${installer_state_removal_descriptions[installer_index]}"
 done
+
+if [[ "${installer_mode}" == "install" ]]; then
+  installer_stage_migration_removal \
+    "${installer_removed_runner_target}" \
+    installer_is_known_removed_runner \
+    "removed DeepSeek runner"
+
+  for installer_legacy_skill_dir in "${installer_legacy_skill_dirs[@]}"; do
+    installer_stage_migration_removal \
+      "${installer_legacy_skill_dir}/SKILL.md" \
+      installer_is_known_legacy_skill \
+      "legacy Skill"
+  done
+fi
 
 for installer_index in "${!installer_migration_targets[@]}"; do
   installer_assert_staged_migration_unchanged "${installer_index}"
@@ -716,6 +1120,21 @@ for installer_pair in "${installer_install_pairs[@]}"; do
   cmp -s "${installer_source}" "${installer_target}"
 done
 
+for installer_index in "${!installer_planned_lanes[@]}"; do
+  installer_lane="${installer_planned_lanes[installer_index]}"
+  installer_state="${installer_planned_states[installer_index]}"
+  installer_source="$(installer_lane_source "${installer_lane}")"
+  if [[ "${installer_state}" == "enabled" ]]; then
+    installer_target="$(installer_lane_target "${installer_lane}")"
+    installer_opposite_target="$(installer_lane_disabled_target "${installer_lane}")"
+  else
+    installer_target="$(installer_lane_disabled_target "${installer_lane}")"
+    installer_opposite_target="$(installer_lane_target "${installer_lane}")"
+  fi
+  cmp -s "${installer_source}" "${installer_target}"
+  [[ ! -e "${installer_opposite_target}" && ! -L "${installer_opposite_target}" ]]
+done
+
 for installer_index in "${!installer_migration_targets[@]}"; do
   installer_assert_staged_migration_unchanged "${installer_index}"
   installer_target="${installer_migration_targets[installer_index]}"
@@ -737,7 +1156,13 @@ if [[ "${installer_cleanup_failed}" -ne 0 ]]; then
   exit 4
 fi
 
-echo "Verified: installed files match the repository sources."
-echo "Installed Worker source profiles (Luna Medium, Luna Max, DeepSeek Flash, and DeepSeek Pro); requested provider mode: ${installer_requested_deepseek_provider}."
-echo "Not validated by this script: provider, credential, model catalog, direct tool result, or native web-search route."
-echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."
+if [[ "${installer_mode}" == "install" ]]; then
+  echo "Verified: installed files match the repository sources and planned lane states."
+  echo "Installed Worker source profiles (Spark Scout, Luna Medium, Luna Max, DeepSeek Flash, and DeepSeek Pro); requested provider mode: ${installer_requested_deepseek_provider}."
+  echo "Not validated by this script: provider, credential, model catalog, direct tool result, native web-search route, or child lifecycle."
+  echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."
+elif [[ "${installer_mode}" == "enable" ]]; then
+  echo "Verified: requested lane state is enabled. Start a new Codex task before relying on Agent discovery."
+else
+  echo "Verified: requested lane state is disabled. Provider, credential, and model-catalog settings were not changed. Start a new Codex task before relying on Agent discovery."
+fi

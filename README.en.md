@@ -15,10 +15,10 @@
 
 ## What problem does it solve?
 
-`Sol Worker Routing` does more than add four subagents to Codex. It combines three ideas in one working method:
+`Sol Worker Routing` does more than add five subagents to Codex. It combines three ideas in one working method:
 
 - **First principles**: establish the final objective, invariant facts, minimum acceptance, and authorization boundary first. When patches, abstractions, or unrelated process accumulate, return to the root cause and simplify.
-- **Route by the actual bottleneck**: Sol keeps the objective and final judgment; DeepSeek V4 Flash uses its speed, low cost, and 1M context for large-input and throughput-sensitive bounded work; DeepSeek V4 Pro 0813 handles bounded medium-high semantic work where a wrong first pass is more expensive; Luna Medium handles narrow work that needs a private Sol packet but already has fixed scope and acceptance; Luna Max gets the time needed for hidden coupling and depth-first reasoning. Simple work stops consuming excess tokens, while deep work is not killed merely because it stays silent for a while.
+- **Route by the actual bottleneck**: Sol keeps the objective and final judgment; DeepSeek V4 Flash uses its speed, low cost, and 1M context for large-input and throughput-sensitive bounded work; DeepSeek V4 Pro 0813 handles bounded medium-high semantic work where a wrong first pass is more expensive; Luna Medium handles narrow work that needs a private Sol packet but already has fixed scope and acceptance; Luna Max gets the time needed for hidden coupling and depth-first reasoning; the new `spark_scout` performs only bounded, read-only evidence reconnaissance with `gpt-5.3-codex-spark` at `xhigh`. Simple work stops consuming excess tokens, while deep work is not killed merely because it stays silent for a while.
 - **Less process, more useful evidence**: TDD, spec-first work, fixed review rounds, and extra tooling are never goals by themselves. The default is one focused contract check plus one real-path result check. Add validation only when it protects a concrete risk and failure would change a decision.
 
 Sol stays in the lead to understand the goal, decide whether a handoff fits, inspect evidence, and deliver the result. Luna Medium and Luna Max both receive independent packets composed by Sol; Medium accepts only a narrow packet with fixed paths, non-goals, and acceptance, and returns a blocker if hidden coupling calls for a Max decision. DeepSeek currently receives only the complete user request as its sole native initial task: use `fork_turns="1"` when the client supports it, otherwise only copy the current request verbatim. This temporary boundary is explained below.
@@ -30,8 +30,9 @@ Sol stays in the lead to understand the goal, decide whether a handoff fits, ins
 | **DeepSeek V4 Pro 0813 (local full-request route verified)** | Bounded work with clear scope but higher semantic density or rework cost | Multi-file behavior changes, isolated complex diagnosis, deep PR review, conflicting-evidence synthesis |
 | **Luna Medium (local native route verified)** | Narrow semantic work that needs a private packet but has fixed paths, scope, and acceptance | Specified-diff review, target-test diagnosis in a known module, constrained implementation |
 | **Luna Max** | Hidden coupling, subtle semantics, and long-horizon deep reasoning | Difficult code review, complex diagnosis, critical implementation, cross-module semantic judgment |
+| **`spark_scout`** | Bounded, read-only, independently verifiable evidence reconnaissance | Locate entry points, call chains, configuration differences, and log/test classifications with exact evidence |
 
-This workspace passed a native `luna_medium_worker` route probe in a fresh Codex task: the client created the named child and it returned `MEDIUM_ROUTE_PROBE=PASS; 7*8=56`. That proves the named route and return path only for this client and profile; every new installation or material client change still needs its own probe.
+This workspace passed a native `luna_medium_worker` route probe in a fresh Codex task: the client created the named child and it returned `MEDIUM_ROUTE_PROBE=PASS; 7*8=56`. That proves the named route and return path only for this client and profile; every new installation or material client change still needs its own probe. The repository includes the `spark_scout` profile; it returns only a conclusion, exact evidence, uncertainty, a blocker, and narrowly scoped next checks, and it does not write files or own architecture, release, risk-control, or final-verdict decisions. A profile or a successful installation never replaces Spark's separate real route probe.
 
 ## What does the same work cost?
 
@@ -66,17 +67,29 @@ flowchart LR
     S -->|"clear scope, costly retry"| DP["DeepSeek V4 Pro 0813<br/>balanced semantic Worker"]
     S -->|"private packet, fixed scope"| LM["Luna Medium<br/>narrow semantic Worker"]
     S -->|"hidden coupling, deep reasoning"| L["Luna Max<br/>depth-first Worker"]
+    S -->|"bounded read-only evidence"| SS["spark_scout<br/>rapid scout Worker"]
     D --> O["Final result"]
     DS --> S
     DP --> S
     LM --> S
     L --> S
+    SS --> S
     S --> O
 ```
 
-Flash, Pro, Luna Medium, and Luna Max are peer leaf Workers, not stages in a hierarchy. Sol owns task recognition, material discovery, decomposition, dispatch, acceptance, and the final conclusion. Medium is not an automatic downgrade from Max: use it only when a private packet's scope, ownership, and acceptance are fixed; it returns a blocker when hidden coupling appears, and Sol explicitly selects any later Max packet. For everyday use, we recommend `gpt-5.6-sol` at **medium** effort: it is enough for most routing and integration without erasing the savings in the lead thread. Move to high only for ambiguous architecture, conflicting evidence, high-stakes decisions, or complex synthesis. The Skill describes this policy but cannot change the model or effort selected for the current task.
+Spark, Flash, Pro, Luna Medium, and Luna Max are peer leaf Workers, not stages in a hierarchy. Sol owns task recognition, material discovery, decomposition, dispatch, acceptance, and the final conclusion. Medium is not an automatic downgrade from Max: use it only when a private packet's scope, ownership, and acceptance are fixed; it returns a blocker when hidden coupling appears, and Sol explicitly selects any later Max packet. For everyday use, we recommend `gpt-5.6-sol` at **medium** effort: it is enough for most routing and integration without erasing the savings in the lead thread. Move to high only for ambiguous architecture, conflicting evidence, high-stakes decisions, or complex synthesis. The Skill describes this policy but cannot change the model or effort selected for the current task.
 
-The workflow follows four simple rules: do not add a handoff when Sol can finish in one focused action; use Flash's 1M context for large repositories, long documents, batch data, and high-volume web research; use Pro for clear-scope semantic work where a retry would cost more; use Luna Medium only for a clear private packet; give Luna Max the time required for deep reasoning.
+The workflow follows five simple rules: do not add a handoff when Sol can finish in one focused action; use Flash's 1M context for large repositories, long documents, batch data, and high-volume web research; use Pro for clear-scope semantic work where a retry would cost more; use Luna Medium only for a clear private packet; use `spark_scout` only for read-only evidence and blockers, never implementation, architecture, release, risk control, or final judgment; give Luna Max the time required for deep reasoning.
+
+## Routing governance and Worker switches
+
+Routing first honors explicit limits in the current task, then checks persistent profile state and real route qualification, and only then chooses a Worker by the task bottleneck. A user may say “do not use DeepSeek this time,” “do not use Spark,” “Sol only,” or “use no subagents”; each soft disable blocks new delegation for this task without changing files or automatically stopping a Worker that is already running.
+
+Persistent hard disable changes Agent discovery for new tasks. Enabled state is `<profile>.toml`; disabled state is `<profile>.toml.disabled`, with the profile content retained for reversible recovery. Disabling DeepSeek renames only the two DeepSeek profiles and does not change the Provider, model catalog, or credentials. `all` means all five Workers and excludes Sol; `deepseek` is the group alias for the Flash and Pro lanes. After enabling, disabling, or upgrading, a new task must reload the Agent registry. An old task is not proof of hot reload, and a profile file is not proof that a real route works.
+
+An upgrade must preserve each lane's existing enabled/disabled state. A lane introduced by the upgrade, such as Spark, defaults to disabled and must not become discoverable merely because the user upgraded. Missing files, dual states, unknown content, symbolic links, and non-regular files must stop before writes; the installer must not guess or repair them automatically. Disabling DeepSeek must not modify its Provider or credentials.
+
+Spark returns `CONCLUSION`, `EVIDENCE` (an exact file, symbol, command output, or URL), `UNCERTAINTY`, `BLOCKER`, and `NEXT CHECKS`. It uses `gpt-5.3-codex-spark / xhigh / 128K / read-only`, does not write files or change workspace or external state, and returns a blocker when the request involves writes, context overflow, hidden coupling, architecture, release, risk control, or a final verdict. Sol decides what happens next. DeepSeek retains the current full-request restriction: prefer `fork_turns="1"`; otherwise reproduce the complete current user request verbatim, without a private Sol packet or a dependency on reliable follow-ups. Luna Medium retains the private-packet boundary: paths or sources, ownership, non-goals, and acceptance must be fixed; hidden coupling, an unresolved root cause, or long-horizon reasoning returns a blocker for Sol to decide whether to issue a Luna Max packet.
 
 ## Install
 
@@ -98,9 +111,20 @@ cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
 
-This terminal command only installs and migrates the five repository files. It does not configure or validate the provider, credential, model catalog, or a real route; use the Codex prompt above for the complete installation contract.
+This terminal command only installs and migrates five profile-state files and one Skill. It does not configure or validate the provider, credential, model catalog, or a real route; use the Codex prompt above for the complete installation contract.
 
-The installer stages and backs up files in their target directories before replacement, then rolls back ordinary command failures and `INT`/`TERM`/`HUP`. The five final files live in two directory trees, so it does not claim a cross-directory transaction after power loss or `SIGKILL`; final targets may be complete old/new files and hidden recovery files may remain, while a rerun revalidates and converges the five final targets.
+The installer provides these exact lane-management commands:
+
+```bash
+bash scripts/install.sh --lane-status
+bash scripts/install.sh --disable-lane deepseek
+bash scripts/install.sh --disable-lane spark_scout
+bash scripts/install.sh --enable-lane deepseek_worker
+```
+
+The exact lane names are `spark_scout`, `deepseek_worker`, `deepseek_pro_worker`, `luna_medium_worker`, and `luna_worker`; unknown names fail rather than fuzzy-match. `deepseek` changes Flash and Pro together; `all` changes all five Workers and excludes Sol. A fresh install enables every lane. An upgrade preserves each known state and adds a newly introduced lane disabled. Start a new Codex task after a switch or upgrade; the installer does not claim hot reload of an old task.
+
+The installer stages and backs up files in their target directories before replacement, then rolls back ordinary command failures and `INT`/`TERM`/`HUP`. The six final artifacts live in two directory trees, so it does not claim a cross-directory transaction after power loss or `SIGKILL`; final targets may be complete old/new files and hidden recovery files may remain, while a rerun revalidates and converges the final state.
 
 On Windows, run it in Git Bash/MSYS Bash or WSL Bash; it is not a native PowerShell script. Use Git Bash POSIX paths such as `/c/Users/...` (a `C:/...` value inherited into `HOME` or `CODEX_HOME` is converted only in an MSYS environment); use WSL's own POSIX paths such as `/mnt/c/...`. Until a real Windows installation path is exercised, this is a compatibility path rather than a verified platform-support claim.
 
@@ -120,14 +144,14 @@ The installation Agent checks the existing official provider and credential, ins
 
 When Codex runs the installation Agent, the installation flow handles all of the following:
 
-1. Install `deepseek_worker` (Flash), `deepseek_pro_worker` (Pro), `luna_medium_worker` (Medium), `luna_worker` (Max), and the `sol-worker-routing` Skill.
+1. The current implementation installs `spark_scout` (read-only evidence), `deepseek_worker` (Flash), `deepseek_pro_worker` (Pro), `luna_medium_worker` (Medium), `luna_worker` (Max), and the `sol-worker-routing` Skill, with enabled/disabled state managed by profile suffix.
 2. Inspect the official DeepSeek upstream, model catalog, and credential, then verify each newly claimed route with an obvious bounded task.
 3. Preserve a working setup instead of reinstalling it because one environment variable or credential backend is not visible.
 4. Only after a real invocation fails, repair the provider and authentication using mechanisms supported by the current Codex client and operating system.
 
 Users do not need to learn the provider schema or edit TOML. If a service credential is truly missing, the installation Agent guides the secure input supported by the current environment instead of prescribing Keychain, an environment variable, or another platform-specific backend. If the current task cannot see a newly installed Worker, the Agent asks only for a new task; the Skill then runs the route probe automatically.
 
-Account-level personalization is the one step the repository cannot perform: paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**.
+Account-level personalization is the one step the repository cannot perform: manually paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**. App Personalization does not update itself; installed files are not proof that the new routing rules are active in the App.
 
 ## What using it looks like
 
@@ -181,13 +205,14 @@ This stays with Sol because a Worker must not redefine the parent objective or o
 
 ## Installation boundaries and project files
 
-The repository installer writes only four Agent profiles and one Skill. Each profile accepts only its own known previous-release content; any other different content stops the install before it is overwritten:
+The repository installer writes one enabled or disabled state file for each of five Agent profiles plus one Skill. Each profile accepts only its own known previous-release content; other content, dual states, symbolic links, or non-regular files stop the install before it is overwritten:
 
 ```text
-~/.codex/agents/deepseek-worker.toml
-~/.codex/agents/deepseek-pro-worker.toml
-~/.codex/agents/luna-medium-worker.toml
-~/.codex/agents/luna-worker.toml
+~/.codex/agents/spark-scout.toml[.disabled]
+~/.codex/agents/deepseek-worker.toml[.disabled]
+~/.codex/agents/deepseek-pro-worker.toml[.disabled]
+~/.codex/agents/luna-medium-worker.toml[.disabled]
+~/.codex/agents/luna-worker.toml[.disabled]
 ~/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
@@ -195,7 +220,7 @@ The repository installer writes only four Agent profiles and one Skill. Each pro
 |---|---|
 | [`personalization.md`](personalization.md) | Global routing preference that you paste manually |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
-| [`agents/`](agents/) | DeepSeek Flash, DeepSeek Pro 0813, Luna Medium, and Luna Max Worker profiles |
+| [`agents/`](agents/) | Spark Scout, DeepSeek Flash, DeepSeek Pro 0813, Luna Medium, and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |
 | [`benchmarks/`](benchmarks/) | Benchmark cases, raw data, and the full report |
 
