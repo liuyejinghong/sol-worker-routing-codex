@@ -15,11 +15,25 @@
 
 ## 它解决什么问题
 
-`Sol Worker Routing` 不只是给 Codex 增加五个子代理。它把三件事放进同一套工作方式里：
+`Sol Worker Routing` 不只是给 Codex 增加五个子代理。它把四件事放进同一套工作方式里：
 
 - **第一性原理**：先明确最终目标、不可变事实、最小验收标准和授权边界，出现重复补丁、额外抽象或无关流程时，回到根因重新简化。
+- **范围经济（HERO 提炼）**：把 `H`（无消费者的哈希/指纹）、`E`（不可达输入的防御）、`R`（没有活的不确定性的审查循环）和 `O`（没有直接需求的防御性脚手架）当作诊断标签。它约束提议怎么做，不压掉真实可达的问题；新增检查必须说明具体失败和会改变的下一步。[来源与案例](https://github.com/wanshuiyin/HERO-Anti-OverDefense)
 - **按真正瓶颈分流**：Sol 保留目标和最终判断；DeepSeek V4 Flash 用速度、低成本和 1M 上下文处理大输入与强调吞吐的有界工作；DeepSeek V4 Pro 0813 处理范围已收敛、但一次错判返工更贵的中高语义任务；Luna Medium 处理需要 Sol 私有拆包、但范围和验收已固定的窄任务；Luna Max 用更长时间完成隐蔽耦合与深度推理；新增的 `spark_scout` 只做 `gpt-5.3-codex-spark`、`xhigh`、只读的有界证据侦察。简单任务不再消耗过多时间和 token，深度任务也不会因为暂时沉默而被提前终止。
 - **少一些流程，多一些有效证据**：不把 TDD、spec-first、固定审查轮次或更多工具当成目标。默认只做一次聚焦合同检查和一次真实链路结果核对；新增验证之前，先确认它保护了什么具体风险，以及失败是否真的会改变决策。
+
+### HERO 是如何融入的
+
+HERO 在这里不是第六个 Worker，也不是新的固定 gate。它首先是主 Agent 始终生效的行为合同，然后由每个 Worker profile 直接携带同一份精简规则；它不依赖是否发生路由，也不依赖子代理能否继承主上下文。查找问题可以充分，提出修法必须收敛；真实可达的问题不能因为看起来罕见而被压掉，纯理论可构造的问题也不能自动长成防御工程。
+
+| 入口 | 作用 |
+|---|---|
+| `personalization.md` | 用户手动复制后，成为主 Agent 的账号级常驻合同；保留完整诊断、负面形状和四个关键反例 |
+| `AGENTS.md` | 以中等长度校准版直接约束本仓库里的主 Agent，不论任务是否委派 |
+| 五个 Agent profile | 让每个 Worker 直接携带精简 HERO，不依赖上下文继承或 Skill 触发 |
+| `sol-worker-routing` Skill | 定义完整 H/E/R/O 诊断，并要求 Sol 在路由前先约束自己的工作 |
+
+这套核心判断对代码、文档、研究、数据处理和 Agent 编排都通用；具体威胁模型、不可逆风险以及必要的安全、迁移、数据完整性、发布、授权和校验要求不通用，必须以用户和项目合同为准。它是自然语言工作约束，不是强制执行的安全边界。常驻合同只带有限的正反案例用于校准；HERO 的完整案例库不会被安装或塞进每次上下文，只在需要辨别具体模式时作为外部参考。
 
 Sol 始终留在主线程，负责理解目标、判断是否适合交接、检查证据和交付结果。Luna Medium 与 Luna Max 都能接收 Sol 拆出的独立任务包；Medium 只接收路径、非目标和验收已固定的窄包，发现隐蔽耦合时必须交回 Sol 决定是否升级到 Max。DeepSeek 当前只接收完整的用户请求作为唯一原生初始任务：客户端支持时用 `fork_turns="1"` 继承，否则只能逐字复制当前请求，下面会说明这项临时边界。
 
@@ -150,7 +164,7 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 使用者不需要研究 provider 格式或手动修改 TOML。确实缺少服务凭据时，安装 Agent 只负责引导当前环境支持的安全输入方式，不会预设 Keychain、环境变量或其他平台专属方案。安装 Agent 如果在当前任务中还看不到新 Worker，只会请你新建一个任务，随后由 Skill 自动完成路由探针。
 
-唯一无法由仓库自动完成的是账号级个性化：从 [`personalization.md`](personalization.md) 复制一个完整语言块，手动粘贴到 Codex App 的“设置 → 个性化 → 自定义指令”。App Personalization 不会自行更新；文件安装成功也不等于新版路由规则已经进入 App。
+唯一无法由仓库自动完成的是账号级个性化：从 [`personalization.md`](personalization.md) 复制一个完整语言块，手动粘贴到 Codex App 的“设置 → 个性化 → 自定义指令”。这是让 HERO 约束整个主 Agent、而不只约束当前仓库和已安装 Worker 的必要激活步骤。App Personalization 不会自行更新；在完成并确认这一步前，不得声称账号级 HERO 已生效。
 
 ## 实际使用方式
 
@@ -213,7 +227,7 @@ bash scripts/install.sh --deepseek-provider deepseek-api
 
 | 文件 | 用途 |
 |---|---|
-| [`personalization.md`](personalization.md) | 需要手动粘贴的全局路由偏好 |
+| [`personalization.md`](personalization.md) | 需要手动粘贴的全局主 Agent 行为合同与路由偏好 |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、验收和整合规则 |
 | [`agents/`](agents/) | Spark Scout、DeepSeek Flash、DeepSeek Pro 0813、Luna Medium 与 Luna Max 的 Worker 配置 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、最小安装和旧名称迁移 |

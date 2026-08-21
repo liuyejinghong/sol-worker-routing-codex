@@ -15,11 +15,25 @@
 
 ## What problem does it solve?
 
-`Sol Worker Routing` does more than add five subagents to Codex. It combines three ideas in one working method:
+`Sol Worker Routing` does more than add five subagents to Codex. It combines four ideas in one working method:
 
 - **First principles**: establish the final objective, invariant facts, minimum acceptance, and authorization boundary first. When patches, abstractions, or unrelated process accumulate, return to the root cause and simplify.
+- **Scope economy (HERO distilled)**: use `H` (hashing without a consumer), `E` (defense for unreachable inputs), `R` (review loops without a live uncertainty), and `O` (defensive scaffolding without a direct requirement) as diagnostic labels. They bound proposals without suppressing real reachable defects; every new check must name the concrete failure and the next decision it would change. [Source and case catalogue](https://github.com/wanshuiyin/HERO-Anti-OverDefense)
 - **Route by the actual bottleneck**: Sol keeps the objective and final judgment; DeepSeek V4 Flash uses its speed, low cost, and 1M context for large-input and throughput-sensitive bounded work; DeepSeek V4 Pro 0813 handles bounded medium-high semantic work where a wrong first pass is more expensive; Luna Medium handles narrow work that needs a private Sol packet but already has fixed scope and acceptance; Luna Max gets the time needed for hidden coupling and depth-first reasoning; the new `spark_scout` performs only bounded, read-only evidence reconnaissance with `gpt-5.3-codex-spark` at `xhigh`. Simple work stops consuming excess tokens, while deep work is not killed merely because it stays silent for a while.
 - **Less process, more useful evidence**: TDD, spec-first work, fixed review rounds, and extra tooling are never goals by themselves. The default is one focused contract check plus one real-path result check. Add validation only when it protects a concrete risk and failure would change a decision.
+
+### How HERO is integrated
+
+HERO is not a sixth Worker or a new standing gate. It is first an always-on behavior contract for the main Agent, then carried directly in compact form by every Worker profile; it does not depend on delegation occurring or on a child inheriting the parent context. Discovery may be broad enough to find real problems, while proposed work must stay proportionate. A reachable defect is not dismissed because it sounds rare, and a merely constructible case does not automatically grow into defensive machinery.
+
+| Surface | Role |
+|---|---|
+| `personalization.md` | Becomes the account-wide main-Agent contract after manual paste, retaining the full diagnostics, negative shapes, and four key counterexamples |
+| `AGENTS.md` | Directly constrains the main Agent with a medium calibration block whether or not it delegates |
+| Five Agent profiles | Give every Worker the compact HERO contract without relying on context inheritance or Skill activation |
+| `sol-worker-routing` Skill | Defines the full H/E/R/O diagnostics and requires Sol to constrain its own work before routing |
+
+The core applies across code, documentation, research, data work, and agent orchestration. Threat models, irreversible risks, and required security, migration, data-integrity, release, authorization, and verification controls are not universal; the user and project contract define them. This is a natural-language operating constraint, not an enforced security boundary. The always-on contract carries only a bounded set of positive and negative calibration examples; HERO's full case catalogue is neither installed nor loaded into every task and remains an external reference for diagnosing a concrete pattern.
 
 Sol stays in the lead to understand the goal, decide whether a handoff fits, inspect evidence, and deliver the result. Luna Medium and Luna Max both receive independent packets composed by Sol; Medium accepts only a narrow packet with fixed paths, non-goals, and acceptance, and returns a blocker if hidden coupling calls for a Max decision. DeepSeek currently receives only the complete user request as its sole native initial task: use `fork_turns="1"` when the client supports it, otherwise only copy the current request verbatim. This temporary boundary is explained below.
 
@@ -151,7 +165,7 @@ When Codex runs the installation Agent, the installation flow handles all of the
 
 Users do not need to learn the provider schema or edit TOML. If a service credential is truly missing, the installation Agent guides the secure input supported by the current environment instead of prescribing Keychain, an environment variable, or another platform-specific backend. If the current task cannot see a newly installed Worker, the Agent asks only for a new task; the Skill then runs the route probe automatically.
 
-Account-level personalization is the one step the repository cannot perform: manually paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**. App Personalization does not update itself; installed files are not proof that the new routing rules are active in the App.
+Account-level personalization is the one step the repository cannot perform: manually paste one complete language block from [`personalization.md`](personalization.md) into Codex App **Settings → Personalization → Custom Instructions**. This is the required activation step for HERO to constrain the whole main Agent rather than only this repository and the installed Workers. App Personalization does not update itself; do not claim account-wide HERO activation until this step is completed and confirmed.
 
 ## What using it looks like
 
@@ -218,7 +232,7 @@ The repository installer writes one enabled or disabled state file for each of f
 
 | File | Purpose |
 |---|---|
-| [`personalization.md`](personalization.md) | Global routing preference that you paste manually |
+| [`personalization.md`](personalization.md) | Global main-Agent behavior contract and routing preference that you paste manually |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol's routing, acceptance, and integration rules |
 | [`agents/`](agents/) | Spark Scout, DeepSeek Flash, DeepSeek Pro 0813, Luna Medium, and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict checks, minimal install, and old-name migration |

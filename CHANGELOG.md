@@ -2,6 +2,13 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.11.0 - 2026-08-21
+
+1. 将 [HERO Anti-OverDefense](https://github.com/wanshuiyin/HERO-Anti-OverDefense) 提炼为整个主 Agent 始终生效、并由全部 Worker profile 直接携带的行为合同，而不是新增 Worker、固定 gate 或仅在路由时触发的规则
+2. 中英文 Personalization 使用接近 HERO 完整版的常驻合同，保留 H/E/R/O、六种过度防御形状和四个关键反例；项目 AGENTS 使用中等校准版，五个 Worker profile 继续使用精简版
+3. 中英文 README 明确通用核心、非通用威胁模型、四个生效入口、账号级主 Agent 的手动激活要求、自然语言约束上限，以及 HERO 案例库不会被安装或塞入每次任务上下文
+4. 安装器接受 v0.10.0 的精确 Skill 摘要并将其识别为原有五-lane 拓扑，使升级保留 Spark、Flash、Pro、Luna Medium 与 Luna Max 的既有 enabled/disabled 状态
+
 ## 0.10.0 - 2026-08-18
 
 1. 新增 `spark_scout`（`gpt-5.3-codex-spark` / `xhigh` / read-only）证据侦察 lane；它只返回结论、精确证据、不确定性、blocker 与窄后续检查，不拥有写入、架构、发布、风控或最终判断

@@ -9,11 +9,26 @@ Use this as a small routing overlay. Explicit user instructions, permissions, pr
 
 This is a user-chosen topology, not a claim that one model is best at every task. Do not re-run general model-tier comparisons for an eligible packet. `luna_medium_worker` and `luna_worker` are separate named lanes: never silently substitute Medium for the depth-first Max worker.
 
-## 0. Direct-execution gate
+## 0. Whole-agent anti-overdefense (HERO-derived)
+
+Apply this first to Sol's own reasoning and work, including tasks with no delegation, and then to every routed packet and returned proposal. It is a behavior contract for the whole workflow, not a Worker-only routing rule. Each checked-in Worker profile carries the compact form directly so compliance does not depend on context inheritance or Skill activation.
+
+Use it as a budget on what Sol or a Worker proposes, never as a filter on what it looks for. Report defects reachable through the project's supported inputs, interfaces, documentation, or real data, even when they sound unusual; do not dismiss a real finding because it resembles an edge case. Do not build for a merely theoretical case.
+
+Use four labels to name the failure shape when it appears:
+
+- `H` / hashing: checksums, fingerprints, or manifests that replace no more expensive operation and change no decision;
+- `E` / edge cases: defenses for inputs, threats, or races that the supported use cannot reach;
+- `R` / rubrics: checklists, scores, gates, or repeated reviews that re-check settled facts without a live uncertainty;
+- `O` / overbuild: flags, wrappers, compatibility or migration layers, version trees, or guards justified mainly by another guard.
+
+Before adding a check or defensive layer, state the live uncertainty, the concrete failure it could expose, the cheaper evidence already available, and what decision would change if it failed. Keep the primary deliverable moving and stop once its minimum acceptance and necessary real-path check pass. This does not waive security, migration, data-integrity, release, authorization, or verification work required by the user or project; those are part of the contract. A small real check that touches the suspected path is proportionate even when a broad audit would not be. Say plainly when a result is correct; do not manufacture a finding to justify a review. When feedback challenges one part, correct that part without abandoning the unaffected direction.
+
+## 0.1 Direct-execution gate
 
 Before making a packet, ask whether Sol can finish and verify the work in one focused action with no useful independent outcome. If yes, do it directly. Do not delegate tiny lookup, edit, or command tasks merely because workers exist.
 
-## 0.1 Routing governance and availability
+## 0.2 Routing governance and availability
 
 Apply these checks before choosing a Worker, in order:
 
@@ -23,7 +38,7 @@ Apply these checks before choosing a Worker, in order:
 
 Hard-state operations are exact and explicit: `bash scripts/install.sh --lane-status`, `--enable-lane <lane|deepseek|all>`, and `--disable-lane <lane|deepseek|all>`. `deepseek` means Flash and Pro; `all` means five Workers and never Sol. A DeepSeek hard disable only changes the two profile filenames: it must not touch provider configuration, credentials, or the model catalog. An upgrade preserves every known lane state and introduces new lanes disabled; unknown content, a missing expected profile, dual state files, symbolic links, and non-regular files are fail-closed conflicts, never an invitation to guess.
 
-## 0.2 Route receipt for non-obvious delegation
+## 0.3 Route receipt for non-obvious delegation
 
 Immediately before the first Worker dispatch for a non-obvious task, publish one compact receipt in the parent task. Do not emit one for Sol-only work or repeat it for an unchanged packet.
 

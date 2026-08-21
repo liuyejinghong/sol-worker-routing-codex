@@ -206,6 +206,7 @@ installer_known_current_skill_digests=(
   "e255886bddead4c5b7911d43c7853fe5175ceeea3bd235e00f6a2b3540fd1322"
   "f5a5a26baf0827f1f92cde79745b87b327535948de3ce56d1c38e09f924e852c"
   "2bd841aebe5b767a7d5a3ce9c3fac1366e09901a15060be873a155b8a7639ca7"
+  "dcb0bc77f53ae8d88df0de6960633e7b4cf9a84dc6fd2728baba300a270a8eba"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -228,6 +229,9 @@ installer_known_luna_medium_agent_digests=(
 )
 installer_known_deepseek_pro_agent_digests=(
   "caa264733598b9ee88df85d374adf86cc2dfdd6df35ed086b7b68d37cf282617"
+)
+installer_known_spark_scout_agent_digests=(
+  "90521174a00a29ca51a754c584abfe7f0866118cb8c1544a2bbf96f277de2970"
 )
 installer_known_removed_runner_digests=(
   "45114d158faf6016950b70c21087d33587ab7098daf835ce62e9eb69667abf77"
@@ -315,6 +319,16 @@ installer_is_known_deepseek_pro_agent() {
   return 1
 }
 
+installer_is_known_spark_scout_agent() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_spark_scout_agent_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
 installer_is_known_removed_runner() {
   local installer_digest
   local installer_known_digest
@@ -384,6 +398,9 @@ installer_target_is_accepted() {
   if [[ "${installer_target_base}" == "${installer_deepseek_pro_agent_target}" ]] && installer_is_known_deepseek_pro_agent "${installer_target}"; then
     return 0
   fi
+  if [[ "${installer_target_base}" == "${installer_spark_scout_agent_target}" ]] && installer_is_known_spark_scout_agent "${installer_target}"; then
+    return 0
+  fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
     return 0
   fi
@@ -428,6 +445,9 @@ installer_current_skill_generation() {
   [[ -f "${installer_skill_target}" && ! -L "${installer_skill_target}" ]] || return 1
   installer_digest="$(installer_sha256 "${installer_skill_target}")" || return 1
   case "${installer_digest}" in
+    dcb0bc77f53ae8d88df0de6960633e7b4cf9a84dc6fd2728baba300a270a8eba)
+      printf '%s\n' "v0.10"
+      ;;
     f5a5a26baf0827f1f92cde79745b87b327535948de3ce56d1c38e09f924e852c)
       printf '%s\n' "v0.9"
       ;;
@@ -448,7 +468,7 @@ installer_current_skill_generation() {
 
 installer_generation_requires_lane() {
   case "$1:$2" in
-    legacy-v0.4:luna_worker|v0.5-v0.7:deepseek_worker|v0.5-v0.7:luna_worker|v0.8:deepseek_worker|v0.8:deepseek_pro_worker|v0.8:luna_worker|v0.9:deepseek_worker|v0.9:deepseek_pro_worker|v0.9:luna_medium_worker|v0.9:luna_worker|current:spark_scout|current:deepseek_worker|current:deepseek_pro_worker|current:luna_medium_worker|current:luna_worker)
+    legacy-v0.4:luna_worker|v0.5-v0.7:deepseek_worker|v0.5-v0.7:luna_worker|v0.8:deepseek_worker|v0.8:deepseek_pro_worker|v0.8:luna_worker|v0.9:deepseek_worker|v0.9:deepseek_pro_worker|v0.9:luna_medium_worker|v0.9:luna_worker|v0.10:spark_scout|v0.10:deepseek_worker|v0.10:deepseek_pro_worker|v0.10:luna_medium_worker|v0.10:luna_worker|current:spark_scout|current:deepseek_worker|current:deepseek_pro_worker|current:luna_medium_worker|current:luna_worker)
       return 0
       ;;
     *)
@@ -1160,7 +1180,7 @@ if [[ "${installer_mode}" == "install" ]]; then
   echo "Verified: installed files match the repository sources and planned lane states."
   echo "Installed Worker source profiles (Spark Scout, Luna Medium, Luna Max, DeepSeek Flash, and DeepSeek Pro); requested provider mode: ${installer_requested_deepseek_provider}."
   echo "Not validated by this script: provider, credential, model catalog, direct tool result, native web-search route, or child lifecycle."
-  echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."
+  echo "Required for account-wide HERO: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions; until confirmed, HERO is active only for this repository and the installed Worker profiles."
 elif [[ "${installer_mode}" == "enable" ]]; then
   echo "Verified: requested lane state is enabled. Start a new Codex task before relying on Agent discovery."
 else
