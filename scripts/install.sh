@@ -30,7 +30,6 @@ else
   installer_home_input="${HOME:?HOME is not set}"
 fi
 installer_home_dir="$(installer_normalize_path "${installer_home_input}")" || exit 1
-installer_requested_deepseek_provider="deepseek-api"
 installer_mode="install"
 installer_requested_lane=""
 
@@ -46,15 +45,6 @@ installer_set_mode() {
 
 while [[ "$#" -gt 0 ]]; do
   case "$1" in
-    --deepseek-provider)
-      [[ "$#" -ge 2 ]] || { echo "Error: --deepseek-provider requires deepseek-api." >&2; exit 64; }
-      installer_requested_deepseek_provider="$2"
-      shift 2
-      ;;
-    --deepseek-provider=*)
-      installer_requested_deepseek_provider="${1#*=}"
-      shift
-      ;;
     --lane-status)
       installer_set_mode "status"
       shift
@@ -88,13 +78,12 @@ while [[ "$#" -gt 0 ]]; do
     -h|--help)
       cat <<'EOF'
 Usage:
-  bash scripts/install.sh [--deepseek-provider deepseek-api]
+  bash scripts/install.sh
   bash scripts/install.sh --lane-status
-  bash scripts/install.sh --enable-lane <lane|deepseek|all>
-  bash scripts/install.sh --disable-lane <lane|deepseek|all>
+  bash scripts/install.sh --enable-lane <lane|all>
+  bash scripts/install.sh --disable-lane <lane|all>
 
-Lanes: spark_scout, deepseek_worker, deepseek_pro_worker,
-       luna_medium_worker, luna_worker.
+Lanes: luna_medium_worker, luna_worker.
 EOF
       exit 0
       ;;
@@ -104,18 +93,6 @@ EOF
       ;;
   esac
 done
-
-case "${installer_requested_deepseek_provider}" in
-  deepseek-api) ;;
-  opencode-go)
-    echo "Error: OpenCode Go is not supported until it exposes the Codex Responses contract directly; use deepseek-api." >&2
-    exit 64
-    ;;
-  *)
-    echo "Error: --deepseek-provider must be deepseek-api." >&2
-    exit 64
-    ;;
-esac
 
 if [[ "${installer_home_dir}" != /* ]]; then
   echo "Error: HOME must be an absolute path: ${installer_home_dir}" >&2
@@ -135,9 +112,6 @@ fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
 installer_luna_medium_agent_source="${installer_repo_root}/agents/luna-medium-worker.toml"
-installer_deepseek_agent_source="${installer_repo_root}/agents/deepseek-worker.toml"
-installer_deepseek_pro_agent_source="${installer_repo_root}/agents/deepseek-pro-worker.toml"
-installer_spark_scout_agent_source="${installer_repo_root}/agents/spark-scout.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
@@ -161,16 +135,24 @@ installer_legacy_skill_dirs=(
 installer_install_pairs=(
   "${installer_luna_agent_source}|${installer_luna_agent_target}"
   "${installer_luna_medium_agent_source}|${installer_luna_medium_agent_target}"
-  "${installer_deepseek_agent_source}|${installer_deepseek_agent_target}"
-  "${installer_deepseek_pro_agent_source}|${installer_deepseek_pro_agent_target}"
   "${installer_skill_source}|${installer_skill_target}"
 )
 installer_lanes=(
-  "spark_scout"
-  "deepseek_worker"
-  "deepseek_pro_worker"
   "luna_medium_worker"
   "luna_worker"
+)
+installer_retired_profile_targets=(
+  "${installer_spark_scout_agent_target}"
+  "${installer_spark_scout_agent_target}.disabled"
+  "${installer_deepseek_agent_target}"
+  "${installer_deepseek_agent_target}.disabled"
+  "${installer_deepseek_pro_agent_target}"
+  "${installer_deepseek_pro_agent_target}.disabled"
+)
+installer_retired_profile_bases=(
+  "${installer_spark_scout_agent_target}"
+  "${installer_deepseek_agent_target}"
+  "${installer_deepseek_pro_agent_target}"
 )
 installer_state_removal_targets=()
 installer_state_removal_descriptions=()
@@ -206,6 +188,9 @@ installer_known_current_skill_digests=(
   "e255886bddead4c5b7911d43c7853fe5175ceeea3bd235e00f6a2b3540fd1322"
   "f5a5a26baf0827f1f92cde79745b87b327535948de3ce56d1c38e09f924e852c"
   "2bd841aebe5b767a7d5a3ce9c3fac1366e09901a15060be873a155b8a7639ca7"
+  "dcb0bc77f53ae8d88df0de6960633e7b4cf9a84dc6fd2728baba300a270a8eba"
+  "ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586"
+  "69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -215,6 +200,7 @@ installer_known_deepseek_agent_digests=(
   "e98e09dd60ecec0ceb57064b35b9f3f196178db3e2cf19c4617347db2d983790"
   "6abaca2b89805cfcfeef02f8d8029cab529fc5d728993e5beebf9e768d9bd5cc"
   "623764be77c410dd4029c44d77390fd355f535dd8bb49198c1629e028e49481a"
+  "fb5a0ef67350a5fe3bae254b20f84aaf663f6ae93c05c273cf79591193979ccb"
 )
 # Exact accepted profile contents from supported prior releases. A target only
 # accepts its own listed content; append the prior digest before changing that
@@ -228,6 +214,13 @@ installer_known_luna_medium_agent_digests=(
 )
 installer_known_deepseek_pro_agent_digests=(
   "caa264733598b9ee88df85d374adf86cc2dfdd6df35ed086b7b68d37cf282617"
+  "e1a31fe73bce8c399b37f01db37c74f7756703c93dd5490786d2e3aec78dc215"
+)
+installer_known_spark_scout_agent_digests=(
+  # Known pre-release profile installed before the 128K context declaration.
+  "78f918e9e2b63dc11bbff5e389b493a624d7d92ecba3f5d43e935b87754b1c99"
+  "90521174a00a29ca51a754c584abfe7f0866118cb8c1544a2bbf96f277de2970"
+  "73d85fa77925da1d847afa104f85bcb7e64c1507f22f67aad8df5bf96570252c"
 )
 installer_known_removed_runner_digests=(
   "45114d158faf6016950b70c21087d33587ab7098daf835ce62e9eb69667abf77"
@@ -315,6 +308,16 @@ installer_is_known_deepseek_pro_agent() {
   return 1
 }
 
+installer_is_known_spark_scout_agent() {
+  local installer_digest
+  local installer_known_digest
+  installer_digest="$(installer_sha256 "$1")" || return 1
+  for installer_known_digest in "${installer_known_spark_scout_agent_digests[@]}"; do
+    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
+  done
+  return 1
+}
+
 installer_is_known_removed_runner() {
   local installer_digest
   local installer_known_digest
@@ -327,9 +330,6 @@ installer_is_known_removed_runner() {
 
 installer_lane_source() {
   case "$1" in
-    spark_scout) printf '%s\n' "${installer_spark_scout_agent_source}" ;;
-    deepseek_worker) printf '%s\n' "${installer_deepseek_agent_source}" ;;
-    deepseek_pro_worker) printf '%s\n' "${installer_deepseek_pro_agent_source}" ;;
     luna_medium_worker) printf '%s\n' "${installer_luna_medium_agent_source}" ;;
     luna_worker) printf '%s\n' "${installer_luna_agent_source}" ;;
     *) return 64 ;;
@@ -338,9 +338,6 @@ installer_lane_source() {
 
 installer_lane_target() {
   case "$1" in
-    spark_scout) printf '%s\n' "${installer_spark_scout_agent_target}" ;;
-    deepseek_worker) printf '%s\n' "${installer_deepseek_agent_target}" ;;
-    deepseek_pro_worker) printf '%s\n' "${installer_deepseek_pro_agent_target}" ;;
     luna_medium_worker) printf '%s\n' "${installer_luna_medium_agent_target}" ;;
     luna_worker) printf '%s\n' "${installer_luna_agent_target}" ;;
     *) return 64 ;;
@@ -376,12 +373,6 @@ installer_target_is_accepted() {
     return 0
   fi
   if [[ "${installer_target_base}" == "${installer_luna_medium_agent_target}" ]] && installer_is_known_luna_medium_agent "${installer_target}"; then
-    return 0
-  fi
-  if [[ "${installer_target_base}" == "${installer_deepseek_agent_target}" ]] && installer_is_known_deepseek_agent "${installer_target}"; then
-    return 0
-  fi
-  if [[ "${installer_target_base}" == "${installer_deepseek_pro_agent_target}" ]] && installer_is_known_deepseek_pro_agent "${installer_target}"; then
     return 0
   fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
@@ -428,6 +419,15 @@ installer_current_skill_generation() {
   [[ -f "${installer_skill_target}" && ! -L "${installer_skill_target}" ]] || return 1
   installer_digest="$(installer_sha256 "${installer_skill_target}")" || return 1
   case "${installer_digest}" in
+    69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184)
+      printf '%s\n' "v0.12"
+      ;;
+    ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586)
+      printf '%s\n' "v0.11"
+      ;;
+    dcb0bc77f53ae8d88df0de6960633e7b4cf9a84dc6fd2728baba300a270a8eba)
+      printf '%s\n' "v0.10"
+      ;;
     f5a5a26baf0827f1f92cde79745b87b327535948de3ce56d1c38e09f924e852c)
       printf '%s\n' "v0.9"
       ;;
@@ -448,7 +448,7 @@ installer_current_skill_generation() {
 
 installer_generation_requires_lane() {
   case "$1:$2" in
-    legacy-v0.4:luna_worker|v0.5-v0.7:deepseek_worker|v0.5-v0.7:luna_worker|v0.8:deepseek_worker|v0.8:deepseek_pro_worker|v0.8:luna_worker|v0.9:deepseek_worker|v0.9:deepseek_pro_worker|v0.9:luna_medium_worker|v0.9:luna_worker|current:spark_scout|current:deepseek_worker|current:deepseek_pro_worker|current:luna_medium_worker|current:luna_worker)
+    legacy-v0.4:luna_worker|v0.5-v0.7:luna_worker|v0.8:luna_worker|v0.9:luna_medium_worker|v0.9:luna_worker|v0.10:luna_medium_worker|v0.10:luna_worker|v0.11:luna_medium_worker|v0.11:luna_worker|v0.12:luna_medium_worker|v0.12:luna_worker|current:luna_medium_worker|current:luna_worker)
       return 0
       ;;
     *)
@@ -470,6 +470,38 @@ installer_is_known_managed_lane_file() {
     fi
   done
   return 1
+}
+
+installer_is_known_retired_profile() {
+  local installer_target="$1"
+  local installer_target_base
+
+  installer_target_base="$(installer_target_base_path "${installer_target}")"
+  case "${installer_target_base}" in
+    "${installer_spark_scout_agent_target}") installer_is_known_spark_scout_agent "${installer_target}" ;;
+    "${installer_deepseek_agent_target}") installer_is_known_deepseek_agent "${installer_target}" ;;
+    "${installer_deepseek_pro_agent_target}") installer_is_known_deepseek_pro_agent "${installer_target}" ;;
+    *) return 1 ;;
+  esac
+}
+
+installer_detect_retired_profile_state() {
+  local installer_target="$1"
+  local installer_disabled_target="${installer_target}.disabled"
+
+  if [[ -L "${installer_target}" || -L "${installer_disabled_target}" ]]; then
+    printf '%s\n' "conflict-nonregular"
+  elif [[ -e "${installer_target}" && ! -f "${installer_target}" ]] || [[ -e "${installer_disabled_target}" && ! -f "${installer_disabled_target}" ]]; then
+    printf '%s\n' "conflict-nonregular"
+  elif [[ -e "${installer_target}" && -e "${installer_disabled_target}" ]]; then
+    printf '%s\n' "conflict-dual"
+  elif [[ -e "${installer_target}" ]]; then
+    installer_is_known_retired_profile "${installer_target}" && printf '%s\n' "known-enabled" || printf '%s\n' "conflict-unknown"
+  elif [[ -e "${installer_disabled_target}" ]]; then
+    installer_is_known_retired_profile "${installer_disabled_target}" && printf '%s\n' "known-disabled" || printf '%s\n' "conflict-unknown"
+  else
+    printf '%s\n' "absent"
+  fi
 }
 
 installer_assert_target_is_regular_if_present() {
@@ -765,11 +797,8 @@ installer_on_exit() {
 installer_expand_lane_request() {
   installer_selected_lanes=()
   case "$1" in
-    spark_scout|deepseek_worker|deepseek_pro_worker|luna_medium_worker|luna_worker)
+    luna_medium_worker|luna_worker)
       installer_selected_lanes+=("$1")
-      ;;
-    deepseek)
-      installer_selected_lanes+=("deepseek_worker" "deepseek_pro_worker")
       ;;
     all)
       installer_selected_lanes=("${installer_lanes[@]}")
@@ -839,6 +868,7 @@ installer_prepare_install_pairs() {
   local installer_lane
   local installer_state
   local installer_any_lane=0
+  local installer_retired_base
   local installer_desired_state
 
   installer_install_pairs=()
@@ -892,6 +922,10 @@ installer_prepare_install_pairs() {
         installer_state="$(installer_detect_lane_state "${installer_lane}")"
         [[ "${installer_state}" == "missing" ]] || installer_any_lane=1
       done
+      for installer_retired_base in "${installer_retired_profile_bases[@]}"; do
+        installer_state="$(installer_detect_retired_profile_state "${installer_retired_base}")"
+        [[ "${installer_state}" == "absent" ]] || installer_any_lane=1
+      done
       if [[ "${installer_any_lane}" -ne 0 ]]; then
         echo "Error: managed profiles exist but the current Skill is missing; refusing to guess whether this is a partial installation." >&2
         return 1
@@ -929,10 +963,18 @@ installer_report_lane_status() {
   local installer_lane
   local installer_state
   local installer_status_conflict=0
+  local installer_retired_base
+  local installer_retired_name
 
   for installer_lane in "${installer_lanes[@]}"; do
     installer_state="$(installer_detect_lane_state "${installer_lane}")"
     printf '%s\t%s\n' "${installer_lane}" "${installer_state}"
+    [[ "${installer_state}" == conflict-* ]] && installer_status_conflict=1
+  done
+  for installer_retired_base in "${installer_retired_profile_bases[@]}"; do
+    installer_state="$(installer_detect_retired_profile_state "${installer_retired_base}")"
+    installer_retired_name="$(basename "${installer_retired_base}" .toml)"
+    printf '%s\t%s\n' "retired_${installer_retired_name}" "${installer_state}"
     [[ "${installer_state}" == conflict-* ]] && installer_status_conflict=1
   done
   if [[ -L "${installer_skill_target}" ]] || [[ -e "${installer_skill_target}" && ! -f "${installer_skill_target}" ]]; then
@@ -978,6 +1020,19 @@ if [[ "${installer_mode}" == "install" ]]; then
       installer_conflict=1
     fi
   fi
+fi
+
+if [[ "${installer_mode}" == "install" ]]; then
+  for installer_retired_base in "${installer_retired_profile_bases[@]}"; do
+    installer_state="$(installer_detect_retired_profile_state "${installer_retired_base}")"
+    case "${installer_state}" in
+      absent|known-enabled|known-disabled) ;;
+      *)
+        echo "Conflict: retired profile state is ${installer_state} and requires manual migration: ${installer_retired_base}" >&2
+        installer_conflict=1
+        ;;
+    esac
+  done
 fi
 
 if [[ "${installer_mode}" == "install" ]]; then
@@ -1044,7 +1099,7 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_spark_scout_agent_source}" "${installer_luna_agent_source}" "${installer_luna_medium_agent_source}" "${installer_deepseek_agent_source}" "${installer_deepseek_pro_agent_source}"
+    "${installer_luna_agent_source}" "${installer_luna_medium_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
@@ -1083,6 +1138,13 @@ for installer_index in "${!installer_state_removal_targets[@]}"; do
 done
 
 if [[ "${installer_mode}" == "install" ]]; then
+  for installer_target in "${installer_retired_profile_targets[@]}"; do
+    installer_stage_migration_removal \
+      "${installer_target}" \
+      installer_is_known_retired_profile \
+      "retired Worker profile"
+  done
+
   installer_stage_migration_removal \
     "${installer_removed_runner_target}" \
     installer_is_known_removed_runner \
@@ -1158,9 +1220,10 @@ fi
 
 if [[ "${installer_mode}" == "install" ]]; then
   echo "Verified: installed files match the repository sources and planned lane states."
-  echo "Installed Worker source profiles (Spark Scout, Luna Medium, Luna Max, DeepSeek Flash, and DeepSeek Pro); requested provider mode: ${installer_requested_deepseek_provider}."
-  echo "Not validated by this script: provider, credential, model catalog, direct tool result, native web-search route, or child lifecycle."
-  echo "Manual step: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions."
+  echo "Installed Worker source profiles: Luna Medium and Luna Max."
+  echo "Retired known Spark Scout and DeepSeek Worker profile files are absent. DeepSeek provider, credential, and model-catalog settings were not changed."
+  echo "Not validated by this script: model-provider routing or child lifecycle."
+  echo "Required for account-wide HERO: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions; until confirmed, HERO is active only for this repository and the installed Worker profiles."
 elif [[ "${installer_mode}" == "enable" ]]; then
   echo "Verified: requested lane state is enabled. Start a new Codex task before relying on Agent discovery."
 else
