@@ -2,6 +2,11 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.12.1 - 2026-08-22
+
+1. 中英文 Personalization 新增产品交付物文案合同：面向用户的 UI、PDF、PPT、报告、截图和导出文件不再混入 Agent 思考、实现汇报、调试记录或下一步计划
+2. 保留报告中理解结论所必需的方法、假设、数据限制与风险说明，并明确设计说明、实现过程和工作记录仅在用户明确要求时进入最终交付物
+
 ## 0.12.0 - 2026-08-22
 
 1. 因 Codex rust-v0.149.0 的官方 PR #39299 将子 Agent 的完整 `model_provider` 固定为继承父会话，退役 `spark_scout`、`deepseek_worker` 与 `deepseek_pro_worker`；issue #17598 的稳定版 macOS 独立复现确认 OpenAI 父会话会把外部模型 ID 送往 OpenAI 并触发 entitlement 错误

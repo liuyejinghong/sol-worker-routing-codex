@@ -32,10 +32,8 @@ Sol 始终留在主线程，负责理解目标、判断是否值得交接、拆�
 
 ## 本版更新
 
-- **增加**：HERO 成为主 Agent 与 Worker 全程生效的行为合同，用于抑制防御性过度建设。
-- **删除**：移除 Spark Scout、DeepSeek Flash 和 DeepSeek Pro 子路由，不再安装、调度或验收这些 lane。
-- **修改**：路由拓扑收敛为 Sol + Luna Medium + Luna Max；安装器只管理两条 Luna lane。
-- **保留**：升级时保留 Luna 的 enabled/disabled 状态，并保留现有 DeepSeek Provider、凭据和 model catalog，不把退役 profile 扩大成配置清理。
+- **增加**：Personalization 加入产品交付物文案合同，防止 UI、PDF、PPT、报告、截图和导出文件混入 Agent 思考、实现汇报或调试记录。
+- **保留**：报告仍可呈现理解结论所必需的方法、假设、数据限制和风险；设计说明与实现过程只在用户明确要求时进入交付物。
 
 详细版本记录见 [`CHANGELOG.md`](CHANGELOG.md)。完整行为合同分别位于 [`personalization.md`](personalization.md)、[`AGENTS.md`](AGENTS.md) 和 [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md)。
 
