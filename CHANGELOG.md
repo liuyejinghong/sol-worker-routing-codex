@@ -2,6 +2,14 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.12.0 - 2026-08-22
+
+1. 因 Codex rust-v0.149.0 的官方 PR #39299 将子 Agent 的完整 `model_provider` 固定为继承父会话，退役 `spark_scout`、`deepseek_worker` 与 `deepseek_pro_worker`；issue #17598 的稳定版 macOS 独立复现确认 OpenAI 父会话会把外部模型 ID 送往 OpenAI 并触发 entitlement 错误
+2. 当前拓扑收敛为 Sol + Luna Medium + Luna Max；Skill、Personalization、项目安装合同和中英文 README 均删除退役 lane 的路由、开关和验收声明，同时保留 HERO 对整个 Agent 的约束
+3. 安装器只安装两条 Luna profile 并保留其既有 enabled/disabled 状态；升级时事务性移除内容摘要已知的 Spark、DeepSeek Flash 与 DeepSeek Pro enabled/disabled profile，未知内容仍 fail closed
+4. 安装器不修改 DeepSeek Provider、凭据引用或 model catalog，也不执行退役路由的 `spawn_agent → followup_task → web_search` 验收；历史基准继续保留为历史证据，不代表当前可路由能力
+5. Luna 并发从最多两个扩展为最多四个：默认仍从一个 Worker 开始，仅在任务独立、所有权互斥时扩展，并保持深度一层和写任务优先单 Worker
+
 ## 0.11.0 - 2026-08-21
 
 1. 将 [HERO Anti-OverDefense](https://github.com/wanshuiyin/HERO-Anti-OverDefense) 提炼为整个主 Agent 始终生效、并由全部 Worker profile 直接携带的行为合同，而不是新增 Worker、固定 gate 或仅在路由时触发的规则
