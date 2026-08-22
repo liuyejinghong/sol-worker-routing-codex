@@ -32,10 +32,8 @@ Sol stays in the main thread and owns objective understanding, decomposition, ev
 
 ## Changes in this release
 
-- **Added**: HERO is now an always-on behavior contract for Sol and Workers, reducing defensive overbuilding.
-- **Removed**: Spark Scout, DeepSeek Flash, and DeepSeek Pro child routes are no longer installed, dispatched, or probed.
-- **Changed**: the topology is now Sol + Luna Medium + Luna Max, and the installer manages only the two Luna lanes.
-- **Preserved**: upgrades retain each Luna lane's state and leave the existing DeepSeek Provider, credentials, and model catalog untouched.
+- **Added**: Personalization now includes a product-facing deliverable copy contract so UI, PDFs, presentations, reports, screenshots, and exports do not expose Agent reasoning, implementation narration, or debugging history.
+- **Preserved**: reports may still include methods, assumptions, data limitations, and risks needed to understand their conclusions; design notes and implementation process appear only when explicitly requested.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for release details. The full contracts live in [`personalization.md`](personalization.md), [`AGENTS.md`](AGENTS.md), and [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md).
 
