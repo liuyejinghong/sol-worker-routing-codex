@@ -2,28 +2,29 @@ name: Relay review-handoff notification
 
 on:
   issues:
-    types: [labeled]
+    types: [opened]
 
 permissions:
   issues: write
 
 jobs:
   notify-owner:
-    if: github.event.label.name == 'review-handoff'
+    if: "${{ contains(github.event.issue.body, '<!-- github-review-handoff: native-email-relay -->') }}"
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       ISSUE_NUMBER: ${{ github.event.issue.number }}
-      OWNER_LOGIN: ${{ vars.GITHUB_REVIEW_HANDOFF_OWNER }}
+      ISSUE_BODY: ${{ github.event.issue.body }}
     steps:
       - name: Post the one delivery comment
         shell: bash
         run: |
-          if [[ -z "${OWNER_LOGIN}" ]]; then
-            echo "Missing repository variable GITHUB_REVIEW_HANDOFF_OWNER." >&2
+          mentions="$(printf '%s\n' "${ISSUE_BODY}" | sed -n '1p')"
+          if [[ "${mentions}" != @* ]]; then
+            echo "The first Issue line must contain the configured @mention." >&2
             exit 1
           fi
 
-          body="$(printf '@%s\n\n> Notification: this review handoff needs your attention.\n\nThe Issue was explicitly labeled `review-handoff`.' "${OWNER_LOGIN}")"
+          body="$(printf '%s\n\n> Notification: this review handoff needs your attention.' "${mentions}")"
           gh issue comment "${ISSUE_NUMBER}" --body "${body}"
