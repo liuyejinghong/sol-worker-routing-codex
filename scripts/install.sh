@@ -191,6 +191,7 @@ installer_known_current_skill_digests=(
   "dcb0bc77f53ae8d88df0de6960633e7b4cf9a84dc6fd2728baba300a270a8eba"
   "ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586"
   "69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184"
+  "0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -419,7 +420,7 @@ installer_current_skill_generation() {
   [[ -f "${installer_skill_target}" && ! -L "${installer_skill_target}" ]] || return 1
   installer_digest="$(installer_sha256 "${installer_skill_target}")" || return 1
   case "${installer_digest}" in
-    69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184)
+    69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184|0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9)
       printf '%s\n' "v0.12"
       ;;
     ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586)

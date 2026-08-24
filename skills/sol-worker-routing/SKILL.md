@@ -1,11 +1,11 @@
 ---
 name: sol-worker-routing
-description: Use when Sol must keep the parent goal while routing bounded work directly, to the Luna Medium private-packet worker or depth-first Luna Max worker.
+description: Use when the current main Codex Agent, including a Terra parent, must keep the parent goal while routing bounded work to the Luna Medium private-packet worker or depth-first Luna Max worker.
 ---
 
 # Sol lead with two bounded Luna lanes
 
-Use this as a small routing overlay. Explicit user instructions, permissions, project `AGENTS.md` files, and verified facts remain authoritative. Sol owns the parent objective, decomposition, source quality, architecture, cross-task decisions, acceptance, authorization, and final answer. Workers own only their bounded packets.
+Use this as a small routing overlay. Here, “Sol” names the coordinator role, not a requirement that the parent select `gpt-5.6-sol`: a current `gpt-5.6-terra` parent has the same routing duties and may use both Luna lanes. Explicit user instructions, permissions, project `AGENTS.md` files, and verified facts remain authoritative. Sol owns the parent objective, decomposition, source quality, architecture, cross-task decisions, acceptance, authorization, and final answer. Workers own only their bounded packets.
 
 The supported topology is Sol plus two native Luna lanes: `luna_medium_worker` and `luna_worker`. `spark_scout`, `deepseek_worker`, and `deepseek_pro_worker` are retired and must not be routed even if a stale task still exposes their names. Codex 0.149.0 intentionally makes Agent roles inherit the parent model provider, so a role cannot select a non-OpenAI provider beneath an OpenAI parent; the earlier DeepSeek full-request workaround is therefore no longer usable.
 
@@ -113,7 +113,7 @@ Do not create a standing reviewer lane. When an explicitly requested fresh-conte
 - In one stage, exactly one producer owns each writable path. Sol may inspect, guide, and verify but does not implement the same owned change in parallel.
 - Dispatch the exact named lane; never substitute a generic role silently.
 
-Where the client exposes a reasoning setting, recommend `gpt-5.6-sol` with `medium` effort for routine routing and integration. Escalate to `high` only for ambiguous architecture, conflicting evidence, high-stakes decisions, or complex synthesis. This Skill cannot change the parent task's selected model or effort.
+Where the client exposes a reasoning setting, `gpt-5.6-sol` with `medium` effort remains a quality recommendation for routine routing and integration, not a routing requirement: the selected parent, including `gpt-5.6-terra`, may perform the coordinator role. Escalate to `high` only for ambiguous architecture, conflicting evidence, high-stakes decisions, or complex synthesis. This Skill cannot change the parent task's selected model or effort.
 
 ## 7. Installation and route recovery
 
