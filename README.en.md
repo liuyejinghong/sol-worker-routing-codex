@@ -34,8 +34,8 @@ Sol stays in the main thread and owns objective understanding, decomposition, ev
 
 ## Changes in this release
 
-- **Fixed**: “Sol” is the coordinator role, not a requirement to select `gpt-5.6-sol`; `gpt-5.6-terra` can route eligible packets under the same contract.
-- **Verified**: a native `luna_medium_worker` route probe completed under a `gpt-5.6-terra` / `max` parent, and the child used `gpt-5.6-luna` / `medium`.
+- **Added**: an existing checkout can run `bash scripts/update.sh` to update from the current branch's configured upstream and reinstall the workflow.
+- **Protected**: it accepts only a branch with no tracked edits that can fast-forward; local-only commits or divergence stop rather than being merged or discarded.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for release details. The full contracts live in [`personalization.md`](personalization.md), [`AGENTS.md`](AGENTS.md), and [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md).
 
@@ -84,6 +84,14 @@ git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
 cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
+
+For an existing clone, update the source and reinstall with one command:
+
+```bash
+bash scripts/update.sh
+```
+
+It fetches the current branch's configured upstream, accepts only a checkout with no tracked edits that can fast-forward, and then reuses the installer while preserving both Luna lane states. Tracked edits, local-only commits, or divergence stop the update rather than being merged or discarded; unrelated untracked files do not block it by themselves. It does not modify Providers, credentials, or model catalogs.
 
 Exact lane operations:
 
@@ -148,6 +156,7 @@ During upgrade it removes an old Spark or DeepSeek profile only when its content
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol routing, packet, lease, and acceptance rules |
 | [`agents/`](agents/) | Luna Medium and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict detection, state preservation, installation, and old-profile migration |
+| [`scripts/update.sh`](scripts/update.sh) | Fast-forward source from the current Git upstream, then run the installer |
 | [`benchmarks/`](benchmarks/) | Historical route experiments and raw evidence, not current lanes |
 
 Installation, implementation, and verification do not authorize commit, push, merge, tag, release, or deployment. This is a community workflow, not an official OpenAI preset. Profile files and Worker self-reports do not prove a real route.

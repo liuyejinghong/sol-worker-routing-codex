@@ -34,8 +34,8 @@ Sol 始终留在主线程，负责理解目标、判断是否值得交接、拆�
 
 ## 本版更新
 
-- **修正**：“Sol”表示主控协调角色，不强制要求选择 `gpt-5.6-sol`；`gpt-5.6-terra` 可按同一合同分流合格任务包。
-- **验证**：已在 `gpt-5.6-terra` / `max` 父任务中完成原生 `luna_medium_worker` 路由探针，子任务实际使用 `gpt-5.6-luna` / `medium`。
+- **新增**：已有 checkout 可直接运行 `bash scripts/update.sh`，从当前分支的已配置上游更新源码后重新安装工作流。
+- **保护**：仅接受没有已跟踪修改且可 fast-forward 的分支；本地领先提交或分叉会停止，不会自动合并或丢弃。
 
 详细版本记录见 [`CHANGELOG.md`](CHANGELOG.md)。完整行为合同分别位于 [`personalization.md`](personalization.md)、[`AGENTS.md`](AGENTS.md) 和 [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md)。
 
@@ -84,6 +84,14 @@ git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
 cd sol-worker-routing-codex
 bash scripts/install.sh
 ```
+
+已经 clone 本仓库时，可用一条命令更新源码并重新安装：
+
+```bash
+bash scripts/update.sh
+```
+
+它从当前分支已配置的上游拉取，并且只接受没有已跟踪修改、可 fast-forward 的 checkout，然后复用安装器保留两条 Luna lane 的状态。已跟踪修改、本地领先提交或分叉会停止更新，不会自动合并或丢弃；无关未跟踪文件不会单独阻塞。它同样不修改 Provider、凭据或 model catalog。
 
 安装器提供精确的 lane 管理接口：
 
@@ -148,6 +156,7 @@ $HOME/.agents/skills/sol-worker-routing/SKILL.md
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、任务包、租约和验收规则 |
 | [`agents/`](agents/) | Luna Medium 与 Luna Max Worker 配置 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、状态保留、安装与旧 profile 迁移 |
+| [`scripts/update.sh`](scripts/update.sh) | 从当前 Git 上游 fast-forward 更新源码，再调用安装器 |
 | [`benchmarks/`](benchmarks/) | 历史路由实验和原始证据，不代表当前可用 lane |
 
 安装、实现和验证不自动授权 commit、push、merge、tag、release 或部署。这是社区工作流，不是 OpenAI 官方预设；配置文件和 Worker 自述不能单独证明真实路由成功。

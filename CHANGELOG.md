@@ -2,6 +2,12 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.12.3 - 2026-08-24
+
+1. 新增 `bash scripts/update.sh`：从当前分支已配置的 Git 上游 fetch 并 fast-forward 源码，再调用现有安装器更新两条 Luna profile 与 Skill
+2. 更新命令只接受没有已跟踪修改、具备上游且可 fast-forward 的分支；已跟踪修改、本地领先提交、分叉或 detached HEAD 会停止，不自动合并或丢弃内容，且不修改 Provider、凭据或 model catalog
+3. 同步中英文 README，提供已有 checkout 的一条命令更新方式与边界说明
+
 ## 0.12.2 - 2026-08-24
 
 1. 明确“Sol”是主控协调角色，而非必须选择 `gpt-5.6-sol`；当前 `gpt-5.6-terra` 父 Agent 可在同一任务包、验收和授权边界下分流合格的 Luna 工作
