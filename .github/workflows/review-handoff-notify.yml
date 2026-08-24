@@ -1,0 +1,29 @@
+name: Relay review-handoff notification
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  notify-owner:
+    if: github.event.label.name == 'review-handoff'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      OWNER_LOGIN: ${{ vars.GITHUB_REVIEW_HANDOFF_OWNER }}
+    steps:
+      - name: Post the one delivery comment
+        shell: bash
+        run: |
+          if [[ -z "${OWNER_LOGIN}" ]]; then
+            echo "Missing repository variable GITHUB_REVIEW_HANDOFF_OWNER." >&2
+            exit 1
+          fi
+
+          body="$(printf '@%s\n\n> Notification: this review handoff needs your attention.\n\nThe Issue was explicitly labeled `review-handoff`.' "${OWNER_LOGIN}")"
+          gh issue comment "${ISSUE_NUMBER}" --body "${body}"
