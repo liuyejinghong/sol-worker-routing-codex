@@ -1,4 +1,0 @@
-interface:
-  display_name: "GitHub Review Handoff"
-  short_description: "Run GPT-5.6 Pro browser reviews and durable GitHub handoffs"
-  default_prompt: "Use $github-review-handoff to run a GPT-5.6 Pro independent review through Codex's in-app Browser and record the result on GitHub."

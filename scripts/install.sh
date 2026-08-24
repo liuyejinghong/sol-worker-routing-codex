@@ -113,10 +113,6 @@ fi
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
 installer_luna_medium_agent_source="${installer_repo_root}/agents/luna-medium-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
-installer_github_review_handoff_skill_source="${installer_repo_root}/skills/github-review-handoff/SKILL.md"
-installer_github_review_handoff_templates_source="${installer_repo_root}/skills/github-review-handoff/references/github-templates.md"
-installer_github_review_handoff_relay_source="${installer_repo_root}/skills/github-review-handoff/references/github-actions-notifier.md"
-installer_github_review_handoff_agent_config_source="${installer_repo_root}/skills/github-review-handoff/agents/openai.yaml"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
 installer_user_skills_dir="${installer_user_agents_dir}/skills"
@@ -125,19 +121,12 @@ installer_skill_scripts_dir="${installer_skill_dir}/scripts"
 installer_legacy_user_skill_dir="${installer_user_skills_dir}/sol-luna-workflow"
 installer_legacy_codex_skills_dir="${installer_codex_dir}/skills"
 installer_legacy_codex_skill_dir="${installer_legacy_codex_skills_dir}/sol-luna-workflow"
-installer_github_review_handoff_dir="${installer_legacy_codex_skills_dir}/github-review-handoff"
-installer_github_review_handoff_references_dir="${installer_github_review_handoff_dir}/references"
-installer_github_review_handoff_agents_dir="${installer_github_review_handoff_dir}/agents"
 installer_luna_agent_target="${installer_agent_dir}/luna-worker.toml"
 installer_luna_medium_agent_target="${installer_agent_dir}/luna-medium-worker.toml"
 installer_deepseek_agent_target="${installer_agent_dir}/deepseek-worker.toml"
 installer_deepseek_pro_agent_target="${installer_agent_dir}/deepseek-pro-worker.toml"
 installer_spark_scout_agent_target="${installer_agent_dir}/spark-scout.toml"
 installer_skill_target="${installer_skill_dir}/SKILL.md"
-installer_github_review_handoff_skill_target="${installer_github_review_handoff_dir}/SKILL.md"
-installer_github_review_handoff_templates_target="${installer_github_review_handoff_references_dir}/github-templates.md"
-installer_github_review_handoff_relay_target="${installer_github_review_handoff_references_dir}/github-actions-notifier.md"
-installer_github_review_handoff_agent_config_target="${installer_github_review_handoff_agents_dir}/openai.yaml"
 installer_removed_runner_target="${installer_skill_scripts_dir}/run-deepseek-worker.sh"
 installer_legacy_skill_dirs=(
   "${installer_legacy_user_skill_dir}"
@@ -147,12 +136,6 @@ installer_install_pairs=(
   "${installer_luna_agent_source}|${installer_luna_agent_target}"
   "${installer_luna_medium_agent_source}|${installer_luna_medium_agent_target}"
   "${installer_skill_source}|${installer_skill_target}"
-)
-installer_github_review_handoff_install_pairs=(
-  "${installer_github_review_handoff_skill_source}|${installer_github_review_handoff_skill_target}"
-  "${installer_github_review_handoff_templates_source}|${installer_github_review_handoff_templates_target}"
-  "${installer_github_review_handoff_relay_source}|${installer_github_review_handoff_relay_target}"
-  "${installer_github_review_handoff_agent_config_source}|${installer_github_review_handoff_agent_config_target}"
 )
 installer_lanes=(
   "luna_medium_worker"
@@ -183,9 +166,6 @@ installer_guarded_dirs=(
   "${installer_legacy_user_skill_dir}"
   "${installer_legacy_codex_skills_dir}"
   "${installer_legacy_codex_skill_dir}"
-  "${installer_github_review_handoff_dir}"
-  "${installer_github_review_handoff_references_dir}"
-  "${installer_github_review_handoff_agents_dir}"
 )
 
 # Exact Skill contents from v0.4.1 and the pre-release v0.5.0 source. These
@@ -212,28 +192,6 @@ installer_known_current_skill_digests=(
   "ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586"
   "69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184"
   "0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9"
-)
-# Exact GitHub Review Handoff Skill contents first shipped by this workflow.
-# Append a prior digest before changing a managed file in a future release.
-installer_known_github_review_handoff_skill_digests=(
-  "e17a2c10a753a35d7e00b2ae0df815f0f426af8b1cbcc24830550effd1f255c7"
-  "fae849a07728f36f04fa4f8e1fa8d240a48842d6c389826c85046ff21c9e34e7"
-  "edb2552a98a748b33b87799aba9ff535f21b4a835bd4d6028f1df91208ba356f"
-  "cfc242f39a3c215bde96e6cf482cc25e3aa960d93c85fe6b46f9662422db0be0"
-  "62a3c25055eec0fad629488add42d2ab934e504d810a4314833d29718186310c"
-  "0cc29b5423177f511c69104ca8710647e154732a81d34e3b17504b28d15fb2f7"
-  "c4bf5441d29e3350766732d0fa94128e39cc6791062fff1ed70cd47b591daf18"
-)
-installer_known_github_review_handoff_templates_digests=(
-  "8642d2f8fdb48492398193f58fba6f8369af657f0157cbdd9fbec24b43d99165"
-  "ab5d56adf3c040d0201287e3bc278fc135473e155c27f49cc941d4a91e5a78a1"
-)
-installer_known_github_review_handoff_relay_digests=(
-  "6bf7c0ab2f1077c874cbd7301f81ab750ecd3bae407165f7e03efe4df798ffd7"
-)
-installer_known_github_review_handoff_agent_config_digests=(
-  "462550f7bedae105ff44c82e63b8fc78bc903d35e1cd187d61d8433d38f71bd0"
-  "37d0f358c2111a5b3c5858b983b6ed34e754ccf74df14457e62ce2994e4e9202"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -309,56 +267,6 @@ installer_is_known_current_skill() {
     [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
   done
   return 1
-}
-
-installer_is_known_github_review_handoff_skill() {
-  local installer_digest
-  local installer_known_digest
-  installer_digest="$(installer_sha256 "$1")" || return 1
-  for installer_known_digest in "${installer_known_github_review_handoff_skill_digests[@]}"; do
-    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
-  done
-  return 1
-}
-
-installer_is_known_github_review_handoff_templates() {
-  local installer_digest
-  local installer_known_digest
-  installer_digest="$(installer_sha256 "$1")" || return 1
-  for installer_known_digest in "${installer_known_github_review_handoff_templates_digests[@]}"; do
-    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
-  done
-  return 1
-}
-
-installer_is_known_github_review_handoff_relay() {
-  local installer_digest
-  local installer_known_digest
-  installer_digest="$(installer_sha256 "$1")" || return 1
-  for installer_known_digest in "${installer_known_github_review_handoff_relay_digests[@]}"; do
-    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
-  done
-  return 1
-}
-
-installer_is_known_github_review_handoff_agent_config() {
-  local installer_digest
-  local installer_known_digest
-  installer_digest="$(installer_sha256 "$1")" || return 1
-  for installer_known_digest in "${installer_known_github_review_handoff_agent_config_digests[@]}"; do
-    [[ "${installer_digest}" == "${installer_known_digest}" ]] && return 0
-  done
-  return 1
-}
-
-installer_is_known_github_review_handoff_file() {
-  case "$1" in
-    "${installer_github_review_handoff_skill_target}") installer_is_known_github_review_handoff_skill "$1" ;;
-    "${installer_github_review_handoff_templates_target}") installer_is_known_github_review_handoff_templates "$1" ;;
-    "${installer_github_review_handoff_relay_target}") installer_is_known_github_review_handoff_relay "$1" ;;
-    "${installer_github_review_handoff_agent_config_target}") installer_is_known_github_review_handoff_agent_config "$1" ;;
-    *) return 1 ;;
-  esac
 }
 
 installer_is_known_deepseek_agent() {
@@ -469,9 +377,6 @@ installer_target_is_accepted() {
     return 0
   fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
-    return 0
-  fi
-  if installer_is_known_github_review_handoff_file "${installer_target}"; then
     return 0
   fi
   return 1
@@ -1052,43 +957,7 @@ installer_prepare_install_pairs() {
         ;;
     esac
   done
-  installer_install_pairs+=(
-    "${installer_skill_source}|${installer_skill_target}"
-    "${installer_github_review_handoff_install_pairs[@]}"
-  )
-}
-
-installer_report_github_review_handoff_status() {
-  local installer_pair
-  local installer_source
-  local installer_target
-  local installer_present=0
-  local installer_missing=0
-
-  for installer_pair in "${installer_github_review_handoff_install_pairs[@]}"; do
-    installer_source="${installer_pair%%|*}"
-    installer_target="${installer_pair#*|}"
-    if [[ -L "${installer_target}" ]] || [[ -e "${installer_target}" && ! -f "${installer_target}" ]]; then
-      printf '%s\t%s\n' "github_review_handoff" "conflict-nonregular"
-      return 1
-    elif [[ -e "${installer_target}" ]]; then
-      installer_present=$((installer_present + 1))
-      if ! installer_target_is_accepted "${installer_source}" "${installer_target}"; then
-        printf '%s\t%s\n' "github_review_handoff" "conflict-unknown"
-        return 1
-      fi
-    else
-      installer_missing=$((installer_missing + 1))
-    fi
-  done
-
-  if [[ "${installer_present}" -eq 0 ]]; then
-    printf '%s\t%s\n' "github_review_handoff" "missing"
-  elif [[ "${installer_missing}" -ne 0 ]]; then
-    printf '%s\t%s\n' "github_review_handoff" "partial"
-  else
-    printf '%s\t%s\n' "github_review_handoff" "accepted"
-  fi
+  installer_install_pairs+=("${installer_skill_source}|${installer_skill_target}")
 }
 
 installer_report_lane_status() {
@@ -1121,9 +990,6 @@ installer_report_lane_status() {
     fi
   else
     printf '%s\t%s\n' "skill" "missing"
-  fi
-  if ! installer_report_github_review_handoff_status; then
-    installer_status_conflict=1
   fi
   [[ "${installer_status_conflict}" -eq 0 ]]
 }
@@ -1182,11 +1048,7 @@ if [[ "${installer_mode}" == "install" ]]; then
     "${installer_deepseek_pro_agent_target}.disabled" \
     "${installer_spark_scout_agent_target}" \
     "${installer_spark_scout_agent_target}.disabled" \
-    "${installer_skill_target}" \
-    "${installer_github_review_handoff_skill_target}" \
-    "${installer_github_review_handoff_templates_target}" \
-    "${installer_github_review_handoff_relay_target}" \
-    "${installer_github_review_handoff_agent_config_target}"
+    "${installer_skill_target}"
   do
     if [[ -L "${installer_target}" ]]; then
       echo "Conflict: installer target uses a symbolic link and requires manual migration: ${installer_target}" >&2
@@ -1250,9 +1112,7 @@ fi
 installer_assert_guarded_paths_safe || exit 3
 mkdir -p -- \
   "${installer_agent_dir}" \
-  "${installer_skill_dir}" \
-  "${installer_github_review_handoff_references_dir}" \
-  "${installer_github_review_handoff_agents_dir}"
+  "${installer_skill_dir}"
 installer_assert_guarded_paths_safe || exit 3
 
 for installer_pair in "${installer_install_pairs[@]}"; do
@@ -1364,7 +1224,6 @@ fi
 if [[ "${installer_mode}" == "install" ]]; then
   echo "Verified: installed files match the repository sources and planned lane states."
   echo "Installed Worker source profiles: Luna Medium and Luna Max."
-  echo "Installed global Skill: github-review-handoff."
   echo "Retired known Spark Scout and DeepSeek Worker profile files are absent. DeepSeek provider, credential, and model-catalog settings were not changed."
   echo "Not validated by this script: model-provider routing or child lifecycle."
   echo "Required for account-wide HERO: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions; until confirmed, HERO is active only for this repository and the installed Worker profiles."
