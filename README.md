@@ -74,7 +74,7 @@ Worker 获得执行租约后，不会因为暂时沉默、耗时较长、尚未�
 ```text
 请为我的 Codex 用户配置安装 https://github.com/liuyejinghong/sol-worker-routing-codex 。
 先完整读取并遵守仓库里的 AGENTS.md，保留现有 Codex 配置，遇到未知内容、双状态或符号链接时不要覆盖。
-安装完成后核对两条 Luna profile 和 Skill；不要修改 Provider、凭据或 model catalog，也不要执行已退役路由的探针。
+安装完成后核对两条 Luna profile、`sol-worker-routing` 与全局 `github-review-handoff` Skill；不要修改 Provider、凭据或 model catalog，也不要执行已退役路由的探针。
 ```
 
 也可以在终端安装：
@@ -104,7 +104,7 @@ bash scripts/install.sh --disable-lane all
 
 新安装默认启用两条 Luna lane；从已识别版本升级时分别保留其 enabled/disabled 状态。未知 lane 名称会失败，不做模糊匹配。
 
-安装器先暂存并备份，再替换文件；普通失败或 `INT` / `TERM` / `HUP` 会回滚。最终文件分布在两棵目录树，因此不宣称断电或 `SIGKILL` 下的跨目录原子性；重新运行会核验并收敛到完整状态。
+安装器先暂存并备份，再替换文件；普通失败或 `INT` / `TERM` / `HUP` 会回滚。最终文件分布在三棵目录树，因此不宣称断电或 `SIGKILL` 下的跨目录原子性；重新运行会核验并收敛到完整状态。
 
 Windows 需要 Git Bash/MSYS Bash 或 WSL Bash；这不是原生 PowerShell 脚本。在真实 Windows 安装链路完成验收前，这只是兼容路径，不是完整平台支持声明。
 
@@ -138,14 +138,39 @@ Windows 需要 Git Bash/MSYS Bash 或 WSL Bash；这不是原生 PowerShell 脚�
 判断这次需求是否值得改变现有架构，并给出最终方案。
 ```
 
+## 用 5.6 Pro 做独立 GitHub 复审
+
+`github-review-handoff` 把审阅交给独立的 5.6 Pro 审阅端：这部分审阅不消耗 Codex 额度，也不复用当前 Codex 对项目的判断，因此可以从独立第三方视角重新检查仓库、PR diff、调用链和验证证据。
+
+一次交接的链路很直接：`Issue / PR + 精确 review head` → `5.6 Pro 独立审阅` → `GitHub finding 与 verdict` → `开发者回复或修复` → `针对新 head 复审`。Issue 保留问题、根因和验收条件；PR 保留精确 SHA、审阅 finding、回复和最终源码结论。只有写回 GitHub、并绑定完整 commit SHA 的 `APPROVE_SOURCE`、`REQUEST_CHANGES` 或 `NEEDS_MORE_EVIDENCE` 才是可追溯结论。
+
+| 仓库类型 | 5.6 Pro 如何访问 | GitHub 上提交审阅结果 |
+|---|---|---|
+| 公开仓库 | 直接读取仓库、Issue 或 PR 链接并审查，无需连接器 | 按已有 GitHub 写入授权提交 |
+| 私有仓库 | 先手动连接 GitHub 连接器并授权对应仓库；未连接时不会读取私有源码 | 读取和提交都依赖这条手动连接及仓库权限 |
+
+### GitHub 原生邮件提醒
+
+通常不需要 Webhook 或邮件服务。安装工作流只安装 Skill，不会替用户修改 GitHub 账号设置、创建连接器或启动审阅。收件人一次性在 GitHub Notifications 的“参与的会话”中开启 Email，并选择已验证的通知地址；随后每次交接只需提供仓库 URL 和 GitHub `@handle` 的角色：新 finding 通知谁、初审/复审通知谁。实际审阅时还必须给出 Issue/PR 链接和精确 head SHA。
+
+独立的 5.6 Pro 判断不等于独立的 GitHub 发件身份：如果它通过你的 GitHub connector 写 Issue，Issue 作者仍是你的账号。此时可见的自我 `@mention` 不能作为“收到外部审阅邮件”的验收。需要由同一账号的自动化可靠唤醒时，Skill 提供可选的 GitHub Actions 中继：只有新建 Issue 在首行用户提供的 `@mention` 下方加入不可见标记 `<!-- github-review-handoff: native-email-relay -->` 时，GitHub Actions 才用自己的身份写一条相同的 `@mention` 评论。它不使用第三方邮件服务、Webhook、标签或仓库变量；只需一次性提交工作流文件。完整配置和测试步骤见 [`github-actions-notifier.md`](skills/github-review-handoff/references/github-actions-notifier.md)。
+
+GitHub 用户名是用于 `@mention` 的账号标识，不是凭据；无需提供邮箱、PAT、Webhook URL 或连接器密钥，也不会被 Skill 持久化。私有仓库的 5.6 Pro 读取和写回仍需手动连接 GitHub connector 并具备对应权限。
+
+它适合需要独立复核的 GitHub 交接，不是普通本地代码审查。连接器不会自动创建，也不替代 push、评论、合并、关闭 Issue、发布或部署所需的单独授权。
+
 ## 安装边界与项目文件
 
-安装器只管理以下三个最终 artifact：
+安装器只管理以下七个最终文件：
 
 ```text
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-medium-worker.toml[.disabled]
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-worker.toml[.disabled]
 $HOME/.agents/skills/sol-worker-routing/SKILL.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/SKILL.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/references/github-templates.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/references/github-actions-notifier.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/agents/openai.yaml
 ```
 
 升级时，安装器仅在内容与已登记历史版本完全一致时移除旧 Spark/DeepSeek profile。未知内容、双状态、符号链接和非普通文件会在任何写入前停止。DeepSeek Provider、凭据、model catalog 及其他 Codex 配置均不属于退役清理范围。
@@ -154,6 +179,7 @@ $HOME/.agents/skills/sol-worker-routing/SKILL.md
 |---|---|
 | [`personalization.md`](personalization.md) | 需要手动粘贴的账号级行为与路由偏好 |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol 的分流、任务包、租约和验收规则 |
+| [`skills/github-review-handoff/`](skills/github-review-handoff/) | 全局 GitHub 开发者与独立审阅者交接、模板与精确 head 结论 |
 | [`agents/`](agents/) | Luna Medium 与 Luna Max Worker 配置 |
 | [`scripts/install.sh`](scripts/install.sh) | 冲突检测、状态保留、安装与旧 profile 迁移 |
 | [`scripts/update.sh`](scripts/update.sh) | 从当前 Git 上游 fast-forward 更新源码，再调用安装器 |

@@ -74,7 +74,7 @@ The simplest method is to give Codex this prompt:
 ```text
 Install https://github.com/liuyejinghong/sol-worker-routing-codex for my Codex user configuration.
 Read and follow AGENTS.md completely, preserve existing Codex settings, and do not overwrite unknown content, dual states, or symbolic links.
-After installation, verify both Luna profiles and the Skill. Do not modify Providers, credentials, or model catalogs, and do not probe retired routes.
+After installation, verify both Luna profiles, `sol-worker-routing`, and the global `github-review-handoff` Skill. Do not modify Providers, credentials, or model catalogs, and do not probe retired routes.
 ```
 
 Or install from a terminal:
@@ -104,7 +104,7 @@ bash scripts/install.sh --disable-lane all
 
 A fresh install enables both Luna lanes. A recognized upgrade preserves each state. Unknown lane names fail rather than fuzzy-match.
 
-The installer stages and backs up before replacement, and rolls back normal failures or `INT` / `TERM` / `HUP`. Final artifacts span two directory trees, so it does not claim cross-directory atomicity under power loss or `SIGKILL`; a rerun verifies and converges complete state.
+The installer stages and backs up before replacement, and rolls back normal failures or `INT` / `TERM` / `HUP`. Final artifacts span three directory trees, so it does not claim cross-directory atomicity under power loss or `SIGKILL`; a rerun verifies and converges complete state.
 
 Windows requires Git Bash/MSYS Bash or WSL Bash; this is not a native PowerShell script. Until a real Windows installation path is accepted, this is a compatibility path rather than a full platform-support claim.
 
@@ -138,14 +138,39 @@ Keep objective and architecture decisions with Sol:
 Decide whether this requirement justifies changing the current architecture and give me the final approach.
 ```
 
+## Use 5.6 Pro for an independent GitHub review
+
+`github-review-handoff` routes review to an independent 5.6 Pro reviewer. Its review does not consume Codex quota and does not reuse Codex's current judgment of the project, so it can re-examine the repository, PR diff, call chain, and verification evidence from a third-party perspective.
+
+The handoff is direct: `Issue / PR + exact review head` → `independent 5.6 Pro review` → `GitHub findings and verdict` → `developer response or fix` → `review of the new head`. The Issue keeps the problem, root cause, and acceptance criteria; the PR keeps the exact SHA, findings, replies, and final source verdict. Only a verdict written back to GitHub and tied to the full commit SHA — `APPROVE_SOURCE`, `REQUEST_CHANGES`, or `NEEDS_MORE_EVIDENCE` — is a durable result.
+
+| Repository type | How 5.6 Pro accesses it | Submitting the GitHub review result |
+|---|---|---|
+| Public | Read and review the repository, Issue, or PR link directly; no connector is needed | Submit under the existing GitHub write authorization |
+| Private | Manually connect the GitHub connector and authorize the repository first; it will not read private source before that | Both reading and submitting depend on that manual connection and repository permission |
+
+### Native GitHub email notification
+
+No webhook or email service is normally required. Installing the workflow installs the Skill only; it does not change a user's GitHub notification settings, create a connector, or start a review. The recipient enables Email for participating conversations once in GitHub Notifications and selects a verified notification address. For each handoff, provide the repository URL and the GitHub `@handle` roles: who receives a new finding, and who receives an initial or re-review request. An actual review still needs the Issue/PR link and exact head SHA.
+
+An independent 5.6 Pro judgment does not create an independent GitHub writer identity. If it writes an Issue through your GitHub connector, the Issue author is still your account; a visible self-`@mention` is not acceptance evidence for an incoming review email. When automation using the same account must reliably wake that account, the Skill provides an optional native GitHub Actions relay: only a newly opened Issue that places the invisible marker `<!-- github-review-handoff: native-email-relay -->` below its first-line user-provided `@mention` receives one matching `@mention` comment from the GitHub Actions identity. It uses no third-party email service, webhook, label, or repository variable; it requires only a one-time workflow commit. See [`github-actions-notifier.md`](skills/github-review-handoff/references/github-actions-notifier.md) for the complete setup and test.
+
+A GitHub username is an account identifier used for an `@mention`, not a credential. Do not provide an email address, PAT, webhook URL, or connector secret, and the Skill does not persist the handle. For a private repository, 5.6 Pro still needs the manually connected GitHub connector and the corresponding repository permission to read or write.
+
+Use it for a GitHub handoff that needs independent review, not for an ordinary local code review. The connector is never created automatically, and it does not replace the separate authorization required for push, commenting, merge, Issue closure, release, or deployment.
+
 ## Installation boundary and repository files
 
-The installer manages only these three final artifacts:
+The installer manages only these seven final files:
 
 ```text
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-medium-worker.toml[.disabled]
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-worker.toml[.disabled]
 $HOME/.agents/skills/sol-worker-routing/SKILL.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/SKILL.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/references/github-templates.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/references/github-actions-notifier.md
+${CODEX_HOME:-$HOME/.codex}/skills/github-review-handoff/agents/openai.yaml
 ```
 
 During upgrade it removes an old Spark or DeepSeek profile only when its content exactly matches a registered historical version. Unknown content, dual states, symlinks, and non-regular files stop before writes. The DeepSeek Provider, credentials, model catalog, and unrelated Codex settings are outside retirement scope.
@@ -154,6 +179,7 @@ During upgrade it removes an old Spark or DeepSeek profile only when its content
 |---|---|
 | [`personalization.md`](personalization.md) | Account-wide behavior and routing preferences copied manually |
 | [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol routing, packet, lease, and acceptance rules |
+| [`skills/github-review-handoff/`](skills/github-review-handoff/) | Global GitHub developer and independent-reviewer handoff, templates, and exact-head verdicts |
 | [`agents/`](agents/) | Luna Medium and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict detection, state preservation, installation, and old-profile migration |
 | [`scripts/update.sh`](scripts/update.sh) | Fast-forward source from the current Git upstream, then run the installer |
