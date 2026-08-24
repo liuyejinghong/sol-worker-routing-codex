@@ -221,6 +221,7 @@ installer_known_github_review_handoff_skill_digests=(
   "edb2552a98a748b33b87799aba9ff535f21b4a835bd4d6028f1df91208ba356f"
   "cfc242f39a3c215bde96e6cf482cc25e3aa960d93c85fe6b46f9662422db0be0"
   "62a3c25055eec0fad629488add42d2ab934e504d810a4314833d29718186310c"
+  "0cc29b5423177f511c69104ca8710647e154732a81d34e3b17504b28d15fb2f7"
 )
 installer_known_github_review_handoff_templates_digests=(
   "8642d2f8fdb48492398193f58fba6f8369af657f0157cbdd9fbec24b43d99165"

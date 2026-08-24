@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub Review Handoff"
-  short_description: "Coordinate durable developer and reviewer handoffs on GitHub"
-  default_prompt: "Use $github-review-handoff to coordinate this change with an independent GitHub reviewer."
+  short_description: "Coordinate GPT-5.6 Pro reviews and durable GitHub handoffs"
+  default_prompt: "Use $github-review-handoff to request a GPT-5.6 Pro independent review and record the result on GitHub."

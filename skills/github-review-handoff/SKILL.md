@@ -1,6 +1,6 @@
 ---
 name: github-review-handoff
-description: Coordinate developers and independent reviewers through durable GitHub Issue and PR records, exact commit identities, structured handoffs, verdicts, and correction loops. Use when one party implements a change and another reviews it through GitHub; do not use for an ordinary local code review with no cross-party handoff.
+description: Coordinate developers and GPT-5.6 Pro independent reviewers through durable GitHub Issue and PR records, exact commit identities, structured handoffs, verdicts, and correction loops. Use when a change needs an independent GitHub review; do not use for an ordinary local code review with no cross-party handoff.
 ---
 
 # GitHub review handoff
@@ -10,6 +10,16 @@ description: Coordinate developers and independent reviewers through durable Git
 Make GitHub the durable source of truth for independent review. Chat, browser conversations, email, and other channels may notify or clarify, but every actionable finding, response, exact review target, and terminal verdict must be recorded on the owning Issue or PR.
 
 This skill coordinates the workflow; it does not grant permission to push, comment, merge, close, release, deploy, or mutate external systems.
+
+## GPT-5.6 Pro independent-review lane
+
+Use this lane when the user requests an independent GPT-5.6 Pro review. It is a separate reviewer conversation, not a child-Agent role or a second pass by the current Codex context; its review does not consume the current Codex task's quota.
+
+1. Reuse the user-designated GPT-5.6 Pro conversation, or open one through an available separate-model or browser entrypoint. This Skill does not itself create a model route. If no such entrypoint or conversation is available, report that the review was not launched; do not silently substitute the current Codex agent.
+2. For a public repository, give the GPT-5.6 Pro reviewer the repository, Issue, or PR URL plus the exact base and review-head SHA; it can read the linked public project directly.
+3. For a private repository, the user must manually connect the GPT-5.6 Pro review conversation to GitHub and grant that connector access to the specific repository before it can read or write. Do not request credentials, tokens, emails, or connector secrets.
+4. Send a compact review packet: repository URL, owning Issue or PR, base SHA, exact review-head SHA, requested focus, existing findings and dispositions, required GitHub `@mention` recipient when applicable, and the requested terminal verdict.
+5. Require the GPT-5.6 Pro reviewer to write findings and its verdict to the owning GitHub Issue or PR. A chat-only response is coordination input, not a completed independent review.
 
 ## Establish the review contract
 

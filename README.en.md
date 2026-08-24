@@ -142,6 +142,8 @@ Decide whether this requirement justifies changing the current architecture and 
 
 `github-review-handoff` routes review to an independent 5.6 Pro reviewer. Its review does not consume Codex quota and does not reuse Codex's current judgment of the project, so it can re-examine the repository, PR diff, call chain, and verification evidence from a third-party perspective.
 
+The execution rule lives in [`SKILL.md`](skills/github-review-handoff/SKILL.md): only when the user requests an independent review does it reuse or open the designated GPT-5.6 Pro conversation through an available entrypoint. If that entrypoint is unavailable, the Skill reports that the review was not launched rather than passing off the current Codex as an independent reviewer.
+
 The handoff is direct: `Issue / PR + exact review head` → `independent 5.6 Pro review` → `GitHub findings and verdict` → `developer response or fix` → `review of the new head`. The Issue keeps the problem, root cause, and acceptance criteria; the PR keeps the exact SHA, findings, replies, and final source verdict. Only a verdict written back to GitHub and tied to the full commit SHA — `APPROVE_SOURCE`, `REQUEST_CHANGES`, or `NEEDS_MORE_EVIDENCE` — is a durable result.
 
 | Repository type | How 5.6 Pro accesses it | Submitting the GitHub review result |
