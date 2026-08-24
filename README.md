@@ -142,7 +142,7 @@ Windows 需要 Git Bash/MSYS Bash 或 WSL Bash；这不是原生 PowerShell 脚�
 
 `github-review-handoff` 把审阅交给独立的 5.6 Pro 审阅端：这部分审阅不消耗 Codex 额度，也不复用当前 Codex 对项目的判断，因此可以从独立第三方视角重新检查仓库、PR diff、调用链和验证证据。
 
-实际调用规则写在 [`SKILL.md`](skills/github-review-handoff/SKILL.md)：仅在用户要求独立审阅时，才复用或通过可用入口打开指定的 GPT-5.6 Pro 会话；没有该会话入口时，Skill 会明确报告“未发起”，不会用当前 Codex 冒充独立审阅。
+实际调用规则写在 [`SKILL.md`](skills/github-review-handoff/SKILL.md)：用户要求独立审阅后，Codex 通过内置 Browser 自动打开或续用 GPT-5.6 Pro 对话、发送审阅包并继续追问；用户不需要转发任何消息。浏览器不可登录或无法选择 GPT-5.6 Pro 时，Skill 会报告真实阻塞，不会用当前 Codex 冒充独立审阅。
 
 一次交接的链路很直接：`Issue / PR + 精确 review head` → `5.6 Pro 独立审阅` → `GitHub finding 与 verdict` → `开发者回复或修复` → `针对新 head 复审`。Issue 保留问题、根因和验收条件；PR 保留精确 SHA、审阅 finding、回复和最终源码结论。只有写回 GitHub、并绑定完整 commit SHA 的 `APPROVE_SOURCE`、`REQUEST_CHANGES` 或 `NEEDS_MORE_EVIDENCE` 才是可追溯结论。
 

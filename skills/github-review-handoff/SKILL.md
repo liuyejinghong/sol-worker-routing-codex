@@ -15,11 +15,12 @@ This skill coordinates the workflow; it does not grant permission to push, comme
 
 Use this lane when the user requests an independent GPT-5.6 Pro review. It is a separate reviewer conversation, not a child-Agent role or a second pass by the current Codex context; its review does not consume the current Codex task's quota.
 
-1. Reuse the user-designated GPT-5.6 Pro conversation, or open one through an available separate-model or browser entrypoint. This Skill does not itself create a model route. If no such entrypoint or conversation is available, report that the review was not launched; do not silently substitute the current Codex agent.
-2. For a public repository, give the GPT-5.6 Pro reviewer the repository, Issue, or PR URL plus the exact base and review-head SHA; it can read the linked public project directly.
-3. For a private repository, the user must manually connect the GPT-5.6 Pro review conversation to GitHub and grant that connector access to the specific repository before it can read or write. Do not request credentials, tokens, emails, or connector secrets.
-4. Send a compact review packet: repository URL, owning Issue or PR, base SHA, exact review-head SHA, requested focus, existing findings and dispositions, required GitHub `@mention` recipient when applicable, and the requested terminal verdict.
-5. Require the GPT-5.6 Pro reviewer to write findings and its verdict to the owning GitHub Issue or PR. A chat-only response is coordination input, not a completed independent review.
+1. Use Codex's in-app Browser through `browser:control-in-app-browser` to open or reuse a ChatGPT conversation, select GPT-5.6 Pro, and conduct the review there. Codex sends the review packet and any necessary follow-ups itself; never ask the user to copy a prompt, relay a reply, or manage the reviewer conversation.
+2. If ChatGPT needs sign-in or GPT-5.6 Pro is unavailable in that browser, stop and ask the user to complete the missing browser access. Do not substitute the current Codex agent, a different model, or a manual relay.
+3. For a public repository, send the GPT-5.6 Pro reviewer the repository, Issue, or PR URL plus the exact base and review-head SHA; it can read the linked public project directly.
+4. For a private repository, the user manually connects GitHub to the GPT-5.6 Pro conversation and grants access to the specific repository. That is the only manual setup: after it is connected, Codex continues the browser conversation and the reviewer reads and writes GitHub itself. Do not request credentials, tokens, emails, or connector secrets.
+5. Send a compact review packet: repository URL, owning Issue or PR, base SHA, exact review-head SHA, requested focus, existing findings and dispositions, required GitHub `@mention` recipient when applicable, and the requested terminal verdict. Follow the Browser action-time confirmation policy immediately before each external message; this is a safety confirmation, not a user relay step.
+6. Keep the browser conversation under Codex control until the reviewer has written findings and its verdict to the owning GitHub Issue or PR. A chat-only response is coordination input, not a completed independent review.
 
 ## Establish the review contract
 
@@ -107,16 +108,15 @@ When the writer and recipient are the same GitHub account and native email must 
 
 Merge only with explicit authority and only when the approved head still matches the PR head and required repository checks are satisfied. Record the merge commit and resulting Issue state. Never infer release, deployment, production validation, or runtime permission from a merged PR.
 
-## External reviewer channel
+## GPT-5.6 Pro browser conversation
 
-When an independent reviewer is reached through a browser or separate model conversation:
+The in-app Browser conversation is the reviewer channel, not a user-mediated handoff.
 
-- Reuse the user-designated existing project and conversation when one is provided; do not create a new project or session unless asked.
-- A public repository can be reviewed from its repository, Issue, or PR link. Before reading or writing a private repository, confirm that the reviewer's manually connected GitHub connector has access to that specific repository; do not request or handle credentials.
-- Send a compact notification containing GitHub links, old and new exact heads, finding dispositions, and the requested verdict. Do not paste a second authoritative review record into chat.
-- Ask the reviewer to write the durable verdict and findings back to the relevant GitHub PR.
-- Treat a chat-only verdict as coordination input, not merge or closure evidence, until it appears on GitHub.
-- Mirror any substantive clarification back to the owning Issue or PR.
+- Keep Codex in control of the ChatGPT conversation through the required verdict; do not ask the user to forward prompts or replies.
+- Inspect each browser response, then send only the focused clarification that changes the reviewer’s verdict or the GitHub record. Follow action-time confirmation before each external message.
+- A public repository can be reviewed from its repository, Issue, or PR link. For a private repository, proceed only after the user has manually connected GitHub to that GPT-5.6 Pro conversation; do not request or handle credentials.
+- Give the reviewer GitHub links, old and new exact heads, finding dispositions, and the requested verdict. Do not paste a second authoritative review record into browser chat.
+- Treat a chat-only verdict as coordination input, not merge or closure evidence, until it appears on GitHub. Mirror any substantive clarification back to the owning Issue or PR.
 
 ## Templates
 

@@ -222,6 +222,7 @@ installer_known_github_review_handoff_skill_digests=(
   "cfc242f39a3c215bde96e6cf482cc25e3aa960d93c85fe6b46f9662422db0be0"
   "62a3c25055eec0fad629488add42d2ab934e504d810a4314833d29718186310c"
   "0cc29b5423177f511c69104ca8710647e154732a81d34e3b17504b28d15fb2f7"
+  "c4bf5441d29e3350766732d0fa94128e39cc6791062fff1ed70cd47b591daf18"
 )
 installer_known_github_review_handoff_templates_digests=(
   "8642d2f8fdb48492398193f58fba6f8369af657f0157cbdd9fbec24b43d99165"
@@ -232,6 +233,7 @@ installer_known_github_review_handoff_relay_digests=(
 )
 installer_known_github_review_handoff_agent_config_digests=(
   "462550f7bedae105ff44c82e63b8fc78bc903d35e1cd187d61d8433d38f71bd0"
+  "37d0f358c2111a5b3c5858b983b6ed34e754ccf74df14457e62ce2994e4e9202"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
