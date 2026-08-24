@@ -18,22 +18,24 @@
 `Sol Worker Routing` is more than adding subagents to Codex. It combines four ideas:
 
 - **First principles**: establish the objective, invariant facts, minimum acceptance, and authorization boundary before adding abstractions or process.
-- **Route by the actual bottleneck**: Sol keeps the objective and final judgment; Luna Medium handles narrow work with fixed scope and acceptance; Luna Max handles hidden coupling, difficult diagnosis, and depth-first reasoning.
+- **Route by the actual bottleneck**: the coordinator role (called Sol below) keeps the objective and final judgment; Luna Medium handles narrow work with fixed scope and acceptance; Luna Max handles hidden coupling, difficult diagnosis, and depth-first reasoning.
 - **HERO Anti-OverDefense**: governs Sol and every Worker to reject checks with no consumer, defenses for unreachable cases, review loops with no live uncertainty, and wrappers or guards with no direct requirement.
 - **Less process, more useful evidence**: fixed gates, review rounds, and extra tools are not goals. The default is one focused contract check and one necessary real-path result.
+
+“Sol” names the coordinator role; it does not require selecting `gpt-5.6-sol`. When the current main Agent is `gpt-5.6-terra`, it has the same duties and may route eligible packets through the two Luna lanes.
 
 Sol stays in the main thread and owns objective understanding, decomposition, evidence quality, acceptance, authorization, and delivery. One-step work stays with Sol. Luna Medium receives only narrow packets with fixed boundaries; if it finds hidden coupling or an unresolved root cause, it returns a blocker and Sol decides whether to issue a Luna Max packet.
 
 | Executor | Best fit | Examples |
 |---|---|---|
-| **Sol** | Tiny work, ambiguity, architecture, authorization, and final decisions | Decide whether to change, integrate results, finish a one-step edit |
+| **Sol (coordinator role)** | Tiny work, ambiguity, architecture, authorization, and final decisions | Decide whether to change, integrate results, finish a one-step edit |
 | **Luna Medium** | Narrow semantic work with fixed scope, paths, ownership, and acceptance | Specified diff review, target-test diagnosis, constrained implementation |
 | **Luna Max** | Hidden coupling, subtle semantics, and long-horizon reasoning | Difficult review, complex diagnosis, critical implementation, cross-module judgment |
 
 ## Changes in this release
 
-- **Added**: Personalization now includes a product-facing deliverable copy contract so UI, PDFs, presentations, reports, screenshots, and exports do not expose Agent reasoning, implementation narration, or debugging history.
-- **Preserved**: reports may still include methods, assumptions, data limitations, and risks needed to understand their conclusions; design notes and implementation process appear only when explicitly requested.
+- **Fixed**: “Sol” is the coordinator role, not a requirement to select `gpt-5.6-sol`; `gpt-5.6-terra` can route eligible packets under the same contract.
+- **Verified**: a native `luna_medium_worker` route probe completed under a `gpt-5.6-terra` / `max` parent, and the child used `gpt-5.6-luna` / `medium`.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for release details. The full contracts live in [`personalization.md`](personalization.md), [`AGENTS.md`](AGENTS.md), and [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md).
 
