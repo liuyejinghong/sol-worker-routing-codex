@@ -1,0 +1,311 @@
+{
+  "date": "2026-09-07",
+  "plugin_version": "0.1.0+codex.20260907061741",
+  "source": "/Users/ethan/plugins/opencode-worker",
+  "installed_cache": "/Users/ethan/.codex/plugins/cache/personal/opencode-worker/0.1.0+codex.20260907061741",
+  "unit_tests": {
+    "passed": 9
+  },
+  "simulated_lifecycle": {
+    "passed": true,
+    "artifact_root": "/private/tmp/ocw-lifecycle-3XrI58",
+    "cases": [
+      "async idle",
+      "same-session followup",
+      "deduplication",
+      "cancel",
+      "provider error",
+      "wrong identity",
+      "timeout",
+      "runner crash recovery",
+      "new task after recovery"
+    ]
+  },
+  "real_mcp": {
+    "outcome": "passed",
+    "checks": [
+      {
+        "name": "read_and_client_restart",
+        "task_id": "e7b88324-ac8c-4b11-ac8e-3695fb4dfe2a",
+        "session_id": "ses_f859aca0dffeocnjh75HjiGw1N",
+        "state": "completed",
+        "finished": true,
+        "identity": {
+          "agent": "Sisyphus - ultraworker",
+          "providerID": "opencode-go",
+          "modelID": "muse-spark-1.3-contributor",
+          "opencode_version": "1.18.29"
+        },
+        "reason": null,
+        "observed_states": [
+          "idle",
+          "busy",
+          "idle"
+        ],
+        "changed_files": [],
+        "tool_outcomes": [
+          {
+            "tool": "read",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          }
+        ]
+      },
+      {
+        "name": "write_and_shell",
+        "task_id": "0f603bf1-b39d-4e3e-b21d-cb4500b15589",
+        "session_id": "ses_f859aa169ffeEYPBjzRdBIhN9R",
+        "state": "completed",
+        "finished": true,
+        "identity": {
+          "agent": "Sisyphus - ultraworker",
+          "providerID": "opencode-go",
+          "modelID": "muse-spark-1.3-contributor",
+          "opencode_version": "1.18.29"
+        },
+        "reason": null,
+        "observed_states": [
+          "idle",
+          "busy",
+          "idle"
+        ],
+        "changed_files": [
+          "normalize.py",
+          "result.txt"
+        ],
+        "tool_outcomes": [
+          {
+            "tool": "read",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          },
+          {
+            "tool": "read",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          },
+          {
+            "tool": "read",
+            "status": "error",
+            "error": "File not found: /private/tmp/opencode-worker-live-cunob0/workspace/result.txt",
+            "exit_code": null
+          },
+          {
+            "tool": "edit",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          },
+          {
+            "tool": "bash",
+            "status": "completed",
+            "error": null,
+            "exit_code": 0
+          },
+          {
+            "tool": "write",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          },
+          {
+            "tool": "read",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          },
+          {
+            "tool": "read",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          }
+        ]
+      },
+      {
+        "name": "same_session_followup",
+        "task_id": "0f603bf1-b39d-4e3e-b21d-cb4500b15589",
+        "session_id": "ses_f859aa169ffeEYPBjzRdBIhN9R",
+        "state": "completed",
+        "finished": true,
+        "identity": {
+          "agent": "Sisyphus - ultraworker",
+          "providerID": "opencode-go",
+          "modelID": "muse-spark-1.3-contributor",
+          "opencode_version": "1.18.29"
+        },
+        "reason": null,
+        "observed_states": [
+          "idle",
+          "busy",
+          "idle"
+        ],
+        "changed_files": [
+          "result.txt"
+        ],
+        "tool_outcomes": [
+          {
+            "tool": "read",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          },
+          {
+            "tool": "write",
+            "status": "completed",
+            "error": null,
+            "exit_code": null
+          }
+        ]
+      },
+      {
+        "name": "denied_path",
+        "task_id": "0f603bf1-b39d-4e3e-b21d-cb4500b15589",
+        "session_id": "ses_f859aa169ffeEYPBjzRdBIhN9R",
+        "state": "needs_attention",
+        "finished": true,
+        "identity": {
+          "agent": "Sisyphus - ultraworker",
+          "providerID": "opencode-go",
+          "modelID": "muse-spark-1.3-contributor",
+          "opencode_version": "1.18.29"
+        },
+        "reason": null,
+        "observed_states": [
+          "idle",
+          "busy",
+          "idle"
+        ],
+        "changed_files": [],
+        "tool_outcomes": [
+          {
+            "tool": "write",
+            "status": "error",
+            "error": "OPENCODE_WORKER_SCOPE: file is outside writable_paths",
+            "exit_code": null
+          }
+        ]
+      },
+      {
+        "name": "early_cancel",
+        "task_id": "27ad7d8a-7d5e-4152-9e6d-6e0c669d85a7",
+        "session_id": null,
+        "state": "cancelled",
+        "finished": true,
+        "identity": null,
+        "reason": null,
+        "observed_states": [],
+        "changed_files": [],
+        "tool_outcomes": []
+      },
+      {
+        "name": "busy_cancel",
+        "task_id": "c66450d5-28f2-426c-84b2-c6db5e35fdf9",
+        "session_id": "ses_f8599b03cffeufjZCvA6osNPQ5",
+        "state": "cancelled",
+        "finished": true,
+        "identity": {
+          "agent": "Sisyphus - ultraworker",
+          "providerID": "opencode-go",
+          "modelID": "muse-spark-1.3-contributor",
+          "opencode_version": "1.18.29"
+        },
+        "reason": "Cancellation requested",
+        "observed_states": [
+          "idle",
+          "busy"
+        ],
+        "changed_files": [],
+        "tool_outcomes": []
+      }
+    ]
+  },
+  "shell_cancel": {
+    "outcome": "passed",
+    "late_file_absent_after_13_seconds": true
+  },
+  "codex_actual": {
+    "binary": "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "version": "0.153.4",
+    "events": [
+      {
+        "server": "opencode_worker",
+        "tool": "status",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "server": "opencode_worker",
+        "tool": "start",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "server": "opencode_worker",
+        "tool": "wait",
+        "status": "completed",
+        "error": null
+      }
+    ],
+    "task_id": "c6d4f558-17f2-476b-8827-9b58d6029751",
+    "session_id": "ses_f8584e342ffeb6642fUA9ZnU5e",
+    "identity": {
+      "agent": "Sisyphus - ultraworker",
+      "providerID": "opencode-go",
+      "modelID": "muse-spark-1.3-contributor",
+      "opencode_version": "1.18.29"
+    },
+    "state": "completed",
+    "marker_match": true,
+    "changed_files": [],
+    "network_env_names": [
+      "HTTP_PROXY",
+      "HTTPS_PROXY",
+      "ALL_PROXY",
+      "http_proxy",
+      "https_proxy",
+      "all_proxy"
+    ],
+    "read_tool_verified": true,
+    "latest_turn": 2,
+    "same_session_followup_passed": true,
+    "temporary_port": 51993,
+    "service_stopped": true,
+    "followup_events": [
+      {
+        "server": "opencode_worker",
+        "tool": "status",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "server": "opencode_worker",
+        "tool": "followup",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "server": "opencode_worker",
+        "tool": "wait",
+        "status": "completed",
+        "error": null
+      }
+    ]
+  },
+  "preservation": {
+    "unrelated_codex_config": true,
+    "luna_profiles_and_states": true,
+    "other_marketplace_entries": true,
+    "installed_cache_matches_source": true
+  },
+  "routing_skill": {
+    "source_updated": true,
+    "installed_path": "/Users/ethan/.codex/skills/sol-worker-routing/SKILL.md",
+    "installation_update": "updated_in_existing_location_by_user_authorization",
+    "matches_repository_source": true,
+    "sha256": "4bb69c5c33a4e73f2ada68c0c188796f80edffb266116140a4f8afe6b48de4e9"
+  }
+}

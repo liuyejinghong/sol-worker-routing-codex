@@ -32,6 +32,33 @@ Astra 负责把问题和方案确定下来，再判断实现是否值得交接�
 | **Luna Medium** | 小范围、做法明确、可独立验收的任务 | 局部修改、来源查找、目标测试排障 |
 | **Luna Max** | 按已收敛开发包实现可独立验收的功能或模块 | 在约定接口和行为下完成代码与必要测试；有界补充审查 |
 
+## 可选 OpenCode Worker 插件
+
+工作流可使用独立安装的 `opencode-worker` 插件，将有明确范围、已获外部执行授权的任务交给本机 OpenCode + OMO，使用 Go 的 Muse Spark 1.3 Contributor。插件负责启动、等待、返工、取消和结果回收；主 Agent 仍负责判断与验收。
+
+只有当前任务能发现插件工具时才考虑该通道。插件缺失时保留原有工作流，Luna 的启用/禁用状态不变。安装本仓库不会安装该插件或修改 Provider 配置。插件没有 Web 管理页面。
+
+插件目前是独立的本地项目，不随本仓库分发。已有插件时，可以这样开始一个任务：
+
+```text
+按 sol-worker-routing 工作流处理这个需求；在已有外部执行授权内，
+把适合的独立任务交给 OpenCode Worker，用 Muse Contributor 执行，最后由你验收。
+```
+
+Skill 加载后，主 Agent 根据任务是否适合交接、当前插件工具是否可用及已有授权选择执行者；不需要手动打开 OpenCode CLI。你也可以明确指定使用插件或本次不委派。插件接口包括 `status`、`start`、`wait`、`followup` 和 `cancel`；`completed` 只表示执行结束，主 Agent 仍需验收实际产物。
+
+Contributor 的优惠条件包括允许 Meta 使用输入和输出训练模型。插件只有一个活动任务槽；取消后确认停止，再把文件交给其他执行者。更新 Skill 后，在后续新任务中加载新版规则即可，不需要追加 App Personalization 指令。
+
+安装器仍只管理 `~/.agents/skills/sol-worker-routing`。如果同名 Skill 已在 `~/.codex/skills`，应明确保留或迁移该安装，避免两份规则并存；本次本机维护按用户确认保留了原 `.codex/skills` 位置。
+
+设计和证据见 [实施方案](docs/2026-09-07-opencode-worker-plugin-plan.md)、[本机接入测试](docs/2026-09-07-opencode-worker-plugin-probe.md) 与 [开发验收记录](docs/2026-09-07-opencode-worker-plugin-development-acceptance.md)。当前工作流源码版本为 0.14.0；独立插件的安装与验证单独维护。
+
+## v0.14.0 更新
+
+- 增加可选 OpenCode Worker 外部执行通道，保留主 Agent 判断和验收职责。
+- 明确工具发现、同会话返工、失败恢复和文件所有权；Luna 开关状态保持独立。
+- 同步安装器的旧 Skill 内容识别及实际接入、开发验收记录。
+
 ## v0.13.0 更新
 
 - 明确 Astra 主控与 Luna Max 程序员分工，Medium 的 blocker 先交回主 Agent 判断。
@@ -47,6 +74,8 @@ flowchart LR
     S -->|"关键决策、强耦合、不值得交接"| D["Astra 直接完成"]
     S -->|"小范围、做法明确"| LM["Luna Medium<br/>局部任务"]
     S -->|"开发包已收敛"| L["Luna Max<br/>功能实现与测试"]
+    S -->|"插件可用、任务适合、已获外部授权"| OC["OpenCode Worker<br/>Go Muse Contributor"]
+    OC --> S
     D --> O["最终结果"]
     LM --> S
     L --> S

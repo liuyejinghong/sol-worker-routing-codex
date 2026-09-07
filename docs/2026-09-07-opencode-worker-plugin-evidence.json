@@ -1,0 +1,286 @@
+{
+  "date": "2026-09-07",
+  "scope": "temporary OpenCode integration probes; not installed Codex plugin acceptance",
+  "runtime": {
+    "opencode": "1.18.29",
+    "omo": "4.19.4",
+    "codex_cli": "0.149.0",
+    "provider": "opencode-go",
+    "model": "muse-spark-1.3-contributor",
+    "agent": "Sisyphus - ultraworker"
+  },
+  "cli_initial": {
+    "exit_code": 0,
+    "elapsed_seconds": 33.03,
+    "agent_short_name_fell_back": true,
+    "read_completed": true,
+    "write_denied": true
+  },
+  "cli_followup": {
+    "exit_code": 0,
+    "elapsed_seconds": 25.91,
+    "stderr": ""
+  },
+  "api_write": {
+    "elapsed_seconds": 21.53,
+    "states": [
+      {
+        "type": "idle"
+      },
+      {
+        "type": "busy"
+      },
+      {
+        "type": "idle"
+      }
+    ],
+    "assistant_identity": [
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "tool-calls"
+      },
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "tool-calls"
+      },
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "stop"
+      }
+    ],
+    "tools": [
+      {
+        "tool": "read",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "tool": "write",
+        "status": "completed",
+        "error": null
+      }
+    ],
+    "text": [
+      "I detect implementation intent - explicit read and write with concrete scope. My approach: read input directly, then write result.",
+      "Input read. Writing result.",
+      "Done. result.json written with marker 2d2447d360333e5b, sum 81, phase 1."
+    ]
+  },
+  "api_followup_code_test": {
+    "elapsed_seconds": 26.33,
+    "states": [
+      {
+        "type": "idle"
+      },
+      {
+        "type": "busy"
+      },
+      {
+        "type": "retry",
+        "attempt": 1,
+        "message": "Error from provider (Console Go): Upstream request failed: [rate_limit_exceeded] Rate limit exceeded. Please retry after a brief wait.",
+        "next": 1788758084903
+      },
+      {
+        "type": "busy"
+      },
+      {
+        "type": "retry",
+        "attempt": 1,
+        "message": "Error from provider (Console Go): Upstream request failed: [rate_limit_exceeded] Rate limit exceeded. Please retry after a brief wait.",
+        "next": 1788758100034
+      },
+      {
+        "type": "busy"
+      },
+      {
+        "type": "idle"
+      }
+    ],
+    "assistant_identity": [
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "tool-calls"
+      },
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "tool-calls"
+      },
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "tool-calls"
+      },
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "tool-calls"
+      },
+      {
+        "agent": "Sisyphus - ultraworker",
+        "modelID": "muse-spark-1.3-contributor",
+        "providerID": "opencode-go",
+        "error": null,
+        "finish": "stop"
+      }
+    ],
+    "tools": [
+      {
+        "tool": "read",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "tool": "read",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "tool": "read",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "tool": "edit",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "tool": "edit",
+        "status": "completed",
+        "error": null
+      },
+      {
+        "tool": "bash",
+        "status": "completed",
+        "error": null
+      }
+    ],
+    "text": [
+      "I detect implementation intent - explicit edits to result.json and normalize.py plus validation run. My approach: read result.json, normalize.py, and check.py, then edit and run check.",
+      "Reads complete. Applying required edits to normalize.py and result.json.",
+      "Edits applied. Running validation.",
+      "Validation: NORMALIZE_CHECK_PASS. result.json phase set to 2, marker/sum preserved. normalize.py fixed. No blockers."
+    ]
+  },
+  "early_cancel_race": {
+    "before": null,
+    "abort_response": true,
+    "after": {
+      "type": "busy"
+    }
+  },
+  "busy_cancel": {
+    "initial": {
+      "type": "idle"
+    },
+    "before_abort": {
+      "type": "busy"
+    },
+    "abort_response": true,
+    "after": [
+      {
+        "type": "idle"
+      }
+    ],
+    "stable_after_2s": {
+      "type": "idle"
+    },
+    "assistant_errors": [
+      {
+        "name": "MessageAbortedError",
+        "data": {
+          "message": "Aborted"
+        }
+      }
+    ]
+  },
+  "permission_probe": {
+    "session_id": "ses_f85b248ceffeuCov24xGZaS23Z",
+    "paths": {
+      "directory": "/private/tmp/codex-opencode-probe-15k4_xhl",
+      "worktree": "/"
+    },
+    "elapsed_seconds": 29.36,
+    "tools": [
+      {
+        "tool": "write",
+        "state": {
+          "status": "completed",
+          "input": {
+            "content": "ALLOWED_OK",
+            "filePath": "/private/tmp/codex-opencode-probe-15k4_xhl/allowed.txt"
+          },
+          "output": "Wrote file successfully.",
+          "title": "private/tmp/codex-opencode-probe-15k4_xhl/allowed.txt",
+          "metadata": {
+            "diagnostics": {},
+            "filepath": "/private/tmp/codex-opencode-probe-15k4_xhl/allowed.txt",
+            "exists": false,
+            "truncated": false
+          },
+          "time": {
+            "start": 1788758333787,
+            "end": 1788758333831
+          }
+        }
+      },
+      {
+        "tool": "write",
+        "state": {
+          "status": "error",
+          "input": {
+            "content": "DENIED_SENTINEL",
+            "filePath": "/private/tmp/codex-opencode-probe-15k4_xhl/denied.txt"
+          },
+          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"*\",\"action\":\"deny\",\"pattern\":\"*\"},{\"permission\":\"edit\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"edit\",\"pattern\":\"result.json\",\"action\":\"allow\"},{\"permission\":\"edit\",\"pattern\":\"**/result.json\",\"action\":\"allow\"},{\"permission\":\"edit\",\"pattern\":\"**/normalize.py\",\"action\":\"allow\"},{\"permission\":\"*\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"edit\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"edit\",\"pattern\":\"**/allowed.txt\",\"action\":\"allow\"}]",
+          "time": {
+            "start": 1788758333791,
+            "end": 1788758333801
+          }
+        }
+      }
+    ],
+    "allowed_exists": true,
+    "denied_exists": false
+  },
+  "host_acceptance": {
+    "fixed_test_unchanged": true,
+    "test_exit_code": 0,
+    "stdout": "NORMALIZE_CHECK_PASS",
+    "result": {
+      "marker": "2d2447d360333e5b",
+      "phase": 2,
+      "sum": 81
+    },
+    "code": "def normalize_tags(tags):\n    result = []\n    seen = set()\n    for tag in tags:\n        cleaned = tag.strip().lower()\n        if not cleaned:\n            continue\n        if cleaned not in seen:\n            seen.add(cleaned)\n            result.append(cleaned)\n    return result\n",
+    "allowed_file_exact": true,
+    "denied_file_absent": true
+  },
+  "limitations": [
+    "no real Codex MCP plugin installed",
+    "no real repository code submitted",
+    "no model quality comparison",
+    "no quota balance verified",
+    "no general sandbox guarantee"
+  ]
+}

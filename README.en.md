@@ -32,6 +32,34 @@ Astra settles the problem and design before deciding whether implementation is w
 | **Luna Medium** | Small tasks with a known approach and independent acceptance | Local edits, source lookups, targeted test investigation |
 | **Luna Max** | Implement an independently testable feature or module from a settled development packet | Code and necessary tests under agreed interfaces and behavior; bounded supplementary review |
 
+## Optional OpenCode Worker plugin
+
+The separately installed `opencode-worker` plugin adds a bounded external execution channel through local OpenCode + OMO and the user's Go Muse Spark Contributor subscription. The plugin owns execution and result collection; the main Agent keeps judgment and acceptance.
+
+Use the channel only when its tools are callable in the current task and external execution is authorized. Without the plugin, the existing workflow continues. Luna lane states remain independent. This repository's installer does not install the plugin or alter Provider configuration. There is no web management page.
+
+The plugin is currently a separate local project and is not distributed by this repository. With it installed, a task can begin with:
+
+```text
+Use the sol-worker-routing workflow for this request. Within the existing
+external-execution authorization, delegate suitable independent work to
+OpenCode Worker using Muse Contributor, then inspect and accept the result.
+```
+
+Once the Skill is loaded, the main Agent selects an executor based on task fit, callable plugin tools and existing authorization. There is no need to open the OpenCode CLI manually. You can also explicitly request the plugin or disable delegation for the task. The tools are `status`, `start`, `wait`, `followup` and `cancel`; `completed` means execution ended, while the main Agent still owns acceptance.
+
+Contributor pricing permits Meta to train on submitted inputs and outputs. The plugin has one active task slot. Confirm cancellation has stopped execution before handing its files to another executor. Load updated Skill instructions in a new task; do not append another Personalization block.
+
+The installer still manages only `~/.agents/skills/sol-worker-routing`. If an existing copy lives under `~/.codex/skills`, explicitly retain or migrate it rather than installing duplicate instructions. This local maintenance retained the existing `.codex/skills` location at the user's request.
+
+See the [implementation plan](docs/2026-09-07-opencode-worker-plugin-plan.md), [local integration probes](docs/2026-09-07-opencode-worker-plugin-probe.md), and [development acceptance](docs/2026-09-07-opencode-worker-plugin-development-acceptance.md). The workflow source version is 0.14.0; the independent plugin has its own installation and validation.
+
+## Changes in v0.14.0
+
+- Add an optional OpenCode Worker execution channel while keeping judgment and acceptance with the main Agent.
+- Define tool discovery, same-session corrections, failure recovery and file ownership; Luna lane state remains independent.
+- Update recognition of the previous Skill contents and include integration and development acceptance records.
+
 ## Changes in v0.13.0
 
 - Astra leads design and Luna Max works as a programmer; Medium blockers return to the main Agent for judgment.
@@ -47,6 +75,8 @@ flowchart LR
     S -->|"critical decisions, tight coupling, no handoff benefit"| D["Astra directly"]
     S -->|"small scope, known approach"| LM["Luna Medium<br/>local tasks"]
     S -->|"settled development packet"| L["Luna Max<br/>implementation and tests"]
+    S -->|"plugin available, suitable task, external use authorized"| OC["OpenCode Worker<br/>Go Muse Contributor"]
+    OC --> S
     D --> O["Final result"]
     LM --> S
     L --> S
