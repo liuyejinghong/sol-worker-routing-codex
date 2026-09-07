@@ -2,6 +2,14 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.13.0 - 2026-09-07
+
+1. 明确主 Agent（当前主要使用 Astra）负责需求、根因、架构、开发包、集成与验收；Luna Max 按已收敛开发包实现功能或模块，Luna Medium 保留小范围明确任务
+2. 开发包明确可观察行为、状态归属、接口、范围和验收，允许局部实现自主权；关键冲突返回主 Agent，不自动形成 Medium 到 Max 的升级链
+3. 按交接与返工总成本选择委派，按实际风险验证，并同步中英文 README、Personalization 和两条 Worker profile
+4. 安装器登记变更前 Skill 与 profiles 的内容，保持旧版升级识别和 Luna 开关状态
+5. 精简 Personalization 为通用协作与表达偏好；仓库 AGENTS.md 压缩通用约束并明确安装条款适用范围，README 与安装提示改为替换旧个性化文本而非追加
+
 ## 0.12.3 - 2026-08-24
 
 1. 新增 `bash scripts/update.sh`：从当前分支已配置的 Git 上游 fetch 并 fast-forward 源码，再调用现有安装器更新两条 Luna profile 与 Skill

@@ -192,6 +192,7 @@ installer_known_current_skill_digests=(
   "ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586"
   "69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184"
   "0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9"
+  "1b2c7418b52107bb11878b1fb255a01eac5b0a6a3618975cb6ba1af27e67d855"
 )
 installer_known_deepseek_agent_digests=(
   "2e2fac3012c1df89fb6c16762a83a10272d75dfe763e8330c47062f957b39622"
@@ -209,9 +210,11 @@ installer_known_deepseek_agent_digests=(
 installer_known_luna_agent_digests=(
   "86021a3589f2676e8512d71a7aa16c9942d7109b6cc61b13dd37960abbeb2296"
   "260d2b6a9542c56960a8ab62fd2e6f2279c3c859bec04570234a3aba89ff6cfe"
+  "efd1f746804ffc345536a40c8fde753e47ad4dd98dc5b766231be03beef6ad93"
 )
 installer_known_luna_medium_agent_digests=(
   "c579d8e0512711cd9c057fc606a54af4dab58bfcb0c70accf5f3667eed9659a5"
+  "ed89157f8246dbad303a9ceba8ee0a8913e54214c532a34126bebf7833509b83"
 )
 installer_known_deepseek_pro_agent_digests=(
   "caa264733598b9ee88df85d374adf86cc2dfdd6df35ed086b7b68d37cf282617"
@@ -420,7 +423,7 @@ installer_current_skill_generation() {
   [[ -f "${installer_skill_target}" && ! -L "${installer_skill_target}" ]] || return 1
   installer_digest="$(installer_sha256 "${installer_skill_target}")" || return 1
   case "${installer_digest}" in
-    69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184|0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9)
+    69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184|0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9|1b2c7418b52107bb11878b1fb255a01eac5b0a6a3618975cb6ba1af27e67d855)
       printf '%s\n' "v0.12"
       ;;
     ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586)
@@ -1226,7 +1229,7 @@ if [[ "${installer_mode}" == "install" ]]; then
   echo "Installed Worker source profiles: Luna Medium and Luna Max."
   echo "Retired known Spark Scout and DeepSeek Worker profile files are absent. DeepSeek provider, credential, and model-catalog settings were not changed."
   echo "Not validated by this script: model-provider routing or child lifecycle."
-  echo "Required for account-wide HERO: paste one block from ${installer_repo_root}/personalization.md into Codex App Settings > Personalization > Custom Instructions; until confirmed, HERO is active only for this repository and the installed Worker profiles."
+  echo "Manual App step: replace the previous workflow text with one block from ${installer_repo_root}/personalization.md in Settings > Personalization > Custom Instructions. Preserve unrelated preferences; do not append duplicates. This script does not update App settings or global AGENTS.md."
 elif [[ "${installer_mode}" == "enable" ]]; then
   echo "Verified: requested lane state is enabled. Start a new Codex task before relying on Agent discovery."
 else

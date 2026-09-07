@@ -1,16 +1,10 @@
-# Installation contract
+# Repository instructions
 
-This repository is designed to be handed directly to a Codex Agent for installation.
+For repository work, follow the user's authorized scope. Apply HERO to the main Agent and Workers: report reachable defects, avoid speculative complexity, and verify the actual change without ritual checks. Required safety and data-integrity controls still apply. Worker routing and development packets belong in `skills/sol-worker-routing/SKILL.md`; general collaboration preferences belong in `personalization.md`.
 
-## HERO anti-overdefense: whole-agent contract
+## Installation contract scope
 
-This applies to the main Codex Agent and every Worker across reasoning, planning, implementation, diagnosis, review, testing, documentation, installation, and maintenance in this repository. It applies before any routing decision and still applies when Sol does all work directly. Bound proposed work, not factual discovery: report a defect reachable through documented inputs, supported interfaces, or actual data, but do not invent defenses for merely theoretical cases.
-
-Use HERO as four diagnostic questions: `H` rejects hashes, fingerprints, or manifests with no consumer or changed decision; `E` rejects defenses for inputs or threats the supported system cannot reach; `R` rejects rubrics, gates, or repeated reviews with no live uncertainty; `O` rejects wrappers, flags, compatibility layers, version trees, or guards justified mainly by other guards. Before adding any of them, name the live uncertainty it resolves, the concrete failure it can expose, the cheaper existing evidence, and the decision that changes on failure. If that answer is absent, do not add it.
-
-Calibrate with shapes, not a checklist. Disproportionate work includes hashing spreadsheet rows when direct comparison already answers the question, writing checksum files nothing reads, hardening accounts for an app with no users or deployment, auditing a patch repeatedly while the requested feature remains unfinished, returning a failing review verdict on everything, and adding guards whose only justification is another guard. Counterexamples must remain visible: a digest that skips re-reading a large unchanged file, a rare input produced by the project's own documentation, the first real smoke run through changed behavior, and a consumer-scoped regression run after changing a shared format are proportionate when they resolve a live uncertainty and change the next action.
-
-This is not a shortcut around security, migration, data integrity, release, authorization, or verification expressly required by this contract, the user, or a higher-priority instruction. Keep the primary deliverable moving, perform only the proportionate check needed to accept it, and stop when acceptance is met. Say plainly when the result is correct; when feedback challenges one part, correct that part without abandoning unaffected work. The `personalization.md` block is the account-wide main-Agent activation surface, both checked-in Luna profiles carry the compact contract directly, and `skills/sol-worker-routing/SKILL.md` is the detailed source for execution and routing.
+The sections below govern authorized installation, upgrade, and lane-state operations only. A source review or repository edit does not itself authorize installing the workflow. The installer must not edit global/project AGENTS.md or App settings; a separate explicit user request to maintain those instructions is outside the installation operation.
 
 ## Objective
 
@@ -62,7 +56,7 @@ If a managed or retired target has unknown content, both state files exist, or a
 
 Before writing, parse the two repository TOML profiles when a standard parser is available. After installation, confirm that the two installed profile-state files and `sol-worker-routing` Skill exactly match repository sources and that all six retired Spark/DeepSeek enabled/disabled paths are absent. Confirm separately that DeepSeek Provider, credential reference, and model catalog were not changed or removed.
 
-Tell the user that `personalization.md` does not activate itself. To make HERO account-wide, they must manually copy one complete language block into Codex App Settings → Personalization → Custom Instructions. Do not claim account-wide activation until confirmed.
+Tell the user that `personalization.md` does not activate itself. They must manually replace the previous workflow block in Codex App Settings → Personalization → Custom Instructions with one complete language block, preserving unrelated preferences. Do not append duplicate instructions or claim the App setting changed until confirmed.
 
 After installation or a state change, use a new task to reload Agent discovery. Probe only each newly enabled Luna lane with one bounded task whose answer and acceptance are obvious; inspect the named child lifecycle and result. A profile on disk is not route proof. Do not probe retired Spark or DeepSeek routes.
 

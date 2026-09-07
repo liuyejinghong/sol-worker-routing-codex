@@ -18,24 +18,24 @@
 `Sol Worker Routing` is more than adding subagents to Codex. It combines four ideas:
 
 - **First principles**: establish the objective, invariant facts, minimum acceptance, and authorization boundary before adding abstractions or process.
-- **Route by the actual bottleneck**: the coordinator role (called Sol below) keeps the objective and final judgment; Luna Medium handles narrow work with fixed scope and acceptance; Luna Max handles hidden coupling, difficult diagnosis, and depth-first reasoning.
-- **HERO Anti-OverDefense**: governs Sol and every Worker to reject checks with no consumer, defenses for unreachable cases, review loops with no live uncertainty, and wrappers or guards with no direct requirement.
-- **Less process, more useful evidence**: fixed gates, review rounds, and extra tools are not goals. The default is one focused contract check and one necessary real-path result.
+- **Route by the actual bottleneck**: the main Agent owns requirements, root cause, architecture, and final judgment; Luna Medium handles small, well-defined tasks; Luna Max programs a feature or module from a settled development packet.
+- **HERO Anti-OverDefense**: governs the main Agent and every Worker to reject checks with no consumer, defenses for unreachable cases, review loops with no live uncertainty, and wrappers or guards with no direct requirement.
+- **Less process, more useful evidence**: select sufficient verification for the actual change and risk, not a fixed check count. Complete required checks, then expand only for new changes, failures, or concrete concerns.
 
-“Sol” names the coordinator role; it does not require selecting `gpt-5.6-sol`. When the current main Agent is `gpt-5.6-terra`, it has the same duties and may route eligible packets through the two Luna lanes.
+Astra (`gpt-6-astra`) is the current primary main Agent; other supported parents can perform the same role. “Sol” in the project name is the historical coordinator name, not a requirement to select `gpt-5.6-sol`. Preserve the user's selected model and reasoning effort.
 
-Sol stays in the main thread and owns objective understanding, decomposition, evidence quality, acceptance, authorization, and delivery. One-step work stays with Sol. Luna Medium receives only narrow packets with fixed boundaries; if it finds hidden coupling or an unresolved root cause, it returns a blocker and Sol decides whether to issue a Luna Max packet.
+Astra settles the problem and design before deciding whether implementation is worth delegating. Luna Max takes implementation work; Astra keeps unresolved critical decisions. Difficulty alone is not a reason to delegate. If acceptance requires Astra to reread the entire context or repeat the central reasoning, Astra does the work directly.
 
 | Executor | Best fit | Examples |
 |---|---|---|
-| **Sol (coordinator role)** | Tiny work, ambiguity, architecture, authorization, and final decisions | Decide whether to change, integrate results, finish a one-step edit |
-| **Luna Medium** | Narrow semantic work with fixed scope, paths, ownership, and acceptance | Specified diff review, target-test diagnosis, constrained implementation |
-| **Luna Max** | Hidden coupling, subtle semantics, and long-horizon reasoning | Difficult review, complex diagnosis, critical implementation, cross-module judgment |
+| **Main Agent (primarily Astra)** | Requirements, root cause, architecture, tightly coupled work, integration, and acceptance | Settle state ownership and business ambiguity, prepare development packets, finish work that does not benefit from handoff |
+| **Luna Medium** | Small tasks with a known approach and independent acceptance | Local edits, source lookups, targeted test investigation |
+| **Luna Max** | Implement an independently testable feature or module from a settled development packet | Code and necessary tests under agreed interfaces and behavior; bounded supplementary review |
 
-## Changes in this release
+## Changes in v0.13.0
 
-- **Added**: an existing checkout can run `bash scripts/update.sh` to update from the current branch's configured upstream and reinstall the workflow.
-- **Protected**: it accepts only a branch with no tracked edits that can fast-forward; local-only commits or divergence stop rather than being merged or discarded.
+- Astra leads design and Luna Max works as a programmer; Medium blockers return to the main Agent for judgment.
+- Development packets settle behavior, design, and acceptance while preserving implementation discretion. Count preparation, waiting, verification, and rework when deciding whether delegation pays off.
 
 See [`CHANGELOG.md`](CHANGELOG.md) for release details. The full contracts live in [`personalization.md`](personalization.md), [`AGENTS.md`](AGENTS.md), and [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md).
 
@@ -43,19 +43,33 @@ See [`CHANGELOG.md`](CHANGELOG.md) for release details. The full contracts live 
 
 ```mermaid
 flowchart LR
-    U["User objective"] --> S["Sol<br/>understand, split, accept, integrate"]
-    S -->|"one focused action"| D["Sol directly"]
-    S -->|"private packet, fixed scope"| LM["Luna Medium<br/>narrow semantic Worker"]
-    S -->|"hidden coupling, deep reasoning"| L["Luna Max<br/>depth Worker"]
+    U["User objective"] --> S["Main Agent / Astra<br/>requirements, design, packet, acceptance"]
+    S -->|"critical decisions, tight coupling, no handoff benefit"| D["Astra directly"]
+    S -->|"small scope, known approach"| LM["Luna Medium<br/>local tasks"]
+    S -->|"settled development packet"| L["Luna Max<br/>implementation and tests"]
     D --> O["Final result"]
     LM --> S
     L --> S
     S --> O
 ```
 
-Luna Medium and Luna Max are peer Workers, not automatic stages. Medium returns a blocker when it discovers hidden coupling; it cannot widen scope or upgrade itself. Sol retains task selection, packet design, write ownership, acceptance, authorization, and final judgment.
+Luna Medium and Luna Max are peer Workers. Medium returns questions it cannot resolve within scope to the main Agent. Only after the critical decisions are settled does the main Agent decide whether Max should implement. There is no fixed `Medium → Max → Astra rescue` chain.
 
-Use a routine parent reasoning level for normal routing and integration. Raise it only for ambiguous architecture, conflicting evidence, high-stakes decisions, or complex synthesis. Main-thread and handoff cost should not exceed the task itself.
+## Development packets for Luna Max
+
+A packet can reference an existing spec or be a concise task message. Completeness means decisions affecting correctness are settled, not that every function is prescribed.
+
+| Content | What must be settled |
+|---|---|
+| Goal and behavior | Which inputs or actions should produce which results |
+| Design | Responsible module, state owner, interfaces, and invariants |
+| Scope and constraints | Readable sources, exclusive write scope, behavior to preserve, and non-goals |
+| Acceptance | Expected results, relevant failure cases, existing caller or test evidence |
+| Decision boundary | Local implementation discretion and decisions to return to the main Agent |
+
+Luna Max chooses local function structure, names, existing utilities, and necessary tests. It investigates facts within the assigned read scope. When the spec conflicts with code, business or interface meaning must change, ownership must move, or work exceeds scope, it pauses the dependent implementation and returns the specific conflict, evidence, and options while continuing unaffected work. The main Agent resolves questions under existing authority instead of automatically forwarding Worker blockers to the user.
+
+Delivery includes code, actual verification, checks not run, spec deviations, and unresolved items. Astra checks business semantics, integration, and important failure paths against the packet and existing callers, rather than relying only on Worker-authored tests. Small omissions can go back for correction; wrong root-cause, business, or interface assumptions return to Astra for judgment. Preserve useful work and avoid repeated speculative rewrites. Repeated substantial rework on the same task type is a reason to stop delegating that work.
 
 ## Routing governance and lane switches
 
@@ -108,13 +122,15 @@ The installer stages and backs up before replacement, and rolls back normal fail
 
 Windows requires Git Bash/MSYS Bash or WSL Bash; this is not a native PowerShell script. Until a real Windows installation path is accepted, this is a compatibility path rather than a full platform-support claim.
 
-Account-wide Personalization is the only manual step: copy one complete language block from [`personalization.md`](personalization.md) into Codex App Settings → Personalization → Custom Instructions. Installed files do not activate account-wide instructions.
+Update account-wide Personalization manually: copy one complete language block from [`personalization.md`](personalization.md) and replace the previous workflow text in Codex App Settings → Personalization → Custom Instructions. Keep unrelated preferences and do not append duplicate versions. Editing the file does not update the App setting.
+
+Personalization holds general collaboration and writing preferences; global AGENTS.md holds coding agreements; project AGENTS.md holds repository rules; the routing Skill owns Worker roles and development packets. Do not paste AGENTS.md or the whole Skill into Personalization. The installer does not manage global AGENTS.md; any old routing details there require separate cleanup.
 
 ## Usage examples
 
-Normally, describe the objective without selecting a Worker. Sol decides whether delegation adds value.
+Normally, describe the objective without selecting a Worker. The main Agent decides whether delegation adds value.
 
-Keep one-step work with Sol:
+Keep one-step work with the main Agent:
 
 ```text
 Confirm this setting's current default and tell me whether it needs to change.
@@ -126,13 +142,15 @@ Use Luna Medium when scope and acceptance are fixed:
 Review only this specified diff against its behavior contract. Return at most three locatable risks, do not expand to other modules, and verify each with existing tests or read-only evidence.
 ```
 
-Use Luna Max for hidden coupling or long-horizon reasoning:
+Use Luna Max to implement a feature with a settled development packet:
 
 ```text
-Diagnose this intermittent concurrency leak across scheduling, cancellation, and resource release. Explain the hidden coupling, implement the minimum fix, and prove re-entry semantics remain intact.
+Implement Astra's agreed export packet: reuse the existing query service and permission checks, preserve the specified columns and order, and output only the header for empty results.
+Read the export module and its existing callers; modify only the export module and tests named in the packet, without changing the public query interface.
+Verify populated results, empty results, denied access, and fields containing commas. Choose local function structure yourself; return evidence and options if the spec conflicts with existing interfaces.
 ```
 
-Keep objective and architecture decisions with Sol:
+Keep root cause, architecture, and critical business decisions with the main Agent:
 
 ```text
 Decide whether this requirement justifies changing the current architecture and give me the final approach.
@@ -152,8 +170,8 @@ During upgrade it removes an old Spark or DeepSeek profile only when its content
 
 | File | Purpose |
 |---|---|
-| [`personalization.md`](personalization.md) | Account-wide behavior and routing preferences copied manually |
-| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Sol routing, packet, lease, and acceptance rules |
+| [`personalization.md`](personalization.md) | Concise collaboration and writing preferences to replace manually |
+| [`skills/sol-worker-routing/SKILL.md`](skills/sol-worker-routing/SKILL.md) | Main Agent routing, development packets, Worker leases, and acceptance rules |
 | [`agents/`](agents/) | Luna Medium and Luna Max Worker profiles |
 | [`scripts/install.sh`](scripts/install.sh) | Conflict detection, state preservation, installation, and old-profile migration |
 | [`scripts/update.sh`](scripts/update.sh) | Fast-forward source from the current Git upstream, then run the installer |
