@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0+codex.20260908104645",
+  "tools": [
+    "status",
+    "run",
+    "start",
+    "wait",
+    "followup",
+    "cancel"
+  ],
+  "runtime_version": "0.2.0",
+  "existing_record_readable": true,
+  "source_cache_equal": true,
+  "routing_skill_equal": true,
+  "config_and_luna_unchanged": true,
+  "existing_heartbeat_untouched": true,
+  "routing_skill_sha256": "39c8ce653fefea972e6e38cb5210e1ec5db47fdaf94edf5c5e5e2e342a6379d4"
+}

@@ -1,0 +1,47 @@
+{
+  "status": "passed",
+  "prototype_only": true,
+  "codex_version": "0.153.4",
+  "mcp_run_calls": 1,
+  "run_duration_seconds": 150.593,
+  "usage_updates_during_run": 0,
+  "agent_messages_during_run": 0,
+  "total_main_thread_usage_updates": 3,
+  "usage_update_times": [
+    165.461,
+    171.476,
+    179.567
+  ],
+  "whole_turn_usage": {
+    "totalTokens": 59360,
+    "inputTokens": 58959,
+    "cachedInputTokens": 38656,
+    "cacheWriteInputTokens": 0,
+    "outputTokens": 401,
+    "reasoningOutputTokens": 0
+  },
+  "context_note": "isolated host with unrelated plugins, MCP servers, memories and hooks disabled for this test invocation only; totals are not comparable to prior tests",
+  "identity": {
+    "agent": "Sisyphus - ultraworker",
+    "providerID": "opencode-go",
+    "modelID": "muse-spark-1.3-contributor",
+    "opencode_version": "1.18.29"
+  },
+  "task_id": "d5cf5f16-71fd-48c6-a3f9-96974161067d",
+  "state": "completed",
+  "main_file_read_verified": true,
+  "script_unchanged": true,
+  "private_service_stopped": true,
+  "unit_tests_passed": 13,
+  "run_contract_cases": [
+    "completion",
+    "failure",
+    "deduplication",
+    "same-session followup",
+    "old request returns old turn",
+    "foreground expiry",
+    "RPC wait interruption",
+    "explicit worker cancellation"
+  ],
+  "exact_wait_billing": "not independently metered; no extra main-thread usage update observed during run"
+}

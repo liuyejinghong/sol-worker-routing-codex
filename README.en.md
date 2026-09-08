@@ -46,13 +46,23 @@ external-execution authorization, delegate suitable independent work to
 OpenCode Worker using Muse Contributor, then inspect and accept the result.
 ```
 
-Once the Skill is loaded, the main Agent selects an executor based on task fit, callable plugin tools and existing authorization. There is no need to open the OpenCode CLI manually. You can also explicitly request the plugin or disable delegation for the task. The tools are `status`, `start`, `wait`, `followup` and `cancel`; `completed` means execution ended, while the main Agent still owns acceptance.
+Once the Skill is loaded, the main Agent selects an executor based on task fit, callable plugin tools and existing authorization. There is no need to open the OpenCode CLI manually. You can also explicitly request the plugin or disable delegation for the task. The tools are `run`, `status`, `start`, `wait`, `followup` and `cancel`; `completed` means execution ended, while the main Agent still owns acceptance.
 
 Contributor pricing permits Meta to train on submitted inputs and outputs. The plugin has one active task slot. Confirm cancellation has stopped execution before handing its files to another executor. Load updated Skill instructions in a new task; do not append another Personalization block.
 
 The installer still manages only `~/.agents/skills/sol-worker-routing`. If an existing copy lives under `~/.codex/skills`, explicitly retain or migrate it rather than installing duplicate instructions. This local maintenance retained the existing `.codex/skills` location at the user's request.
 
-See the [implementation plan](docs/2026-09-07-opencode-worker-plugin-plan.md), [local integration probes](docs/2026-09-07-opencode-worker-plugin-probe.md), and [development acceptance](docs/2026-09-07-opencode-worker-plugin-development-acceptance.md). The workflow source version is 0.14.0; the independent plugin has its own installation and validation.
+See the [implementation plan](docs/2026-09-07-opencode-worker-plugin-plan.md), [local integration probes](docs/2026-09-07-opencode-worker-plugin-probe.md), and [development acceptance](docs/2026-09-07-opencode-worker-plugin-development-acceptance.md). The workflow source version is 0.15.0; the independent plugin has its own installation and validation.
+
+## One foreground run
+
+Use `run` by default: dispatch and waiting stay inside the plugin, and the main Agent accepts the result after execution stops. For corrections, use `followup(wait_seconds: 300)`.
+
+The foreground window is capped at 300 seconds; MCP tool timeout is 360 seconds. When Code Mode wraps the call, set the enclosing exec `yield_time_ms` to 360000. Silence alone does not prevent an outer wrapper from yielding early. If the window expires while the worker is unfinished, retain the request ID and continue waiting.
+
+Background `start` does not register a conversation wakeup. Do not end the main response promising automatic acceptance unless supported followup is actually bound. RPC interruption only stops waiting; use `cancel` to stop the worker.
+
+The [final plan and metering probe](docs/2026-09-08-opencode-worker-final-run-plan.md) recorded a 150.6-second run with no main-thread usage update during the wait and real artifact inspection afterward. This is bounded foreground waiting, not a callback into an ended conversation or a universal zero-token guarantee.
 
 ## Changes in v0.14.0
 

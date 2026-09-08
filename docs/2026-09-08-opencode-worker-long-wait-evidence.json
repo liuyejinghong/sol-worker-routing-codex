@@ -1,0 +1,78 @@
+{
+  "scope": "isolated prototype; no installed plugin or heartbeat changes",
+  "plugin_wait_max_seconds": 180,
+  "host_mcp_timeout_seconds": 210,
+  "third_case_requested_exec_yield_ms": 180000,
+  "wrapper_tool_calls_not_exposed_by_cli_json": true,
+  "cases": [
+    {
+      "case": "default_outer_wait",
+      "wait_calls": 1,
+      "wait_seconds": 112.314,
+      "visible_agent_messages_during_wait": 1,
+      "task_id": "de94789e-5b86-45ca-9df8-87ac447524e6",
+      "identity": {
+        "agent": "Sisyphus - ultraworker",
+        "providerID": "opencode-go",
+        "modelID": "muse-spark-1.3-contributor",
+        "opencode_version": "1.18.29"
+      },
+      "state": "completed",
+      "main_agent_read_verified": true,
+      "whole_turn_usage": {
+        "input_tokens": 196931,
+        "cached_input_tokens": 166656,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 542,
+        "reasoning_output_tokens": 13
+      },
+      "final_report": "验收通过。\n\n- 临时 `ocw_long_wait_probe` 的 `start`、`wait` 各调用一次，wait 返回 `completed`、`finished=true`，无错误。\n- 脚本退出码为 `0`，输出 `SYNTHETIC_WORK_DONE`。\n- 本机只读读取 `result.txt`，标记确认为 `LONG_WAIT_ce8c9b5b49126fb8`。\n- 实际模型：`opencode-go/muse-spark-1.3-contributor`，OpenCode 版本 `1.18.29`。"
+    },
+    {
+      "case": "silent_only",
+      "wait_calls": 1,
+      "wait_seconds": 115.397,
+      "visible_agent_messages_during_wait": 0,
+      "task_id": "fb2e30e2-0809-4ed3-86d3-c89b90877b87",
+      "identity": {
+        "agent": "Sisyphus - ultraworker",
+        "providerID": "opencode-go",
+        "modelID": "muse-spark-1.3-contributor",
+        "opencode_version": "1.18.29"
+      },
+      "state": "completed",
+      "main_agent_read_verified": true,
+      "whole_turn_usage": {
+        "input_tokens": 193824,
+        "cached_input_tokens": 163968,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 542,
+        "reasoning_output_tokens": 19
+      },
+      "final_report": "长等待执行与结果核验通过；严格的宿主单次阻塞未完全满足。\n\n- 探针 `wait` 仅调用一次，正常完成，无超时；期间未发送进度提示。\n- 宿主执行包装器提前返回，随后用了两次续等，因此不能认定为完整的单次阻塞验收。\n- 本机只读核对标记完全一致：`LONG_WAIT_SILENT_edc3f20097b8e711`。\n- 实际模型：`opencode-go/muse-spark-1.3-contributor`。\n- Worker 执行指定命令成功，另调用了 `read` 核对文件。"
+    },
+    {
+      "case": "extended_outer_wait",
+      "wait_calls": 1,
+      "wait_seconds": 119.886,
+      "visible_agent_messages_during_wait": 0,
+      "task_id": "1d0dc981-ab19-4fb0-8095-be9fc6c33858",
+      "identity": {
+        "agent": "Sisyphus - ultraworker",
+        "providerID": "opencode-go",
+        "modelID": "muse-spark-1.3-contributor",
+        "opencode_version": "1.18.29"
+      },
+      "state": "completed",
+      "main_agent_read_verified": true,
+      "whole_turn_usage": {
+        "input_tokens": 140944,
+        "cached_input_tokens": 84480,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 494,
+        "reasoning_output_tokens": 0
+      },
+      "final_report": "验收通过。\n\n- `wait` 仅调用一次，MCP 超时为 180 秒，外层 yield 为 180000 毫秒。\n- 实际阻塞约 **119.9 秒**；外层未提前返回，续等 **0 次**。\n- Worker 仅执行 `python3 slow_task.py`，退出码为 0，输出 `SYNTHETIC_WORK_DONE`。\n- 本机只读核对 `result.txt`，内容匹配 `LONG_WAIT_OUTER_83ea8ec421b8007b`。\n- 实际模型：`opencode-go/muse-spark-1.3-contributor`；Agent：`Sisyphus - ultraworker`；OpenCode：`1.18.29`。"
+    }
+  ]
+}

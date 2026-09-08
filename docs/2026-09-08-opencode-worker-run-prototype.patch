@@ -1,0 +1,174 @@
+--- a/src/mcp.ts
++++ b/src/mcp.ts
+@@ -4,20 +4,26 @@
+ import path from 'node:path';
+ import { execFile } from 'node:child_process';
+ import { promisify } from 'node:util';
+-import { errorText, maybeJson, MODEL, PROVIDER, publicTask, requestId, sleep, startSchema, stateRoot, taskDir, taskId, VERSION } from './core.js';
++import { errorText, maybeJson, MODEL, PROVIDER, publicTask, requestId, sleep, startSchema, stateRoot, taskDir, taskId, VERSION, type Task } from './core.js';
+ import { opencodePath } from './runtime.js';
+ import { Store } from './store.js';
++import { awaitTask } from './await-task.js';
+ 
+ const store = new Store(stateRoot());
+ const server = new McpServer({ name: 'opencode-worker', version: VERSION }, {
+   instructions: 'Delegate bounded authorized work to local OpenCode using Go Muse Spark Contributor. Contributor permits training on submitted prompts/completions. Keep Codex in charge of judgment and acceptance. Use stable request_id values; wait timeouts are not failures. completed means execution ended, not accepted. Never silently switch provider or overlap file ownership. start/followup spend the user\'s Go quota.',
+ });
+ const result = (value: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(value) }] });
+-const handle = (fn: (args: any) => Promise<unknown>) => async (args: any) => {
+-  try { return result(await fn(args)); } catch (error) { return { ...result({ error: errorText(error) }), isError: true }; }
++const handle = (fn: (args: any, signal?: AbortSignal) => Promise<unknown>) => async (args: any, extra: { signal: AbortSignal }) => {
++  try { return result(await fn(args, extra.signal)); } catch (error) { return { ...result({ error: errorText(error) }), isError: true }; }
+ };
+-const lookup = async (id: string) => {
+-  const task = await store.reconcile(await store.get(id));
++const lookup = async (id: string, turn?: number) => {
++  let task = await store.reconcile(await store.get(id));
++  if (turn !== undefined && task.turn !== turn) {
++    const archived = await maybeJson<Task>(path.join(taskDir(store.root, id), `turn-${turn}`, 'result.json'));
++    if (!archived) throw new Error('Requested turn archive is unavailable; current turn is not its result');
++    task = archived;
++  }
+   return { ...publicTask(task), artifacts: path.join(taskDir(store.root, task.id), `turn-${task.turn}`) };
+ };
+ server.registerTool('status', {
+@@ -37,29 +43,32 @@
+     quota: 'unavailable', data_directory: store.root,
+     network_env_present: ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY', 'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy'].filter(key => Boolean(process.env[key])) };
+ }));
++server.registerTool('run', {
++  description: 'Dispatch one authorized OpenCode Go Muse Contributor task and await its result inside this tool. Prefer this for foreground work: no separate status/start/wait loop is required. Use a stable request_id; repeating identical arguments resumes waiting on the same task, never starts a duplicate. wait_seconds is a bounded foreground window. If wait_expired=true and finished=false, retain ownership and continue with the same request or an explicit followup arrangement. Cancelling the tool call stops waiting, not the worker; use cancel to stop the worker. In Code Mode, set the surrounding exec yield_time_ms to cover wait_seconds.',
++  inputSchema: startSchema.innerType().extend({ wait_seconds: z.number().int().min(1).max(300).default(300) }),
++  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
++}, handle(async ({ wait_seconds, ...input }, signal) => {
++  const task = await store.start(input);
++  const turn = "requested_turn" in task ? Number(task.requested_turn) : task.turn;
++  return awaitTask(() => lookup(task.task_id, turn), wait_seconds, signal);
++}));
+ server.registerTool('start', {
+   description: 'Start one bounded external OpenCode worker task through the user\'s Go Muse Contributor subscription. This sends task context and files read by the agent to that provider. Reuse request_id on uncertain retries. directory must be an explicitly assigned local directory; writable_paths are literal owned paths (trailing / means directory). allowed_commands are exact trusted commands; shell is not a filesystem sandbox. Returns immediately with task_id.',
+   inputSchema: startSchema, annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+ }, handle(args => store.start(args)));
+ server.registerTool('wait', {
+-  description: 'Wait up to 30 seconds for execution to finish or require attention. Retain file ownership while finished=false, including unknown/cancelling states. Inspect tool errors and artifacts before acceptance.',
+-  inputSchema: { task_id: taskId, timeout_seconds: z.number().min(0).max(30).default(20) }, annotations: { readOnlyHint: true },
+-}, handle(async ({ task_id, timeout_seconds }) => {
+-  const deadline = Date.now() + timeout_seconds * 1000;
+-  let task;
+-  do {
+-    task = await lookup(task_id);
+-    if (task.finished || task.state === 'unknown') break;
+-    if (Date.now() >= deadline) break;
+-    await sleep(Math.min(500, Math.max(0, deadline - Date.now())));
+-  } while (Date.now() < deadline);
+-  return task;
++  description: 'Wait up to 300 seconds for execution to finish or require attention. Retain file ownership while finished=false, including unknown/cancelling states. Inspect tool errors and artifacts before acceptance.',
++  inputSchema: { task_id: taskId, timeout_seconds: z.number().min(0).max(300).default(300) }, annotations: { readOnlyHint: true },
++}, handle(({ task_id, timeout_seconds }, signal) => awaitTask(() => lookup(task_id), timeout_seconds, signal)));
++server.registerTool('followup', {
++  description: 'Send a correction or continuation to a finished task using the same OpenCode session and original permissions. Reuse request_id when retrying. Does not expand write or shell scope. Prior task must be confirmed stopped. Set wait_seconds to await the correction within this call; zero preserves immediate-return behavior.',
++  inputSchema: { task_id: taskId, request_id: requestId, task: z.string().min(1).max(60000), wait_seconds: z.number().int().min(0).max(300).default(0) },
++  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
++}, handle(async ({ task_id, request_id, task, wait_seconds }, signal) => {
++  const started = await store.followup(task_id, request_id, task);
++  const turn = "requested_turn" in started ? Number(started.requested_turn) : started.turn;
++  return wait_seconds ? awaitTask(() => lookup(task_id, turn), wait_seconds, signal) : started;
+ }));
+-server.registerTool('followup', {
+-  description: 'Send a correction or continuation to a finished task using the same OpenCode session and original permissions. Reuse request_id when retrying. Does not expand write or shell scope. Prior task must be confirmed stopped.',
+-  inputSchema: { task_id: taskId, request_id: requestId, task: z.string().min(1).max(60000) },
+-  annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: true },
+-}, handle(({ task_id, request_id, task }) => store.followup(task_id, request_id, task)));
+ server.registerTool('cancel', {
+   description: 'Request cancellation of a worker task. Retains existing edits. Poll wait/status until finished=true before reassigning its files. If a runner crashed, attempts reconciliation of only its recorded private service; never stops the user\'s normal OpenCode service.',
+   inputSchema: { task_id: taskId }, annotations: { readOnlyHint: false, destructiveHint: false },
+--- /dev/null
++++ b/src/await-task.ts
+@@ -0,0 +1,14 @@
++import { setTimeout } from 'node:timers/promises';
++
++export async function awaitTask<T extends { finished: boolean; state: string }>(
++  lookup: () => Promise<T>, seconds: number, signal?: AbortSignal,
++): Promise<T & { wait_expired: boolean }> {
++  const deadline = Date.now() + seconds * 1000;
++  while (true) {
++    signal?.throwIfAborted();
++    const task = await lookup();
++    if (task.finished || task.state === 'unknown') return { ...task, wait_expired: false };
++    if (Date.now() >= deadline) return { ...task, wait_expired: true };
++    await setTimeout(Math.min(500, Math.max(1, deadline - Date.now())), undefined, { signal });
++  }
++}
+--- /dev/null
++++ b/tests/await-task.test.ts
+@@ -0,0 +1,27 @@
++import test from 'node:test';
++import assert from 'node:assert/strict';
++import { awaitTask } from '../src/await-task.js';
++
++test('returns completed and failed tasks immediately instead of waiting out the window', async () => {
++  for (const state of ['completed', 'failed', 'cancelled', 'needs_attention']) {
++    const result = await awaitTask(async () => ({ finished: true, state }), 300);
++    assert.equal(result.state, state); assert.equal(result.wait_expired, false);
++  }
++});
++test('window expiry retains unfinished state; unknown returns for recovery', async () => {
++  assert.deepEqual(await awaitTask(async () => ({ finished: false, state: 'running' }), 0), { finished: false, state: 'running', wait_expired: true });
++  assert.deepEqual(await awaitTask(async () => ({ finished: false, state: 'unknown' }), 300), { finished: false, state: 'unknown', wait_expired: false });
++});
++test('RPC cancellation stops the waiting loop without inventing worker completion', async () => {
++  const controller = new AbortController();
++  let calls = 0;
++  const waiting = awaitTask(async () => { calls++; return { finished: false, state: 'running' }; }, 300, controller.signal);
++  setTimeout(() => controller.abort(), 10);
++  await assert.rejects(waiting, { name: 'AbortError' });
++  assert.equal(calls, 1);
++});
++test('state inspection stays inside one call until the task ends', async () => {
++  let calls = 0;
++  const result = await awaitTask(async () => ({ finished: ++calls === 2, state: calls === 2 ? 'completed' : 'running' }), 2);
++  assert.equal(result.state, 'completed'); assert.equal(result.wait_expired, false); assert.equal(calls, 2);
++});
+--- /dev/null
++++ b/tests/run-integration.ts
+@@ -0,0 +1,29 @@
++import fs from 'node:fs/promises';
++import path from 'node:path';
++import assert from 'node:assert/strict';
++import { Client } from '@modelcontextprotocol/sdk/client/index.js';
++import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
++
++const root=await fs.mkdtemp('/private/tmp/ocw-run-contract-');const directory=path.join(root,'workspace');await fs.mkdir(directory);
++const env=Object.fromEntries(Object.entries(process.env).filter((e):e is [string,string]=>e[1]!==undefined));
++env.OPENCODE_WORKER_STATE_DIR=path.join(root,'state');env.OPENCODE_WORKER_BIN=path.resolve('tests/fake-opencode.mjs');env.OPENCODE_WORKER_FAKE_DB=path.join(root,'db');
++const client=new Client({name:'run-contract',version:'1'});await client.connect(new StdioClientTransport({command:process.execPath,args:[path.resolve('dist/mcp.mjs')],env,stderr:'inherit'}));
++const call=async(name:string,args:any={})=>{const r:any=await client.callTool({name,arguments:args});assert.equal(r.isError,undefined,JSON.stringify(r));return JSON.parse(r.content[0].text);};
++try{
++ const args={request_id:'normal',directory,task:'FAKE_NORMAL',timeout_seconds:30,wait_seconds:10};
++ const first=await call('run',args);assert.equal(first.state,'completed');assert.equal(first.wait_expired,false);
++ const repeated=await call('run',args);assert.equal(repeated.task_id,first.task_id);
++ const next=await call('followup',{task_id:first.task_id,request_id:'next',task:'FAKE_NORMAL',wait_seconds:10});assert.equal(next.turn,2);assert.equal(next.state,'completed');
++ const old=await call('run',args);assert.equal(old.turn,1);assert.equal(old.request_id,'normal');
++ const failed=await call('run',{...args,request_id:'fail',task:'FAKE_MODEL_ERROR'});assert.equal(failed.state,'failed');assert.equal(failed.finished,true);
++ const expired=await call('run',{...args,request_id:'window',task:'FAKE_STALL',wait_seconds:1});assert.equal(expired.wait_expired,true);assert.equal(expired.finished,false);
++ await call('cancel',{task_id:expired.task_id});assert.equal((await call('wait',{task_id:expired.task_id,timeout_seconds:10})).state,'cancelled');
++ const controller=new AbortController();
++ const pending=client.callTool({name:'run',arguments:{...args,request_id:'abort-wait',task:'FAKE_STALL'}},undefined,{signal:controller.signal}).then(()=>false,()=>true);
++ let active;
++ for(let i=0;i<30;i++){active=(await call('status')).active_task;if(active?.request_id==='abort-wait'&&active.state==='running')break;await new Promise(r=>setTimeout(r,100));}
++ assert.equal(active.request_id,'abort-wait');controller.abort();assert.equal(await pending,true);
++ const still=await call('status',{task_id:active.task_id});assert.equal(still.finished,false);
++ await call('cancel',{task_id:active.task_id});assert.equal((await call('wait',{task_id:active.task_id,timeout_seconds:10})).state,'cancelled');
++ console.log('RUN_CONTRACT_PASS',root);
++}finally{await client.close();}
+--- a/.mcp.json
++++ b/.mcp.json
+@@ -5,7 +5,7 @@
+       "args": [],
+       "cwd": ".",
+       "startup_timeout_sec": 15,
+-      "tool_timeout_sec": 45,
++      "tool_timeout_sec": 360,
+       "env_vars": [
+         "HTTP_PROXY",
+         "HTTPS_PROXY",

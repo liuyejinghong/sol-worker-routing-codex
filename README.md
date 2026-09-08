@@ -45,13 +45,23 @@ Astra 负责把问题和方案确定下来，再判断实现是否值得交接�
 把适合的独立任务交给 OpenCode Worker，用 Muse Contributor 执行，最后由你验收。
 ```
 
-Skill 加载后，主 Agent 根据任务是否适合交接、当前插件工具是否可用及已有授权选择执行者；不需要手动打开 OpenCode CLI。你也可以明确指定使用插件或本次不委派。插件接口包括 `status`、`start`、`wait`、`followup` 和 `cancel`；`completed` 只表示执行结束，主 Agent 仍需验收实际产物。
+Skill 加载后，主 Agent 根据任务是否适合交接、当前插件工具是否可用及已有授权选择执行者；不需要手动打开 OpenCode CLI。你也可以明确指定使用插件或本次不委派。插件接口包括 `run`、`status`、`start`、`wait`、`followup` 和 `cancel`；`completed` 只表示执行结束，主 Agent 仍需验收实际产物。
 
 Contributor 的优惠条件包括允许 Meta 使用输入和输出训练模型。插件只有一个活动任务槽；取消后确认停止，再把文件交给其他执行者。更新 Skill 后，在后续新任务中加载新版规则即可，不需要追加 App Personalization 指令。
 
 安装器仍只管理 `~/.agents/skills/sol-worker-routing`。如果同名 Skill 已在 `~/.codex/skills`，应明确保留或迁移该安装，避免两份规则并存；本次本机维护按用户确认保留了原 `.codex/skills` 位置。
 
-设计和证据见 [实施方案](docs/2026-09-07-opencode-worker-plugin-plan.md)、[本机接入测试](docs/2026-09-07-opencode-worker-plugin-probe.md) 与 [开发验收记录](docs/2026-09-07-opencode-worker-plugin-development-acceptance.md)。当前工作流源码版本为 0.14.0；独立插件的安装与验证单独维护。
+设计和证据见 [实施方案](docs/2026-09-07-opencode-worker-plugin-plan.md)、[本机接入测试](docs/2026-09-07-opencode-worker-plugin-probe.md) 与 [开发验收记录](docs/2026-09-07-opencode-worker-plugin-development-acceptance.md)。当前工作流源码版本为 0.15.0；独立插件的安装与验证单独维护。
+
+## 单次 run 与等待
+
+普通任务默认用 `run`，派发和等待都在插件程序内完成。主代理收到终态后再验收，不需要反复进行空状态查询。返工使用 `followup(wait_seconds: 300)`。
+
+前台窗口最长 300 秒，宿主 MCP 超时为 360 秒。使用 Code Mode 包装时，外层 exec 的 `yield_time_ms` 设为 360000；静默提示本身不能阻止外层默认短等待提前返回。窗口到期但任务未结束时，保留原请求 ID 继续等待。
+
+`start` 保留显式后台模式，但不会注册原会话唤醒。没有已绑定跟进时，主代理不能结束响应并承诺之后自动验收。RPC 中断只停止等待；明确取消 Worker 使用 `cancel`。
+
+[最终方案与计量验证](docs/2026-09-08-opencode-worker-final-run-plan.md)记录了一次 150.6 秒 run：等待期间没有主线程计量更新，返回后实际读取并验收产物。这是有界前台等待，不是会话结束后的完成回调，也不代表任意时长绝对零 token。
 
 ## v0.14.0 更新
 
