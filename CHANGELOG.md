@@ -2,7 +2,10 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
-## Unreleased
+## 0.16.0 - 2026-09-11
+
+- 安装回归在 macOS Bash 3.2 与 GNU Bash 5.2 各通过 34 组，覆盖 Medium 退役、Max 状态保留、中断恢复与未知文件拒绝；路由 Skill 格式验证通过。
+- 正式移除 Luna Medium：新安装仅提供 Luna Max；升级删除已知 Medium 启用或停用文件，保留 Max 状态。小范围任务由主 Agent 直接完成，不再分派给 Medium。
 
 - 完成独立 OpenCode Worker 0.3 OMO 混合路由开发与真实验收：DeepSeek max、Muse xhigh，直接子任务权限、单写者和整树取消；源码、构建产物和配置合并样例纳入仓库；已完成单独安装及安装缓存的真实混合路由验收。同步路由 Skill，并登记其前版摘要以保留 Luna 状态。
 

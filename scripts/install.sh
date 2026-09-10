@@ -83,7 +83,7 @@ Usage:
   bash scripts/install.sh --enable-lane <lane|all>
   bash scripts/install.sh --disable-lane <lane|all>
 
-Lanes: luna_medium_worker, luna_worker.
+Lanes: luna_worker (Luna Max). Luna Medium is retired.
 EOF
       exit 0
       ;;
@@ -111,7 +111,6 @@ if [[ "${installer_codex_dir}" != /* ]]; then
 fi
 
 installer_luna_agent_source="${installer_repo_root}/agents/luna-worker.toml"
-installer_luna_medium_agent_source="${installer_repo_root}/agents/luna-medium-worker.toml"
 installer_skill_source="${installer_repo_root}/skills/sol-worker-routing/SKILL.md"
 installer_agent_dir="${installer_codex_dir}/agents"
 installer_user_agents_dir="${installer_home_dir}/.agents"
@@ -134,14 +133,14 @@ installer_legacy_skill_dirs=(
 )
 installer_install_pairs=(
   "${installer_luna_agent_source}|${installer_luna_agent_target}"
-  "${installer_luna_medium_agent_source}|${installer_luna_medium_agent_target}"
   "${installer_skill_source}|${installer_skill_target}"
 )
 installer_lanes=(
-  "luna_medium_worker"
   "luna_worker"
 )
 installer_retired_profile_targets=(
+  "${installer_luna_medium_agent_target}"
+  "${installer_luna_medium_agent_target}.disabled"
   "${installer_spark_scout_agent_target}"
   "${installer_spark_scout_agent_target}.disabled"
   "${installer_deepseek_agent_target}"
@@ -150,6 +149,7 @@ installer_retired_profile_targets=(
   "${installer_deepseek_pro_agent_target}.disabled"
 )
 installer_retired_profile_bases=(
+  "${installer_luna_medium_agent_target}"
   "${installer_spark_scout_agent_target}"
   "${installer_deepseek_agent_target}"
   "${installer_deepseek_pro_agent_target}"
@@ -177,6 +177,7 @@ installer_known_legacy_skill_digests=(
 # Exact installed Skill content from the previous repository release. This is
 # the only in-place upgrade source accepted for the current Skill path.
 installer_known_current_skill_digests=(
+  "64c526105a470d1096e880ddf8db331456d32782d22ac8b391c3acb8eca718bb"
   "39c8ce653fefea972e6e38cb5210e1ec5db47fdaf94edf5c5e5e2e342a6379d4"
   "4bb69c5c33a4e73f2ada68c0c188796f80edffb266116140a4f8afe6b48de4e9"
   "9bab5713bd407ebe9c9549377c3eae3174a1cdc221f16401a4834a0c131fdb74"
@@ -216,6 +217,7 @@ installer_known_luna_agent_digests=(
   "efd1f746804ffc345536a40c8fde753e47ad4dd98dc5b766231be03beef6ad93"
 )
 installer_known_luna_medium_agent_digests=(
+  "db06c050053a868322fc4fdfbe7d51d14d78d352132a7ae2b3a33912e7120e70"
   "c579d8e0512711cd9c057fc606a54af4dab58bfcb0c70accf5f3667eed9659a5"
   "ed89157f8246dbad303a9ceba8ee0a8913e54214c532a34126bebf7833509b83"
 )
@@ -339,7 +341,6 @@ installer_is_known_removed_runner() {
 
 installer_lane_source() {
   case "$1" in
-    luna_medium_worker) printf '%s\n' "${installer_luna_medium_agent_source}" ;;
     luna_worker) printf '%s\n' "${installer_luna_agent_source}" ;;
     *) return 64 ;;
   esac
@@ -347,7 +348,6 @@ installer_lane_source() {
 
 installer_lane_target() {
   case "$1" in
-    luna_medium_worker) printf '%s\n' "${installer_luna_medium_agent_target}" ;;
     luna_worker) printf '%s\n' "${installer_luna_agent_target}" ;;
     *) return 64 ;;
   esac
@@ -379,9 +379,6 @@ installer_target_is_accepted() {
   cmp -s "${installer_source}" "${installer_target}" && return 0
   installer_target_base="$(installer_target_base_path "${installer_target}")"
   if [[ "${installer_target_base}" == "${installer_luna_agent_target}" ]] && installer_is_known_luna_agent "${installer_target}"; then
-    return 0
-  fi
-  if [[ "${installer_target_base}" == "${installer_luna_medium_agent_target}" ]] && installer_is_known_luna_medium_agent "${installer_target}"; then
     return 0
   fi
   if [[ "${installer_target}" == "${installer_skill_target}" ]] && installer_is_known_current_skill "${installer_target}"; then
@@ -457,7 +454,7 @@ installer_current_skill_generation() {
 
 installer_generation_requires_lane() {
   case "$1:$2" in
-    legacy-v0.4:luna_worker|v0.5-v0.7:luna_worker|v0.8:luna_worker|v0.9:luna_medium_worker|v0.9:luna_worker|v0.10:luna_medium_worker|v0.10:luna_worker|v0.11:luna_medium_worker|v0.11:luna_worker|v0.12:luna_medium_worker|v0.12:luna_worker|current:luna_medium_worker|current:luna_worker)
+    legacy-v0.4:luna_worker|v0.5-v0.7:luna_worker|v0.8:luna_worker|v0.9:luna_worker|v0.10:luna_worker|v0.11:luna_worker|v0.12:luna_worker|current:luna_worker)
       return 0
       ;;
     *)
@@ -487,6 +484,7 @@ installer_is_known_retired_profile() {
 
   installer_target_base="$(installer_target_base_path "${installer_target}")"
   case "${installer_target_base}" in
+    "${installer_luna_medium_agent_target}") installer_is_known_luna_medium_agent "${installer_target}" ;;
     "${installer_spark_scout_agent_target}") installer_is_known_spark_scout_agent "${installer_target}" ;;
     "${installer_deepseek_agent_target}") installer_is_known_deepseek_agent "${installer_target}" ;;
     "${installer_deepseek_pro_agent_target}") installer_is_known_deepseek_pro_agent "${installer_target}" ;;
@@ -812,7 +810,7 @@ installer_on_exit() {
 installer_expand_lane_request() {
   installer_selected_lanes=()
   case "$1" in
-    luna_medium_worker|luna_worker)
+    luna_worker)
       installer_selected_lanes+=("$1")
       ;;
     all)
@@ -1123,7 +1121,7 @@ fi
 
 if command -v python3 >/dev/null 2>&1 && python3 -c 'import tomllib' >/dev/null 2>&1; then
   python3 -c 'import sys, tomllib; [tomllib.load(open(path, "rb")) for path in sys.argv[1:]]' \
-    "${installer_luna_agent_source}" "${installer_luna_medium_agent_source}"
+    "${installer_luna_agent_source}"
   echo "Verified: repository agent TOML files parse with tomllib."
 fi
 
@@ -1248,8 +1246,8 @@ installer_finish_recovery || exit 4
 
 if [[ "${installer_mode}" == "install" ]]; then
   echo "Verified: installed files match the repository sources and planned lane states."
-  echo "Installed Worker source profiles: Luna Medium and Luna Max."
-  echo "Retired known Spark Scout and DeepSeek Worker profile files are absent. DeepSeek provider, credential, and model-catalog settings were not changed."
+  echo "Installed Worker source profiles: Luna Max."
+  echo "Retired known Luna Medium, Spark Scout and DeepSeek Worker profile files are absent. DeepSeek provider, credential, and model-catalog settings were not changed."
   echo "Not validated by this script: model-provider routing or child lifecycle."
   echo "Manual App step: replace the previous workflow text with one block from ${installer_repo_root}/personalization.md in Settings > Personalization > Custom Instructions. Preserve unrelated preferences; do not append duplicates. This script does not update App settings or global AGENTS.md."
 elif [[ "${installer_mode}" == "enable" ]]; then

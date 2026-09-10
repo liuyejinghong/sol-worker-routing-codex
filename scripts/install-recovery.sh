@@ -10,11 +10,10 @@ installer_recovery_files=()
 installer_recovery_hashes=()
 
 installer_recovery_header() {
-  printf '%s\0' "sol-worker-routing-recovery-1" \
+  printf '%s\0' "sol-worker-routing-recovery-2" \
     "${installer_home_dir}" "${installer_codex_dir}" \
     "${installer_mode}" "${installer_requested_lane}" \
     "$(installer_sha256 "${installer_luna_agent_source}")" \
-    "$(installer_sha256 "${installer_luna_medium_agent_source}")" \
     "$(installer_sha256 "${installer_skill_source}")"
 }
 
@@ -23,7 +22,6 @@ installer_recovery_file_safe() {
   local installer_allowed=0
   for installer_base in \
     "${installer_luna_agent_target}" "${installer_luna_agent_target}.disabled" \
-    "${installer_luna_medium_agent_target}" "${installer_luna_medium_agent_target}.disabled" \
     "${installer_retired_profile_targets[@]}" "${installer_skill_target}" \
     "${installer_removed_runner_target}" \
     "${installer_legacy_user_skill_dir}/SKILL.md" "${installer_legacy_codex_skill_dir}/SKILL.md"
@@ -68,7 +66,7 @@ installer_load_recovery() {
     echo "Error: the recorded installer process is still running (${installer_pid}); no files changed." >&2
     return 1
   fi
-  for installer_index in 0 1; do
+  for installer_index in "${!installer_lanes[@]}"; do
     if ! IFS= read -r -d '' installer_state <&3; then
       exec 3<&-; return 1
     fi
@@ -109,7 +107,7 @@ installer_load_recovery() {
 
 installer_prepare_recovery_pairs() {
   local installer_index installer_lane installer_state installer_source installer_target
-  for installer_index in 0 1; do
+  for installer_index in "${!installer_lanes[@]}"; do
     installer_state="${installer_recovery_states[installer_index]}"
     [[ "${installer_state}" != "-" ]] || continue
     installer_lane="${installer_lanes[installer_index]}"
@@ -138,7 +136,7 @@ installer_recovery_unchanged() {
 
 installer_save_recovery() {
   local installer_index installer_lane installer_state installer_file
-  local installer_states=("-" "-")
+  local installer_states=("-")
   if [[ "${#installer_staged_targets[@]}" -eq 0 && "${#installer_migration_targets[@]}" -eq 0 && "${installer_recovery_loaded}" -eq 0 ]]; then
     return 0
   fi
@@ -147,8 +145,7 @@ installer_save_recovery() {
     installer_lane="${installer_planned_lanes[installer_index]}"
     installer_state="${installer_planned_states[installer_index]}"
     case "${installer_lane}" in
-      luna_medium_worker) installer_states[0]="${installer_state}" ;;
-      luna_worker) installer_states[1]="${installer_state}" ;;
+      luna_worker) installer_states[0]="${installer_state}" ;;
     esac
   done
   for installer_file in "${installer_staged_files[@]-}" "${installer_target_backup_files[@]-}" "${installer_migration_backup_files[@]-}"; do

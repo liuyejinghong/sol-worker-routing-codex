@@ -17,7 +17,7 @@ One model does not need to do everything. This workflow keeps requirements, task
 | Executor | Main responsibility |
 |---|---|
 | Codex main Agent | Understand requirements, choose an approach, integrate and verify |
-| Luna Medium / Max | Native subagents for bounded tasks |
+| Luna Max | Native subagents for bounded tasks |
 | OpenCode / OMO | One external Worker routing work to DeepSeek and Muse |
 
 ## Codex × OpenCode
@@ -54,7 +54,7 @@ The model ID is `opencode-go/muse-spark-1.3-contributor`. Contributor offers dis
 
 ## Quick start
 
-Install this repository's routing Skill and two native Luna profiles:
+Install this repository's routing Skill and the native Luna Max profile:
 
 ```bash
 git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
@@ -75,6 +75,8 @@ This task may use my Go DeepSeek and Muse Contributor subscription through OpenC
 Native Luna subagents remain usable without the external plugin. You can select an executor or disable delegation for a task. Update an existing standard installation with `bash scripts/update.sh`.
 
 After an installation or lane switch is forcibly interrupted, rerun the original command with the same checkout, HOME / CODEX_HOME and arguments. The installer uses a temporary recovery record to finish the known operation, then removes its record and backups. Unknown source or file changes stop recovery. Partial installations left by older versions without a recovery record still need manual inspection. This is not a cross-directory power-loss atomicity guarantee.
+
+Luna Medium is retired. Upgrades remove its known enabled or disabled profile and preserve the Luna Max state. Small tasks stay with the main agent.
 
 ## Documentation
 

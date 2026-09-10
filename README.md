@@ -17,7 +17,7 @@
 | 执行者 | 主要职责 |
 |---|---|
 | Codex 主代理 | 理解需求、确定方案、整合与验收 |
-| Luna Medium / Max | 原生子代理，处理有明确范围的任务 |
+| Luna Max | 原生子代理，处理有明确范围的任务 |
 | OpenCode / OMO | 一个外部 Worker，按职责调用 DeepSeek 与 Muse |
 
 ## Codex × OpenCode
@@ -54,7 +54,7 @@ OpenCode Worker 0.3 通过 OMO profile 分工：DeepSeek V4.1 Flash（`max`）�
 
 ## 快速开始
 
-安装本仓库提供的路由 Skill 和两条 Luna 原生子代理配置：
+安装本仓库提供的路由 Skill 和 Luna Max 原生子代理配置：
 
 ```bash
 git clone https://github.com/liuyejinghong/sol-worker-routing-codex.git
@@ -75,6 +75,8 @@ bash scripts/install.sh
 没有安装外部插件时，仍可使用 Luna 原生子代理。你可以指定执行者，也可以要求本次不委派。更新已有标准安装使用 `bash scripts/update.sh`。
 
 安装或开关操作被强制中断后，使用相同 checkout、HOME / CODEX_HOME 和参数重跑原命令。安装器会依据临时恢复记录完成已知操作，并在成功后清除记录与备份；源码或文件出现未知变化时会停止。旧版留下的、没有恢复记录的部分安装仍需人工检查。此机制不承诺跨目录的断电原子性。
+
+Luna Medium 已退役：升级会删除已知的启用或停用配置，保留 Luna Max 的开关状态。小任务由主代理直接处理。
 
 ## 更多文档
 

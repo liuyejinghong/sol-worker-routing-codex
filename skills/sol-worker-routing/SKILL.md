@@ -1,6 +1,6 @@
 ---
 name: sol-worker-routing
-description: Route bounded work under the current main Agent, including Astra. Use Luna Medium for small, well-defined tasks and Luna Max to implement a settled development packet; keep unresolved design and root-cause decisions with the main Agent. Use the optional OpenCode Worker plugin for bounded externally authorized OMO work when its tools are available.
+description: Route bounded work under the current main Agent, including Astra. Use Luna Max to implement a settled development packet; keep unresolved design and root-cause decisions with the main Agent. Use the optional OpenCode Worker plugin for bounded externally authorized OMO work when its tools are available.
 ---
 
 # Main Agent with bounded workers
@@ -9,7 +9,7 @@ The current main Agent owns requirements, root-cause analysis, architecture, dev
 
 User instructions and existing authorization take precedence over this routing guidance within the applicable permission boundary. Continue authorized work through ordinary implementation choices and unknown facts that can be investigated in scope. Ask the user only for a missing decision that materially changes the objective or authorization, while continuing work that does not depend on that decision.
 
-The managed workers are `luna_medium_worker` and `luna_worker`. Retired `spark_scout`, `deepseek_worker`, and `deepseek_pro_worker` roles remain outside this workflow. Their historical Provider limitation and retirement contract are recorded in the repository's `AGENTS.md`; do not revive their native-role workaround or add a provider-protocol bridge. The separately installed, user-authorized OpenCode Worker plugin is an optional external execution channel; it does not restore those retired roles.
+The only managed worker is `luna_worker` (Luna Max). Luna Medium (`luna_medium_worker`) is retired; keep its former small tasks with the main Agent. Retired `spark_scout`, `deepseek_worker`, and `deepseek_pro_worker` roles remain outside this workflow. Their historical Provider limitation and retirement contract are recorded in the repository's `AGENTS.md`; do not revive their native-role workaround or add a provider-protocol bridge. The separately installed, user-authorized OpenCode Worker plugin is an optional external execution channel; it does not restore those retired roles.
 
 ## 0. Whole-agent anti-overdefense (HERO-derived)
 
@@ -33,21 +33,19 @@ Delegate only when the main Agent can assess the result with substantially less 
 Before choosing a Worker:
 
 1. Current-task instructions such as “Sol only” or “no subagents” block new delegation without editing files or terminating work already running.
-2. Persistent state wins next. `<profile>.toml` is enabled and `<profile>.toml.disabled` is disabled for new tasks. Use only `bash scripts/install.sh --lane-status`, `--enable-lane <luna_medium_worker|luna_worker|all>`, or `--disable-lane <luna_medium_worker|luna_worker|all>`.
+2. Persistent state wins next. `<profile>.toml` is enabled and `<profile>.toml.disabled` is disabled for new tasks. Use only `bash scripts/install.sh --lane-status`, `--enable-lane <luna_worker|all>`, or `--disable-lane <luna_worker|all>`.
 3. A real route probe after installation or a material client change wins over a profile file. If a lane is unqualified, retain the task with the main Agent or use another qualified lane only if it fits the packet. Do not repeat unchanged route checks.
 
-Upgrades preserve each Luna lane's enabled/disabled state. Unknown content, a missing expected profile, dual state files, symbolic links, and non-regular files are fail-closed conflicts. After any install or state change, use a new task to reload Agent discovery.
+Upgrades preserve the Luna Max lane's enabled/disabled state. Unknown content, a missing expected profile, dual state files, symbolic links, and non-regular files are fail-closed conflicts. After any install or state change, use a new task to reload Agent discovery.
 
 ## 2. Route by the work
 
 ```text
 small direct task, unresolved root cause or design    -> main Agent
 tightly coupled work, costly-to-verify reasoning      -> main Agent
-small, well-defined change or evidence task           -> luna_medium_worker
+small, well-defined change or evidence task           -> main Agent
 settled development packet for a feature or module   -> luna_worker
 ```
-
-Luna Medium handles narrow tasks with known scope, approach, ownership, and acceptance: a small patch, source lookup, or targeted test investigation. A blocker returns to the main Agent for judgment; it never automatically escalates to Max.
 
 Luna Max is the programmer for an independently testable feature or module whose critical behavior and design decisions are settled. It owns implementation and relevant tests within the development packet. It may choose local function structure, names, existing utilities, and necessary tests. A complete packet settles decisions that affect correctness without prescribing every line of code. A small task can use a concise message; a formal spec file is not mandatory.
 
@@ -80,7 +78,7 @@ Before a non-obvious dispatch, briefly identify the executor, qualified lane, re
 For development, reuse an existing spec where available and supply enough context for the Worker to act independently:
 
 ```text
-Worker and mode: luna_medium_worker | luna_worker | opencode-worker; read-only | write
+Worker and mode: luna_worker | opencode-worker; read-only | write
 Goal and observable behavior:
 Settled design: affected module, state owner, interfaces and invariants, or `none`
 Scope: readable sources, owned writable paths, non-goals, behavior to preserve
@@ -102,7 +100,6 @@ A dispatched Worker owns an execution lease until it returns or a state-based st
 - Do not interrupt because a Worker is silent, slower than expected, or has not written files.
 - If direction may need to change, request a non-terminating checkpoint and preserve useful analysis and changes.
 - Interrupt only for user cancellation or replacement, task obsolescence, observed scope or authorization violation, repeated concrete errors, or resource deadlock.
-- A Medium blocker never upgrades itself; the main Agent first resolves the decision and only then assigns any settled implementation packet.
 
 ## 5. Verification and review
 
@@ -133,7 +130,7 @@ The main Agent continues independent work while a Worker runs. Parallelism serve
 When this workflow is installed or a Luna lane is unavailable, the main Agent owns setup. Run the commands from the workflow repository checkout, not an unrelated project's directory:
 
 1. Run `bash scripts/install.sh --lane-status` before changing state.
-2. The installer manages the two Luna profiles and this Skill. It preserves lane states and removes only exact known retired profiles; it never edits Providers, credentials, or model catalogs.
+2. The installer manages the Luna Max profile and this Skill. It preserves lane states and removes only exact known retired profiles; it never edits Providers, credentials, or model catalogs.
 3. After installation or a state change, ask for a new task so Agent discovery reloads.
 4. In that new task, probe each newly enabled Luna lane with a bounded task whose answer and acceptance are obvious. Inspect the named child lifecycle and result; a profile on disk is not route proof.
 5. If a lane fails, diagnose the actual native route. Do not revive retired Spark or DeepSeek roles or add a provider-protocol bridge as a native-route repair. The optional OpenCode Worker plugin has its own installation and validation; it is not installed by this script.

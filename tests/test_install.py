@@ -12,7 +12,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 BASH = os.environ.get("INSTALL_TEST_BASH", "/bin/bash")
-LANES = ("luna-medium-worker", "luna-worker")
+LANES = ("luna-worker",)
 
 
 def snapshot(home):
@@ -31,9 +31,9 @@ def run(home, args=(), fault=None):
 
 def setup(home, mode):
     if mode == "fresh":
-        return (), (False, False)
+        return (), (False,)
     if mode == "upgrade":
-        for name, off in zip(LANES, (False, True)):
+        for name, off in zip(("luna-medium-worker", "luna-worker"), (False, True)):
             path = home / ".codex/agents" / (name + ".toml" + (".disabled" if off else ""))
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(subprocess.check_output(
@@ -44,12 +44,12 @@ def setup(home, mode):
             ["git", "show", "v0.12.3:skills/sol-worker-routing/SKILL.md"], cwd=ROOT))
         (home / ".codex/agents/spark-scout.toml").write_bytes(subprocess.check_output(
             ["git", "show", "v0.10.0:agents/spark-scout.toml"], cwd=ROOT))
-        return (), (False, True)
+        return (), (True,)
     assert run(home).returncode == 0
     if mode == "enable":
         assert run(home, ("--disable-lane", "all")).returncode == 0
-        return ("--enable-lane", "all"), (False, False)
-    return ("--disable-lane", "all"), (True, True)
+        return ("--enable-lane", "all"), (False,)
+    return ("--disable-lane", "all"), (True,)
 
 
 def verify(home, disabled):
@@ -61,7 +61,9 @@ def verify(home, disabled):
         assert not other.exists()
     assert (home / ".agents/skills/sol-worker-routing/SKILL.md").read_bytes() == (
         ROOT / "skills/sol-worker-routing/SKILL.md").read_bytes()
-    assert not (home / ".codex/agents/spark-scout.toml").exists()
+    for name in ("luna-medium-worker", "spark-scout", "deepseek-worker", "deepseek-pro-worker"):
+        for suffix in (".toml", ".toml.disabled"):
+            assert not (home / ".codex/agents" / (name + suffix)).exists()
     assert not [p for p in home.rglob("*") if p.is_file() and ".install" in p.name]
 
 
@@ -107,7 +109,7 @@ def main():
                         FAULT_COUNTER=str(counter), FAULT_ACTION=action,
                         FAULT_AT=str(at), FAULT_JOURNAL="1" if journal else "0")
 
-        for mode, writes in (("fresh", 3), ("disable", 4), ("enable", 4), ("upgrade", 4)):
+        for mode, writes in (("fresh", 2), ("disable", 2), ("enable", 2), ("upgrade", 4)):
             for at in range(1, writes + 1):
                 home = root / f"{mode}-{at}"
                 home.mkdir()
@@ -140,7 +142,7 @@ def main():
                     assert marker.exists()
                 result = run(home)
                 assert result.returncode == 0, result.stdout + result.stderr
-                verify(home, (False, False))
+                verify(home, (False,))
             else:
                 args = ()
                 if case == "unknown-target":
@@ -151,7 +153,7 @@ def main():
                     args = ("--disable-lane", "all")
                 elif case == "live-owner":
                     fields = marker.read_bytes().split(b"\0")
-                    fields[8] = str(os.getpid()).encode()
+                    fields[7] = str(os.getpid()).encode()
                     marker.write_bytes(b"\0".join(fields))
                 before = snapshot(home)
                 assert run(home, args).returncode != 0
@@ -160,12 +162,41 @@ def main():
         home = root / "normal"
         home.mkdir()
         assert run(home).returncode == 0
-        for lane in ("luna_medium_worker", "luna_worker", "all"):
+        for lane in ("luna_worker", "all"):
             for action in ("disable", "enable"):
                 assert run(home, (f"--{action}-lane", lane)).returncode == 0
                 assert run(home, (f"--{action}-lane", lane)).returncode == 0
                 checks += 1
-        verify(home, (False, False))
+        verify(home, (False,))
+        before = snapshot(home)
+        assert run(home, ("--enable-lane", "luna_medium_worker")).returncode != 0
+        assert snapshot(home) == before
+        for case in ("enabled", "disabled", "unknown", "dual", "symlink", "directory"):
+            home = root / ("medium-" + case)
+            home.mkdir()
+            setup(home, "upgrade")
+            base = home / ".codex/agents/luna-medium-worker.toml"
+            if case == "disabled":
+                base.rename(Path(str(base) + ".disabled"))
+            elif case == "unknown":
+                base.write_text("user edit")
+            elif case == "dual":
+                Path(str(base) + ".disabled").write_bytes(base.read_bytes())
+            elif case in ("symlink", "directory"):
+                base.unlink()
+                if case == "symlink":
+                    base.symlink_to(home / ".codex/agents/luna-worker.toml.disabled")
+                else:
+                    base.mkdir()
+            before = snapshot(home)
+            result = run(home)
+            if case in ("enabled", "disabled"):
+                assert result.returncode == 0, result.stdout + result.stderr
+                verify(home, (True,))
+            else:
+                assert result.returncode != 0
+                assert snapshot(home) == before
+            checks += 1
     print(json.dumps({"regression_groups_passed": checks, "scope": "temporary homes only"}))
 
 

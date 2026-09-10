@@ -8,7 +8,7 @@ The sections below govern authorized installation, upgrade, and lane-state opera
 
 ## Objective
 
-Install the checked-in `luna_medium_worker` and `luna_worker` custom Agent profiles plus the `sol-worker-routing` Skill, preserve each Luna lane's enabled/disabled state, and preserve every unrelated Codex setting.
+Install the checked-in `luna_worker` (Luna Max) custom Agent profile plus the `sol-worker-routing` Skill, preserve Luna Max's enabled/disabled state, and preserve every unrelated Codex setting.
 
 `spark_scout`, `deepseek_worker`, and `deepseek_pro_worker` are retired. Codex rust-v0.149.0 merged [#39299](https://github.com/openai/codex/pull/39299), which intentionally limits Agent-role overrides and preserves the parent's complete model provider. Under an OpenAI parent, a DeepSeek role therefore keeps the external model ID but routes through OpenAI and fails entitlement; the independent stable reproduction is recorded in [#17598](https://github.com/openai/codex/issues/17598#issuecomment-5376031711). Do not revive the old full-request workaround, run `spawn_agent -> followup_task -> web_search` acceptance, or add a provider-protocol bridge as a native-role workaround. Wait for an official supported cross-provider provider-selection and plaintext task-handoff path for native roles. The separately maintained, user-authorized `opencode-worker` plugin may use OpenCode's native session API as an external execution channel; it does not restore these roles or expand this installer's managed paths.
 
@@ -20,15 +20,15 @@ The installation may manage only one state in each active profile pair plus the 
 
 ```text
 ${CODEX_HOME:-$HOME/.codex}/agents/luna-worker.toml | luna-worker.toml.disabled
-${CODEX_HOME:-$HOME/.codex}/agents/luna-medium-worker.toml | luna-medium-worker.toml.disabled
 $HOME/.agents/skills/sol-worker-routing/SKILL.md
 ```
 
-`<profile>.toml` is enabled and `<profile>.toml.disabled` is disabled for new tasks. `--lane-status`, `--enable-lane <luna_medium_worker|luna_worker|all>`, and `--disable-lane <luna_medium_worker|luna_worker|all>` are the only state operations. `all` means the two Luna Workers and never Sol.
+`<profile>.toml` is enabled and `<profile>.toml.disabled` is disabled for new tasks. `--lane-status`, `--enable-lane <luna_worker|all>`, and `--disable-lane <luna_worker|all>` are the only state operations. `all` means Luna Max only, never the main Agent or retired lanes.
 
 During a recognized upgrade, the installer may remove exactly matching known copies, enabled or disabled, of these retired profiles:
 
 ```text
+${CODEX_HOME:-$HOME/.codex}/agents/luna-medium-worker.toml[.disabled]
 ${CODEX_HOME:-$HOME/.codex}/agents/spark-scout.toml[.disabled]
 ${CODEX_HOME:-$HOME/.codex}/agents/deepseek-worker.toml[.disabled]
 ${CODEX_HOME:-$HOME/.codex}/agents/deepseek-pro-worker.toml[.disabled]
@@ -40,9 +40,9 @@ The installer may also remove the documented old `sol-luna-workflow` Skill or pr
 
 Use `$CODEX_HOME` for Agent profiles when set, otherwise `$HOME/.codex`. The user-authored `sol-worker-routing` Skill uses `$HOME/.agents/skills`. Run `bash scripts/install.sh` from this repository; do not reproduce the migration with broader commands.
 
-The three final files live in two directory trees, so the installer must not claim a cross-directory power-loss transaction. It stages before replacement, backs up accepted targets, rolls back a normal failure or `INT`/`TERM`/`HUP`, and re-runs safely after power loss or `SIGKILL`. Hidden staging and backup files are transient recovery state, not installed outputs.
+The two final files live in two directory trees, so the installer must not claim a cross-directory power-loss transaction. It stages before replacement, backs up accepted targets, rolls back a normal failure or `INT`/`TERM`/`HUP`, and re-runs safely after power loss or `SIGKILL`. Hidden staging and backup files are transient recovery state, not installed outputs.
 
-For a fresh installation, both Luna lanes start enabled. A recognized upgrade preserves their individual states. A missing expected Luna profile is an ambiguous partial installation and must fail closed. Unknown content, dual state files, symbolic links, and non-regular files stop before writes. Recognized prior topologies are legacy v0.4 (Luna only), v0.5-v0.7 (Flash + Luna), v0.8 (Flash + Pro + Luna), v0.9 (Flash + Pro + Luna Medium + Luna), and v0.10-v0.11 (Spark + Flash + Pro + Luna Medium + Luna). The current topology is Luna Medium + Luna Max.
+For a fresh installation, Luna Max starts enabled. A recognized upgrade preserves its state. A missing expected Luna profile is an ambiguous partial installation and must fail closed. Unknown content, dual state files, symbolic links, and non-regular files stop before writes. Recognized prior topologies are legacy v0.4 (Luna only), v0.5-v0.7 (Flash + Luna), v0.8 (Flash + Pro + Luna), v0.9 (Flash + Pro + Luna Medium + Luna), and v0.10-v0.11 (Spark + Flash + Pro + Luna Medium + Luna). Versions v0.12-v0.15 used Luna Medium + Luna Max. The current topology is Luna Max only; Luna Medium is retired and small tasks stay with the main Agent.
 
 Recheck managed paths and accepted content immediately before staging, replacement, rollback, or retirement. A portable Bash script must not claim an adversarial no-follow guarantee against concurrent parent-directory replacement.
 
@@ -54,10 +54,10 @@ If a managed or retired target has unknown content, both state files exist, or a
 
 ## Verification and handoff
 
-Before writing, parse the two repository TOML profiles when a standard parser is available. After installation, confirm that the two installed profile-state files and `sol-worker-routing` Skill exactly match repository sources and that all six retired Spark/DeepSeek enabled/disabled paths are absent. Confirm separately that DeepSeek Provider, credential reference, and model catalog were not changed or removed.
+Before writing, parse the repository TOML profile when a standard parser is available. After installation, confirm that the installed Luna Max profile-state file and `sol-worker-routing` Skill exactly match repository sources and that all eight retired Medium/Spark/DeepSeek enabled/disabled paths are absent. Confirm separately that DeepSeek Provider, credential reference, and model catalog were not changed or removed.
 
 Tell the user that `personalization.md` does not activate itself. They must manually replace the previous workflow block in Codex App Settings → Personalization → Custom Instructions with one complete language block, preserving unrelated preferences. Do not append duplicate instructions or claim the App setting changed until confirmed.
 
-After installation or a state change, use a new task to reload Agent discovery. Probe only each newly enabled Luna lane with one bounded task whose answer and acceptance are obvious; inspect the named child lifecycle and result. A profile on disk is not route proof. Do not probe retired Spark or DeepSeek routes.
+After installation or a state change, use a new task to reload Agent discovery. Probe only each newly enabled Luna lane with one bounded task whose answer and acceptance are obvious; inspect the named child lifecycle and result. A profile on disk is not route proof. Do not probe retired Medium, Spark or DeepSeek routes.
 
 Report installed paths, preserved Luna states, removed retired profile paths, confirmation that Provider and credential state was untouched, conflicts if any, route-probe status, and the remaining manual Personalization step.
