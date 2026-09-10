@@ -1,6 +1,6 @@
 ---
 name: sol-worker-routing
-description: Route bounded work under the current main Agent, including Astra. Use Luna Medium for small, well-defined tasks and Luna Max to implement a settled development packet; keep unresolved design and root-cause decisions with the main Agent. Use the optional OpenCode Worker plugin for bounded externally authorized Muse Contributor work when its tools are available.
+description: Route bounded work under the current main Agent, including Astra. Use Luna Medium for small, well-defined tasks and Luna Max to implement a settled development packet; keep unresolved design and root-cause decisions with the main Agent. Use the optional OpenCode Worker plugin for bounded externally authorized OMO work when its tools are available.
 ---
 
 # Main Agent with bounded workers
@@ -61,7 +61,7 @@ When `opencode-worker` is installed and its MCP tools are callable in the curren
 
 Respect the tools and argument limits advertised by the current task. If run or the new wait arguments are not yet available, use the existing status/wait tools within their advertised limits to finish already-started work; refresh tool discovery in a new task before new foreground dispatch. Do not force unsupported arguments or replace the plugin with an ad hoc CLI.
 
-The selected external model is `opencode-go/muse-spark-1.3-contributor`. Respect the user's chosen executor. When none is specified, choose among the main Agent, qualified enabled Luna lanes and the available plugin by handoff cost and task fit. Do not interpret one integration test as proof that Muse always outperforms Luna. Contributor permits training on submitted inputs and outputs; existing external-use authorization applies without repeated confirmation.
+The 0.3 profile uses `opencode-go/deepseek-flash` at `max` for coordination and hard roles, and `opencode-go/muse-spark-1.3-contributor` at `xhigh` for bulk roles. Verify the installed tool version before using `model_mode: "omo"`; 0.2 remains single-model. Profile changes require explicit configuration and installation; repository development does not activate them. Respect the user's chosen executor. When none is specified, choose among the main Agent, qualified enabled Luna lanes and the available plugin by handoff cost and task fit. Do not interpret one integration test as proof that Muse always outperforms Luna. Contributor permits training on submitted inputs and outputs; existing external-use authorization applies without repeated confirmation.
 
 Default to the plugin's `run` tool, which dispatches and waits inside one call. Use `wait_seconds: 300`; if using Code Mode, set the enclosing exec pragma `yield_time_ms` to 360000 so it covers the wait window and handoff margin. Do not repeatedly wake the model for empty status checks or periodic progress messages. Pass the same bounded packet and ownership contract used for native workers, plus the assigned absolute directory, exact writable paths and trusted commands. Keep request IDs stable across retries. The plugin owns its OpenCode session, runtime and result collection; the Skill does not reproduce that logic through shell commands.
 
@@ -69,7 +69,7 @@ Only one external task may run at a time. `finished=false`, including an unknown
 
 A foreground window can expire. If `wait_expired=true` and `finished=false`, keep ownership and repeat the identical run request or wait for that task; do not invent a new request ID. RPC interruption stops waiting, not execution. Use cancel only when execution should stop. Do not end the main response with unfinished work unless supported host followup is actually bound or the user explicitly chose manual followup. Background start remains available for that explicit mode but does not register any completion wakeup. This workflow keeps the current turn pending; it does not claim to wake an already-ended conversation.
 
-The plugin runs one OMO primary role and disables further model-invoked delegation. Its tools and permissions do not inherit Codex's sandbox. Allow only task-specific trusted foreground commands; read-only mode has no shell. Native Luna enabled/disabled state remains independent of the plugin.
+In profile mode, the plugin runs one OMO primary role with at most two direct children, no nested delegation or fallback, and one writer across the tree. Read-only specialists remain read-only. Inspect child receipts as well as the root result; cancellation applies to the full tree. Single mode disables delegation. Its tools and permissions do not inherit Codex's sandbox. Allow only task-specific trusted foreground commands; read-only mode has no shell. Native Luna enabled/disabled state remains independent of the plugin.
 
 If the plugin is absent, unavailable, or outside the user's authorization, keep the original routing choices. An explicitly requested Muse task must not silently switch to Luna, another Go model, Zen or a different paid Provider. Report the limitation and retain useful work.
 

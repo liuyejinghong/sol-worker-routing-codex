@@ -1,0 +1,23 @@
+[
+  {
+    "case": "other-lane",
+    "exit": 0,
+    "untouched": true,
+    "lane_changed": true,
+    "output": "Verified: repository agent TOML files parse with tomllib.\nInstalled or updated: /var/folders/14/5s225v_91m7dfmkt32zcl6v40000gq/T/cwr-conflict-6vlo34dk/.codex/agents/luna-worker.toml.disabled\nMigrated: removed known legacy file at /var/folders/14/5s225v_91m7dfmkt32zcl6v40000gq/T/cwr-conflict-6vlo34dk/.codex/agents/luna-worker.toml\nVerified: requested lane state is disabled. Provider, credential, and model-catalog settings were not changed. Start a new Codex task before relying on Agent discovery.\n"
+  },
+  {
+    "case": "skill",
+    "exit": 0,
+    "untouched": true,
+    "lane_changed": true,
+    "output": "Verified: repository agent TOML files parse with tomllib.\nInstalled or updated: /var/folders/14/5s225v_91m7dfmkt32zcl6v40000gq/T/cwr-conflict-xbogt9q6/.codex/agents/luna-worker.toml.disabled\nMigrated: removed known legacy file at /var/folders/14/5s225v_91m7dfmkt32zcl6v40000gq/T/cwr-conflict-xbogt9q6/.codex/agents/luna-worker.toml\nVerified: requested lane state is disabled. Provider, credential, and model-catalog settings were not changed. Start a new Codex task before relying on Agent discovery.\n"
+  },
+  {
+    "case": "retired",
+    "exit": 0,
+    "untouched": true,
+    "lane_changed": true,
+    "output": "Verified: repository agent TOML files parse with tomllib.\nInstalled or updated: /var/folders/14/5s225v_91m7dfmkt32zcl6v40000gq/T/cwr-conflict-ol9_u6c3/.codex/agents/luna-worker.toml.disabled\nMigrated: removed known legacy file at /var/folders/14/5s225v_91m7dfmkt32zcl6v40000gq/T/cwr-conflict-ol9_u6c3/.codex/agents/luna-worker.toml\nVerified: requested lane state is disabled. Provider, credential, and model-catalog settings were not changed. Start a new Codex task before relying on Agent discovery.\n"
+  }
+]

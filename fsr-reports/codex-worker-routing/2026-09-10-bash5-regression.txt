@@ -1,0 +1,2 @@
+GNU bash, version 5.2.37(1)-release (aarch64-apple-darwin25.6.0)
+{"regression_groups_passed": 35, "scope": "temporary homes only"}

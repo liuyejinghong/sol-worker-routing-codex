@@ -1,0 +1,18 @@
+[
+  {
+    "id": "FSR-001",
+    "title": "现代 Bash 下 lane 状态切换失败",
+    "firstSeen": "2026-09-09",
+    "priority": "P2",
+    "status": "FIXED",
+    "latestAudit": "2026-09-10-installer-fix-verification.md"
+  },
+  {
+    "id": "FSR-002",
+    "title": "SIGKILL 后原命令重跑不能恢复",
+    "firstSeen": "2026-09-09",
+    "priority": "P2",
+    "status": "FIXED",
+    "latestAudit": "2026-09-10-installer-fix-verification.md"
+  }
+]

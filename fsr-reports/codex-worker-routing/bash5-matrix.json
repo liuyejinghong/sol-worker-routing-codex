@@ -1,0 +1,74 @@
+[
+  {
+    "start": "enabled",
+    "action": "enable",
+    "lane": "luna_medium_worker",
+    "exit": 0
+  },
+  {
+    "start": "enabled",
+    "action": "enable",
+    "lane": "luna_worker",
+    "exit": 0
+  },
+  {
+    "start": "enabled",
+    "action": "enable",
+    "lane": "all",
+    "exit": 0
+  },
+  {
+    "start": "enabled",
+    "action": "disable",
+    "lane": "luna_medium_worker",
+    "exit": 1
+  },
+  {
+    "start": "enabled",
+    "action": "disable",
+    "lane": "luna_worker",
+    "exit": 1
+  },
+  {
+    "start": "enabled",
+    "action": "disable",
+    "lane": "all",
+    "exit": 1
+  },
+  {
+    "start": "disabled",
+    "action": "enable",
+    "lane": "luna_medium_worker",
+    "exit": 1
+  },
+  {
+    "start": "disabled",
+    "action": "enable",
+    "lane": "luna_worker",
+    "exit": 1
+  },
+  {
+    "start": "disabled",
+    "action": "enable",
+    "lane": "all",
+    "exit": 1
+  },
+  {
+    "start": "disabled",
+    "action": "disable",
+    "lane": "luna_medium_worker",
+    "exit": 0
+  },
+  {
+    "start": "disabled",
+    "action": "disable",
+    "lane": "luna_worker",
+    "exit": 0
+  },
+  {
+    "start": "disabled",
+    "action": "disable",
+    "lane": "all",
+    "exit": 0
+  }
+]

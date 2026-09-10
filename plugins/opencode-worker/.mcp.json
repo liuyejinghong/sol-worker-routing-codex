@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "opencode_worker": {
+      "command": "./scripts/launch.sh",
+      "args": [],
+      "cwd": ".",
+      "startup_timeout_sec": 15,
+      "tool_timeout_sec": 360,
+      "env_vars": [
+        "HTTP_PROXY",
+        "HTTPS_PROXY",
+        "ALL_PROXY",
+        "NO_PROXY",
+        "http_proxy",
+        "https_proxy",
+        "all_proxy",
+        "no_proxy",
+        "OPENCODE_WORKER_BIN",
+        "OPENCODE_WORKER_NODE",
+        "OPENCODE_WORKER_STATE_DIR",
+        "OPENCODE_WORKER_AGENT",
+        "OPENCODE_WORKER_OMO_CONFIG"
+      ]
+    }
+  }
+}

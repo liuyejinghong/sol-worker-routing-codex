@@ -1,0 +1,131 @@
+// DRAFT ONLY: merge this profile into ~/.omo/omo.jsonc; do not replace that file.
+// Select with OMO_PROFILE=codex-worker only after the Worker adapter supports delegation.
+// Not applied or runtime-validated. Existing global settings and migration markers must be preserved.
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/omo.schema.json",
+  "profiles": {
+    "codex-worker": {
+      "models": {
+        "hard": {
+          "model": "opencode-go/deepseek-flash",
+          "reasoning": "max"
+        },
+        "bulk": {
+          "model": "opencode-go/muse-spark-1.3-contributor",
+          "reasoning": "xhigh"
+        }
+      },
+      "[opencode]": {
+        "disabled_agents": [
+          "hephaestus"
+        ],
+        "model_fallback": false,
+        "runtime_fallback": false,
+        "team_mode": {
+          "enabled": false
+        },
+        "background_task": {
+          "defaultConcurrency": 2,
+          "providerConcurrency": {
+            "opencode-go": 2
+          },
+          "maxDepth": 1
+        },
+        "agents": {
+          "sisyphus": {
+            "model": "hard",
+            "reasoning": "max",
+            "prompt_append": "Within the task boundaries supplied by Codex, route unresolved root causes, difficult cross-module logic and design-sensitive work to DeepSeek-backed categories. Route high-volume work to Muse-backed categories only when behavior and acceptance are settled; file count alone does not imply low difficulty. Use named read-only specialists for evidence gathering. Use either category or subagent_type in one task call, never both. Do not run planning or review agents by default when the supplied packet is already clear. Repeated failure of the same unresolved cause returns for diagnosis, not repeated speculative patches. Wait for all owned child tasks before declaring completion. Never silently switch models or expand permissions."
+          },
+          "atlas": {
+            "model": "hard",
+            "reasoning": "max",
+            "prompt_append": "Within the task boundaries supplied by Codex, route unresolved root causes, difficult cross-module logic and design-sensitive work to DeepSeek-backed categories. Route high-volume work to Muse-backed categories only when behavior and acceptance are settled; file count alone does not imply low difficulty. Use named read-only specialists for evidence gathering. Use either category or subagent_type in one task call, never both. Do not run planning or review agents by default when the supplied packet is already clear. Repeated failure of the same unresolved cause returns for diagnosis, not repeated speculative patches. Wait for all owned child tasks before declaring completion. Never silently switch models or expand permissions."
+          },
+          "prometheus": {
+            "model": "hard",
+            "reasoning": "max"
+          },
+          "oracle": {
+            "model": "hard",
+            "reasoning": "max"
+          },
+          "metis": {
+            "model": "hard",
+            "reasoning": "max",
+            "tools": {
+              "task": false,
+              "call_omo_agent": false,
+              "write": false,
+              "edit": false,
+              "apply_patch": false
+            }
+          },
+          "momus": {
+            "model": "hard",
+            "reasoning": "max",
+            "tools": {
+              "task": false,
+              "call_omo_agent": false,
+              "write": false,
+              "edit": false,
+              "apply_patch": false
+            }
+          },
+          "explore": {
+            "model": "bulk",
+            "reasoning": "xhigh"
+          },
+          "librarian": {
+            "model": "bulk",
+            "reasoning": "xhigh"
+          },
+          "multimodal-looker": {
+            "model": "bulk",
+            "reasoning": "xhigh"
+          },
+          "sisyphus-junior": {
+            "model": "bulk",
+            "reasoning": "xhigh"
+          }
+        },
+        "categories": {
+          "deep": {
+            "model": "hard",
+            "reasoning": "max"
+          },
+          "ultrabrain": {
+            "model": "hard",
+            "reasoning": "max"
+          },
+          "unspecified-high": {
+            "model": "hard",
+            "reasoning": "max"
+          },
+          "visual-engineering": {
+            "model": "hard",
+            "reasoning": "max"
+          },
+          "artistry": {
+            "model": "hard",
+            "reasoning": "max"
+          },
+          "quick": {
+            "model": "bulk",
+            "reasoning": "xhigh"
+          },
+          "unspecified-low": {
+            "model": "bulk",
+            "reasoning": "xhigh",
+            "description": "Settled, mechanically verifiable implementation, including repetitive changes across many files. Do not use for unresolved semantics or root causes."
+          },
+          "writing": {
+            "model": "bulk",
+            "reasoning": "xhigh",
+            "description": "Documentation and prose from agreed facts and decisions. Unresolved analysis belongs to a DeepSeek-backed category."
+          }
+        }
+      }
+    }
+  }
+}

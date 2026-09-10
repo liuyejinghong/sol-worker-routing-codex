@@ -1,0 +1,329 @@
+{
+  "upgrade_readback": [
+    {
+      "case": "upgrade-v0.4.1-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.4.1-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.5.3-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.5.3-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.6.0-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.6.0-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.7.0-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.7.0-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.7.1-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.7.1-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.8.0-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.8.0-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.9.0-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.9.0-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.10.0-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.10.0-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.0-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.0-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.1-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.1-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.2-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.2-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.3-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.12.3-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.13.0-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-v0.13.0-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-bfbafeb-enabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    },
+    {
+      "case": "upgrade-bfbafeb-disabled",
+      "profiles": {
+        "luna-worker": true,
+        "luna-medium-worker": true
+      },
+      "retired_absent": true,
+      "skill_matches": true
+    }
+  ],
+  "metrics_fixture": {
+    "count": 2,
+    "inputs": 36,
+    "outputs": 8,
+    "sessions": 2,
+    "p50_prefix": 10,
+    "checksum_mismatch_reported": true,
+    "sample_count": 1,
+    "sample_checksum_unverified": true
+  },
+  "empty_rejected": true,
+  "pilot_fields": [
+    "case",
+    "worker",
+    "acceptance",
+    "wall_seconds",
+    "output_tokens",
+    "reasoning_tokens",
+    "generated_tokens",
+    "notes"
+  ],
+  "pilot_rows": [
+    {
+      "case": "p-map-evidence",
+      "worker": "deepseek_worker",
+      "acceptance": "pass",
+      "wall_seconds": "50",
+      "output_tokens": "2894",
+      "reasoning_tokens": "1275",
+      "generated_tokens": "4169",
+      "notes": "Read-only source-pinned evidence task"
+    },
+    {
+      "case": "p-map-evidence",
+      "worker": "luna_worker",
+      "acceptance": "pass",
+      "wall_seconds": "176",
+      "output_tokens": "8128",
+      "reasoning_tokens": "6334",
+      "generated_tokens": "14462",
+      "notes": "Same acceptance contract"
+    },
+    {
+      "case": "click-mechanical-patch",
+      "worker": "deepseek_worker",
+      "acceptance": "pass",
+      "wall_seconds": "38",
+      "output_tokens": "814",
+      "reasoning_tokens": "98",
+      "generated_tokens": "912",
+      "notes": "One-file mechanical patch and target test"
+    },
+    {
+      "case": "click-mechanical-patch",
+      "worker": "luna_worker",
+      "acceptance": "pass",
+      "wall_seconds": "59",
+      "output_tokens": "1565",
+      "reasoning_tokens": "681",
+      "generated_tokens": "2246",
+      "notes": "Same acceptance contract"
+    },
+    {
+      "case": "httpx-bounded-review",
+      "worker": "luna_worker",
+      "acceptance": "not-graded",
+      "wall_seconds": "346",
+      "output_tokens": "16979",
+      "reasoning_tokens": "14201",
+      "generated_tokens": "31180",
+      "notes": "Read-only semantic review; findings not independently confirmed"
+    }
+  ]
+}

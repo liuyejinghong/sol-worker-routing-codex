@@ -1,0 +1,34 @@
+{
+  "omo_installed": "4.19.4",
+  "opencode_installed": "1.18.29",
+  "draft": "docs/2026-09-10-omo-codex-worker-profile.draft.jsonc",
+  "checks": {
+    "json_parsed": true,
+    "opencode_block_schema_after_documented_defaults": true,
+    "configured_agents": 10,
+    "disabled_core_agents": [
+      "hephaestus"
+    ],
+    "configured_categories": 8,
+    "all_reasoning_labels_in_cached_provider_variants": true,
+    "all_roles_and_categories_use_model_maximum": true
+  },
+  "validation_only_defaults": [
+    "git_master",
+    "team_mode nested defaults"
+  ],
+  "provider_metadata_cached_at": "2026-09-10T05:56:07.202Z",
+  "not_validated": [
+    "unified profile resolution in a live instance",
+    "actual child model selection",
+    "child permission inheritance",
+    "cross-model task completion and cancellation",
+    "performance or quality"
+  ],
+  "applied_to_user_config": false,
+  "reasoning_policy": {
+    "hard": "max",
+    "bulk": "xhigh",
+    "scope": "all roles, categories and auxiliary calls; auxiliary runtime propagation awaits implementation"
+  }
+}

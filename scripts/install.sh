@@ -177,6 +177,7 @@ installer_known_legacy_skill_digests=(
 # Exact installed Skill content from the previous repository release. This is
 # the only in-place upgrade source accepted for the current Skill path.
 installer_known_current_skill_digests=(
+  "39c8ce653fefea972e6e38cb5210e1ec5db47fdaf94edf5c5e5e2e342a6379d4"
   "4bb69c5c33a4e73f2ada68c0c188796f80edffb266116140a4f8afe6b48de4e9"
   "9bab5713bd407ebe9c9549377c3eae3174a1cdc221f16401a4834a0c131fdb74"
   "f0f5b4ccc60365268f1c63ddfc0d967069a647293be97b3eb954355d786aa498"
@@ -243,6 +244,8 @@ installer_removed_migration_indexes=()
 installer_committed_target_indexes=()
 installer_transaction_started=0
 installer_transaction_complete=0
+
+source "${installer_script_dir}/install-recovery.sh"
 
 installer_sha256() {
   if command -v shasum >/dev/null 2>&1; then
@@ -425,7 +428,7 @@ installer_current_skill_generation() {
   [[ -f "${installer_skill_target}" && ! -L "${installer_skill_target}" ]] || return 1
   installer_digest="$(installer_sha256 "${installer_skill_target}")" || return 1
   case "${installer_digest}" in
-    69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184|0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9|1b2c7418b52107bb11878b1fb255a01eac5b0a6a3618975cb6ba1af27e67d855)
+    39c8ce653fefea972e6e38cb5210e1ec5db47fdaf94edf5c5e5e2e342a6379d4|69e4a78c924e92fde3432311f186d3303af39aa7ad156ac48e8ab2ad5d381184|0fc8f022593430c0bc3180f583aed4aae9e47f190593fb4e9351dff49c8ed9d9|1b2c7418b52107bb11878b1fb255a01eac5b0a6a3618975cb6ba1af27e67d855)
       printf '%s\n' "v0.12"
       ;;
     ad8925fad92814ad0b6735af094117c2560c9c1033a4334ad47c22cbad7d1586)
@@ -794,6 +797,12 @@ installer_on_exit() {
     echo "Recovery backups were preserved because rollback did not complete." >&2
     installer_report_recovery_backups
   fi
+  if [[ -n "${installer_recovery_temp}" ]]; then
+    rm -f -- "${installer_recovery_temp}" || installer_cleanup_failed=1
+  fi
+  if [[ "${installer_status}" -ne 0 && "${installer_transaction_started}" -eq 1 && "${installer_transaction_complete}" -eq 0 && "${installer_rollback_complete}" -eq 1 && "${installer_recovery_loaded}" -eq 0 && "${installer_cleanup_failed}" -eq 0 ]]; then
+    installer_finish_recovery || installer_cleanup_failed=1
+  fi
   if [[ "${installer_cleanup_failed}" -ne 0 ]]; then
     echo "The original installation error is unchanged; recovery artifacts require manual inspection." >&2
   fi
@@ -882,6 +891,11 @@ installer_prepare_install_pairs() {
   installer_state_removal_descriptions=()
   installer_planned_lanes=()
   installer_planned_states=()
+
+  if [[ "${installer_recovery_loaded}" -eq 1 ]]; then
+    installer_prepare_recovery_pairs
+    return
+  fi
 
   case "${installer_mode}" in
     enable|disable)
@@ -1007,6 +1021,10 @@ if [[ "${installer_mode}" == "status" ]]; then
   exit 0
 fi
 
+if ! installer_load_recovery; then
+  echo "Error: interrupted installation cannot be resumed safely; inspect ${installer_recovery_path}. No files were changed." >&2
+  exit 2
+fi
 installer_prepare_install_pairs || exit 2
 
 for installer_dir in "${installer_guarded_dirs[@]}"; do
@@ -1170,6 +1188,7 @@ for installer_index in "${!installer_migration_targets[@]}"; do
   installer_assert_staged_migration_unchanged "${installer_index}"
 done
 
+installer_save_recovery
 installer_transaction_started=1
 
 for installer_index in "${!installer_staged_targets[@]}"; do
@@ -1190,6 +1209,14 @@ for installer_pair in "${installer_install_pairs[@]}"; do
   cmp -s "${installer_source}" "${installer_target}"
 done
 
+for installer_index in "${!installer_migration_targets[@]}"; do
+  installer_assert_staged_migration_unchanged "${installer_index}"
+  installer_target="${installer_migration_targets[installer_index]}"
+  installer_removed_migration_indexes+=("${installer_index}")
+  rm -- "${installer_target}"
+  echo "Migrated: removed known legacy file at ${installer_target}"
+done
+
 for installer_index in "${!installer_planned_lanes[@]}"; do
   installer_lane="${installer_planned_lanes[installer_index]}"
   installer_state="${installer_planned_states[installer_index]}"
@@ -1205,14 +1232,6 @@ for installer_index in "${!installer_planned_lanes[@]}"; do
   [[ ! -e "${installer_opposite_target}" && ! -L "${installer_opposite_target}" ]]
 done
 
-for installer_index in "${!installer_migration_targets[@]}"; do
-  installer_assert_staged_migration_unchanged "${installer_index}"
-  installer_target="${installer_migration_targets[installer_index]}"
-  installer_removed_migration_indexes+=("${installer_index}")
-  rm -- "${installer_target}"
-  echo "Migrated: removed known legacy file at ${installer_target}"
-done
-
 installer_transaction_complete=1
 installer_cleanup_failed=0
 if ! installer_cleanup_staged_files; then
@@ -1225,6 +1244,7 @@ if [[ "${installer_cleanup_failed}" -ne 0 ]]; then
   echo "Error: installed targets are verified, but recovery-file cleanup failed; inspect the reported paths before retrying." >&2
   exit 4
 fi
+installer_finish_recovery || exit 4
 
 if [[ "${installer_mode}" == "install" ]]; then
   echo "Verified: installed files match the repository sources and planned lane states."

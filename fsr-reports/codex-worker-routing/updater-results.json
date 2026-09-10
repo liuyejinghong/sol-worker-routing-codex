@@ -1,0 +1,56 @@
+[
+  {
+    "case": "same",
+    "exit": 0,
+    "installer_called": true,
+    "output": "Fetching origin/main...\nAlready up to date.\nApplying the updated workflow...\nUpdated to 103caa7.\n"
+  },
+  {
+    "case": "fast-forward",
+    "exit": 0,
+    "installer_called": true,
+    "output": "Fetching origin/main...\nUpdating 103caa7..663582d\nFast-forward\n change | 1 +\n 1 file changed, 1 insertion(+)\n create mode 100644 change\nApplying the updated workflow...\nUpdated to 663582d.\n"
+  },
+  {
+    "case": "dirty",
+    "exit": 1,
+    "installer_called": false,
+    "output": "Error: tracked changes are present; commit, stash, or discard them before updating.\n"
+  },
+  {
+    "case": "untracked",
+    "exit": 0,
+    "installer_called": true,
+    "output": "Fetching origin/main...\nAlready up to date.\nApplying the updated workflow...\nUpdated to 663582d.\n"
+  },
+  {
+    "case": "ahead",
+    "exit": 1,
+    "installer_called": false,
+    "output": "Fetching origin/main...\nError: local main is ahead of or diverged from origin/main; resolve that branch before updating.\n"
+  },
+  {
+    "case": "diverged",
+    "exit": 1,
+    "installer_called": false,
+    "output": "Fetching origin/main...\nError: local main is ahead of or diverged from origin/main; resolve that branch before updating.\n"
+  },
+  {
+    "case": "detached",
+    "exit": 1,
+    "installer_called": false,
+    "output": "Error: detached HEAD is not supported; switch to a tracked branch first.\n"
+  },
+  {
+    "case": "no-upstream",
+    "exit": 1,
+    "installer_called": false,
+    "output": "fatal: no upstream configured for branch 'main'\nError: main has no configured upstream.\n"
+  },
+  {
+    "case": "installer-fails",
+    "exit": 17,
+    "installer_called": true,
+    "output": "Fetching origin/main...\nUpdating aba18cb..78c4d97\nFast-forward\n change | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)\nApplying the updated workflow...\n"
+  }
+]

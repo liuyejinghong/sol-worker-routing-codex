@@ -1,0 +1,18 @@
+{
+  "interpreter": "/tmp/bash-5.2.37/bash",
+  "version_readback": "bash-identity.txt",
+  "version_readback_timing": "after probes; binary was not rebuilt or replaced between probes and readback",
+  "original_invocation_record": "Codex tool execution used subprocess.run with the interpreter path below; individual --version output was not captured per matrix call",
+  "argv_template": [
+    "/tmp/bash-5.2.37/bash",
+    "scripts/install.sh",
+    "<args recorded in bash5-results.json or action/lane in bash5-matrix.json>"
+  ],
+  "cwd": "/Users/ethan/codex-workflow",
+  "isolation": "fresh tempfile.mkdtemp for each case; SOL_WORKER_ROUTING_TEST_HOME assigned to it, inherited CODEX_HOME removed",
+  "results": [
+    "bash5-results.json",
+    "bash5-matrix.json"
+  ],
+  "evidence_limit": "Exact interpreter-to-earlier-call association is executor-recorded; current version readback is independently readable. No claim that matrix entries each contain raw version output."
+}

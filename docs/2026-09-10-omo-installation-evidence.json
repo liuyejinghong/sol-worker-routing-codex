@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-10",
+  "version": "0.3.0+codex.20260910074819",
+  "outcome": "passed",
+  "tools": [
+    "status",
+    "run",
+    "start",
+    "wait",
+    "followup",
+    "cancel"
+  ],
+  "state": "completed",
+  "finished": true,
+  "sessions": [
+    {
+      "role": "sisyphus",
+      "category": null,
+      "providerID": "opencode-go",
+      "modelID": "deepseek-flash",
+      "reasoning": "max",
+      "state": "completed"
+    },
+    {
+      "role": "explore",
+      "category": null,
+      "providerID": "opencode-go",
+      "modelID": "muse-spark-1.3-contributor",
+      "reasoning": "xhigh",
+      "state": "completed"
+    }
+  ],
+  "protected_files_unchanged": {
+    "/Users/ethan/.codex/config.toml": true,
+    "/Users/ethan/.codex/auth.json": true,
+    "/Users/ethan/.local/share/opencode/auth.json": true,
+    "/Users/ethan/.config/opencode/opencode.json": true,
+    "/Users/ethan/.agents/plugins/marketplace.json": true,
+    "/Users/ethan/.codex/agents/luna-medium-worker.toml": true,
+    "/Users/ethan/.codex/agents/luna-worker.toml": true
+  },
+  "source_in_repository": "plugins/opencode-worker",
+  "evidence_path": "/private/tmp/ocw-install-PALQcj/acceptance.json"
+}

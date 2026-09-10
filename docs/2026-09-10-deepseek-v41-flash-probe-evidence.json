@@ -1,0 +1,932 @@
+{
+  "started_at": "2026-09-10T05:55:59.987Z",
+  "workspace": "/private/tmp/dsv41-probe-3zRp94/workspace",
+  "requested": {
+    "provider": "opencode-go",
+    "model": "deepseek-flash",
+    "official_version_mapping": "DeepSeek V4.1 Flash"
+  },
+  "wire": [
+    {
+      "request_model": "deepseek-flash",
+      "path": "/v1/chat/completions",
+      "at": "2026-09-10T05:56:05.770Z",
+      "http_status": 200,
+      "response_models": [
+        "deepseek-flash"
+      ],
+      "usage": {
+        "prompt_tokens": 10661,
+        "completion_tokens": 127,
+        "total_tokens": 10788,
+        "prompt_cache_hit_tokens": 0,
+        "prompt_cache_miss_tokens": 10661,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 70
+        }
+      },
+      "error_types": []
+    },
+    {
+      "request_model": "deepseek-flash",
+      "path": "/v1/chat/completions",
+      "at": "2026-09-10T05:56:08.543Z",
+      "http_status": 200,
+      "response_models": [
+        "deepseek-flash"
+      ],
+      "usage": {
+        "prompt_tokens": 10876,
+        "completion_tokens": 52,
+        "total_tokens": 10928,
+        "prompt_cache_hit_tokens": 10624,
+        "prompt_cache_miss_tokens": 252,
+        "prompt_tokens_details": {
+          "cached_tokens": 10624
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 30
+        }
+      },
+      "error_types": []
+    }
+  ],
+  "status": "probe_completed",
+  "opencode_version": "1.18.29",
+  "agents": [
+    {
+      "name": "Sisyphus - ultraworker",
+      "mode": "primary",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "Prometheus - Plan Builder",
+      "mode": "primary",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "Atlas - Plan Executor",
+      "mode": "primary",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "AI Citation Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "AI Data Remediation Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "AI Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "API Tester",
+      "mode": "subagent"
+    },
+    {
+      "name": "Accessibility Auditor",
+      "mode": "subagent"
+    },
+    {
+      "name": "Account Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Accounts Payable Agent",
+      "mode": "subagent"
+    },
+    {
+      "name": "Ad Creative Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Agentic Identity & Trust Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Agents Orchestrator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Analytics Reporter",
+      "mode": "subagent"
+    },
+    {
+      "name": "Anthropologist",
+      "mode": "subagent"
+    },
+    {
+      "name": "App Store Optimizer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Automation Governance Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Autonomous Optimization Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Backend Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Baidu SEO Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Behavioral Nudge Engine",
+      "mode": "subagent"
+    },
+    {
+      "name": "Bilibili Content Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Blender Add-on Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Blockchain Security Auditor",
+      "mode": "subagent"
+    },
+    {
+      "name": "Book Co-Author",
+      "mode": "subagent"
+    },
+    {
+      "name": "Brand Guardian",
+      "mode": "subagent"
+    },
+    {
+      "name": "Carousel Growth Engine",
+      "mode": "subagent"
+    },
+    {
+      "name": "China E-Commerce Operator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Code Reviewer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Compliance Auditor",
+      "mode": "subagent"
+    },
+    {
+      "name": "Content Creator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Corporate Training Designer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Cross-Border E-Commerce Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Cultural Intelligence Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Data Consolidation Agent",
+      "mode": "subagent"
+    },
+    {
+      "name": "Data Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Database Optimizer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Deal Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "DevOps Automator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Developer Advocate",
+      "mode": "subagent"
+    },
+    {
+      "name": "Discovery Coach",
+      "mode": "subagent"
+    },
+    {
+      "name": "Document Generator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Douyin Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Embedded Firmware Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Evidence Collector",
+      "mode": "subagent"
+    },
+    {
+      "name": "Executive Summary Generator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Experiment Tracker",
+      "mode": "subagent"
+    },
+    {
+      "name": "Feedback Synthesizer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Feishu Integration Developer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Finance Tracker",
+      "mode": "subagent"
+    },
+    {
+      "name": "French Consulting Market Navigator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Frontend Developer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Game Audio Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Game Designer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Geographer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Git Workflow Master",
+      "mode": "subagent"
+    },
+    {
+      "name": "Godot Gameplay Scripter",
+      "mode": "subagent"
+    },
+    {
+      "name": "Godot Multiplayer Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Godot Shader Developer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Government Digital Presales Consultant",
+      "mode": "subagent"
+    },
+    {
+      "name": "Growth Hacker",
+      "mode": "subagent"
+    },
+    {
+      "name": "Healthcare Marketing Compliance Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Historian",
+      "mode": "subagent"
+    },
+    {
+      "name": "Identity Graph Operator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Image Prompt Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Incident Response Commander",
+      "mode": "subagent"
+    },
+    {
+      "name": "Inclusive Visuals Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Infrastructure Maintainer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Instagram Curator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Jira Workflow Steward",
+      "mode": "subagent"
+    },
+    {
+      "name": "Korean Business Navigator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Kuaishou Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "LSP/Index Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Legal Compliance Checker",
+      "mode": "subagent"
+    },
+    {
+      "name": "Level Designer",
+      "mode": "subagent"
+    },
+    {
+      "name": "LinkedIn Content Creator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Livestream Commerce Coach",
+      "mode": "subagent"
+    },
+    {
+      "name": "MCP Builder",
+      "mode": "subagent"
+    },
+    {
+      "name": "Metis - Plan Consultant",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "Mobile App Builder",
+      "mode": "subagent"
+    },
+    {
+      "name": "Model QA Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Momus - Plan Critic",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "Narrative Designer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Narratologist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Outbound Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "PPC Campaign Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Paid Media Auditor",
+      "mode": "subagent"
+    },
+    {
+      "name": "Paid Social Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Performance Benchmarker",
+      "mode": "subagent"
+    },
+    {
+      "name": "Pipeline Analyst",
+      "mode": "subagent"
+    },
+    {
+      "name": "Podcast Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Private Domain Operator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Product Manager",
+      "mode": "subagent"
+    },
+    {
+      "name": "Programmatic & Display Buyer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Project Shepherd",
+      "mode": "subagent"
+    },
+    {
+      "name": "Proposal Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Psychologist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Rapid Prototyper",
+      "mode": "subagent"
+    },
+    {
+      "name": "Reality Checker",
+      "mode": "subagent"
+    },
+    {
+      "name": "Recruitment Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Reddit Community Builder",
+      "mode": "subagent"
+    },
+    {
+      "name": "Report Distribution Agent",
+      "mode": "subagent"
+    },
+    {
+      "name": "Roblox Avatar Creator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Roblox Experience Designer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Roblox Systems Scripter",
+      "mode": "subagent"
+    },
+    {
+      "name": "SEO Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "SRE (Site Reliability Engineer)",
+      "mode": "subagent"
+    },
+    {
+      "name": "Sales Coach",
+      "mode": "subagent"
+    },
+    {
+      "name": "Sales Data Extraction Agent",
+      "mode": "subagent"
+    },
+    {
+      "name": "Sales Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Salesforce Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Search Query Analyst",
+      "mode": "subagent"
+    },
+    {
+      "name": "Security Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Senior Developer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Senior Project Manager",
+      "mode": "subagent"
+    },
+    {
+      "name": "Short-Video Editing Coach",
+      "mode": "subagent"
+    },
+    {
+      "name": "Sisyphus-Junior",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "Social Media Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Software Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Solidity Smart Contract Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Sprint Prioritizer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Studio Operations",
+      "mode": "subagent"
+    },
+    {
+      "name": "Studio Producer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Study Abroad Advisor",
+      "mode": "subagent"
+    },
+    {
+      "name": "Supply Chain Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Support Responder",
+      "mode": "subagent"
+    },
+    {
+      "name": "Technical Artist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Technical Writer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Terminal Integration Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Test Results Analyzer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Threat Detection Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "TikTok Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Tool Evaluator",
+      "mode": "subagent"
+    },
+    {
+      "name": "Tracking & Measurement Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Trend Researcher",
+      "mode": "subagent"
+    },
+    {
+      "name": "Twitter Engager",
+      "mode": "subagent"
+    },
+    {
+      "name": "UI Designer",
+      "mode": "subagent"
+    },
+    {
+      "name": "UX Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "UX Researcher",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unity Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unity Editor Tool Developer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unity Multiplayer Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unity Shader Graph Artist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unreal Multiplayer Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unreal Systems Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unreal Technical Artist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Unreal World Builder",
+      "mode": "subagent"
+    },
+    {
+      "name": "Visual Storyteller",
+      "mode": "subagent"
+    },
+    {
+      "name": "WeChat Mini Program Developer",
+      "mode": "subagent"
+    },
+    {
+      "name": "WeChat Official Account Manager",
+      "mode": "subagent"
+    },
+    {
+      "name": "Weibo Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Whimsy Injector",
+      "mode": "subagent"
+    },
+    {
+      "name": "Workflow Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Workflow Optimizer",
+      "mode": "subagent"
+    },
+    {
+      "name": "XR Cockpit Interaction Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "XR Immersive Developer",
+      "mode": "subagent"
+    },
+    {
+      "name": "XR Interface Architect",
+      "mode": "subagent"
+    },
+    {
+      "name": "Xiaohongshu Specialist",
+      "mode": "subagent"
+    },
+    {
+      "name": "Zhihu Strategist",
+      "mode": "subagent"
+    },
+    {
+      "name": "build",
+      "mode": "subagent"
+    },
+    {
+      "name": "compaction",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "explore",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "general",
+      "mode": "subagent"
+    },
+    {
+      "name": "librarian",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "macOS Spatial/Metal Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "multimodal-looker",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "oracle",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "plan",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "summary",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "title",
+      "mode": "subagent",
+      "model": {
+        "modelID": "deepseek-flash",
+        "providerID": "opencode-go"
+      }
+    },
+    {
+      "name": "visionOS Spatial Engineer",
+      "mode": "subagent"
+    },
+    {
+      "name": "zk-steward",
+      "mode": "subagent"
+    }
+  ],
+  "selected_agent": {
+    "name": "Sisyphus - ultraworker",
+    "model": {
+      "modelID": "deepseek-flash",
+      "providerID": "opencode-go"
+    }
+  },
+  "catalog_model": {
+    "id": "deepseek-flash",
+    "name": "DeepSeek V4.1 Flash",
+    "api": {
+      "id": "deepseek-flash",
+      "url": "https://opencode.ai/zen/go/v1",
+      "npm": "@ai-sdk/openai-compatible"
+    },
+    "limit": {
+      "context": 1000000,
+      "output": 384000
+    },
+    "capabilities": {
+      "temperature": true,
+      "reasoning": true,
+      "attachment": true,
+      "toolcall": true,
+      "input": {
+        "text": true,
+        "audio": false,
+        "image": true,
+        "video": false,
+        "pdf": false
+      },
+      "output": {
+        "text": true,
+        "audio": false,
+        "image": false,
+        "video": false,
+        "pdf": false
+      },
+      "interleaved": {
+        "field": "reasoning_content"
+      }
+    }
+  },
+  "effective": {
+    "model": "opencode-go/deepseek-flash",
+    "small_model": "opencode-go/deepseek-flash",
+    "provider_base_url": "http://127.0.0.1:60822/v1",
+    "plugins": [
+      "oh-my-openagent@latest"
+    ]
+  },
+  "session_id": "ses_f761cd203ffevWfcPey6Ewt6PG",
+  "assistants": [
+    {
+      "providerID": "opencode-go",
+      "modelID": "deepseek-flash",
+      "agent": "Sisyphus - ultraworker",
+      "finish": "tool-calls",
+      "tokens": {
+        "total": 10788,
+        "input": 10661,
+        "output": 57,
+        "reasoning": 70,
+        "cache": {
+          "read": 0,
+          "write": 0
+        }
+      },
+      "parts": [
+        {
+          "type": "tool",
+          "tool": "read",
+          "status": "completed",
+          "input": {
+            "filePath": "/private/tmp/dsv41-probe-3zRp94/workspace/input.txt"
+          }
+        }
+      ]
+    },
+    {
+      "providerID": "opencode-go",
+      "modelID": "deepseek-flash",
+      "agent": "Sisyphus - ultraworker",
+      "finish": "stop",
+      "tokens": {
+        "total": 10928,
+        "input": 252,
+        "output": 22,
+        "reasoning": 30,
+        "cache": {
+          "read": 10624,
+          "write": 0
+        }
+      },
+      "parts": [
+        {
+          "type": "text",
+          "text": "{\"nonce\":\"dsv41-4432b7f20b38\",\"sum\":100}"
+        }
+      ]
+    }
+  ],
+  "acceptance": {
+    "answer_correct": true,
+    "read_tool_completed": true,
+    "all_local_identity_correct": true,
+    "wire_observed": true,
+    "no_other_requested_model": true,
+    "response_models": [
+      "deepseek-flash"
+    ]
+  },
+  "real_configs_unchanged": true,
+  "completed_at": "2026-09-10T05:56:12.670Z",
+  "private_server_stopped": true,
+  "independent_acceptance": {
+    "answer_recomputed": true,
+    "catalog_version_name_verified": true,
+    "request_and_response_models_verified": true,
+    "note": "Go response exposes the deepseek-flash alias, not an independently verifiable weights/checkpoint identifier."
+  },
+  "usage_totals": {
+    "prompt_tokens": 21537,
+    "completion_tokens": 179,
+    "prompt_cache_hit_tokens": 10624,
+    "prompt_cache_miss_tokens": 10913
+  }
+}
