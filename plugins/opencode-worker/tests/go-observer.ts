@@ -1,13 +1,13 @@
 import http from 'node:http';
 export async function goObserver() {
   const requests: any[] = [];
-  const allowed = new Map([['deepseek-flash', 'max'], ['muse-spark-1.3-contributor', 'xhigh']]);
+  const allowed = new Map([['deepseek-v4.1-flash', 'max'], ['muse-spark-1.3-contributor', 'xhigh']]);
   const server = http.createServer(async (req, res) => {
     const row: any = { time: new Date().toISOString() };
     try {
       const chunks: Buffer[] = []; for await (const chunk of req) chunks.push(chunk);
       const body = Buffer.concat(chunks); const data = JSON.parse(body.toString());
-      Object.assign(row, { model: data.model, effort: data.reasoning_effort ?? data.reasoning?.effort, path: req.url }); requests.push(row);
+      Object.assign(row, { model: data.model, effort: data.reasoning_effort ?? data.reasoning?.effort, path: req.url, tools: (data.tools || []).map((t: any) => t.function?.name ?? t.name).filter(Boolean) }); requests.push(row);
       if (!allowed.has(data.model) || row.effort !== allowed.get(data.model) || requests.length > 50 || !['/v1/chat/completions', '/v1/responses'].includes(req.url || '')) {
         row.blocked = true; res.writeHead(403, { 'content-type': 'application/json' }).end(JSON.stringify({ error: { message: 'Acceptance observer rejected model, reasoning or request count' } })); return;
       }

@@ -4558,6 +4558,7 @@ async function OpenCodeWorkerGuard(ctx) {
     config: async (config) => {
       const task = await readJson(file);
       if (!task.routing) throw new Error("Worker routing was not reserved");
+      config.mcp = Object.fromEntries(Object.keys(config.mcp || {}).map((name) => [name, { enabled: false }]));
       for (const [name, agent] of Object.entries(config.agent || {})) {
         const role = canonicalAgent(name);
         const route = AUXILIARY.has(role) ? task.routing.auxiliary : task.routing.agents[role];

@@ -5,7 +5,7 @@ description: Delegate bounded authorized work to local OpenCode and the user's O
 
 # OpenCode Worker
 
-Discover this plugin's callable MCP tools. Use the selected OMO profile (default `codex-worker`) as the model mapping. All agents, categories and auxiliary requests must use each model's highest supported reasoning. Check actual role/category/model receipts, not the Sisyphus or Junior label alone. Do not silently switch Provider or model. Contributor permits training on submitted inputs and outputs. Follow existing external-use authorization without repeating confirmations already given.
+Discover this plugin's callable MCP tools. Use the selected OMO profile (default `codex-worker`) as the model mapping. All agents, categories and auxiliary requests must use each model's highest supported reasoning. Check actual role/category/model receipts, not the Sisyphus or Junior label alone. Do not silently switch Provider or model. The default profile uses `opencode-go/deepseek-v4.1-flash` at `max` and `opencode-go/muse-spark-1.3-contributor` at `xhigh`. Model family names such as `deepseek-flash` are not callable model IDs. If startup reports an unavailable model, compare the selected profile with the Provider catalog and preserve the user's exact model/version; do not substitute V4 for V4.1 or create a replacement task profile. Contributor permits training on submitted inputs and outputs. Follow existing external-use authorization without repeating confirmations already given.
 
 Keep requirements, scope, integration and acceptance with Codex. Reuse the host workflow's bounded packet and file-ownership rules. This skill defines the execution contract, not a second routing policy.
 

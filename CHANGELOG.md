@@ -2,6 +2,14 @@
 
 版本遵循语义化版本。`0.1.0` 至 `0.3.1` 根据 Git 历史追溯整理。
 
+## 0.16.1 - 2026-09-11
+
+- [真实验收](docs/2026-09-11-opencode-worker-v41-fix-acceptance.md)：V4.1 max → Muse xhigh 的父子读取与安装缓存受限写入均通过；类型检查、21 项单元测试、模拟树集成及 Skill 升级验证通过。
+
+- 修正 OpenCode Worker 默认 DeepSeek 模型 ID 为 `opencode-go/deepseek-v4.1-flash`，保留 `max`；同步插件 0.3.1、路由 Skill、配置样例及测试。
+- Worker 临时运行环境禁用继承的 MCP 服务，避免范围外资源工具出现在只读子任务中；全局 MCP 配置保持不变。
+- 明确 family 名称不是可调用 ID；启动失败时不得将 V4.1 替换为 V4，或另建任务 profile 绕过既定配置。
+
 ## 0.16.0 - 2026-09-11
 
 - 安装回归在 macOS Bash 3.2 与 GNU Bash 5.2 各通过 34 组，覆盖 Medium 退役、Max 状态保留、中断恢复与未知文件拒绝；路由 Skill 格式验证通过。

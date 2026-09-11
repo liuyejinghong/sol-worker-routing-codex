@@ -11,18 +11,21 @@ const source = () => fs.readFile('config/omo-profile.jsonc', 'utf8');
 test('profile is explicit, fully routed, and uses each model maximum; no missing-profile fallback', async () => {
   const text = await source();
   const r = parseRouting(text, 'codex-worker', 'fixture');
-  assert.equal(r.agents.sisyphus.modelID, 'deepseek-flash');
+  assert.equal(r.agents.sisyphus.modelID, 'deepseek-v4.1-flash');
   assert.equal(r.agents.sisyphus.reasoning, 'max');
+  const catalog = { 'deepseek-v4.1-flash': { family: 'deepseek-flash', variants: { low: {}, high: {}, max: {} } } };
+  validateMaximum(r.agents.sisyphus, catalog);
+  assert.throws(() => validateMaximum({ ...r.agents.sisyphus, modelID: 'deepseek-flash' }, catalog), /Model unavailable/);
   assert.equal(r.categories.quick.modelID, 'muse-spark-1.3-contributor');
   assert.equal(r.categories.quick.reasoning, 'xhigh');
   assert.equal(r.auxiliary.reasoning, 'xhigh');
   assert.throws(() => parseRouting(text, 'absent', 'fixture'), /missing/);
   const d = parse(text); d.profiles['codex-worker']['[opencode]'].model_fallback = true;
   assert.throws(() => parseRouting(JSON.stringify(d), 'codex-worker', 'fixture'), /disable/);
-  assert.throws(() => validateMaximum({ ...r.agents.sisyphus, reasoning: 'high' }, { 'deepseek-flash': { variants: { high: {}, max: {} } } }), /maximum/);
+  assert.throws(() => validateMaximum({ ...r.agents.sisyphus, reasoning: 'high' }, { 'deepseek-v4.1-flash': { variants: { high: {}, max: {} } } }), /maximum/);
   const changed = structuredClone(r); changed.categories.quick.modelID = 'another'; assert.equal(sameRouting(r, changed), false);
   const single = parseRouting(text, 'codex-worker', 'fixture', 'single');
-  assert.equal(single.auxiliary.modelID, 'deepseek-flash');
+  assert.equal(single.auxiliary.modelID, 'deepseek-v4.1-flash');
 });
 async function fixture() {
   const directory = await fs.realpath(await fs.mkdtemp('/private/tmp/ocw-tree-unit-'));
@@ -34,7 +37,7 @@ async function fixture() {
   const messages: Record<string, any[]> = {};
   const client = { session: { get: async ({ path: p }: any) => ({ data: sessions[p.id] }), messages: async ({ path: p }: any) => ({ data: messages[p.id] || [] }) } };
   const guard = new TreeGuard(file, client);
-  await guard.parameters({ sessionID: 'ses_root', agent: 'Sisyphus - ultraworker', model: { id: 'deepseek-flash', providerID: 'opencode-go' }, message: { id: 'msg_root' } }, { options: {} });
+  await guard.parameters({ sessionID: 'ses_root', agent: 'Sisyphus - ultraworker', model: { id: 'deepseek-v4.1-flash', providerID: 'opencode-go' }, message: { id: 'msg_root' } }, { options: {} });
   return { task, file, directory, guard, sessions, messages };
 }
 test('named Muse reader cannot write or delegate; an unexpected model is rejected before execution', async () => {
@@ -46,7 +49,7 @@ test('named Muse reader cannot write or delegate; an unexpected model is rejecte
   await f.guard.parameters(input, output); assert.equal(output.options.reasoningEffort, 'xhigh');
   await assert.rejects(f.guard.before({ sessionID: 'ses_reader', tool: 'write' }, { filePath: 'owned.txt' }), /read-only/);
   await assert.rejects(f.guard.before({ sessionID: 'ses_reader', tool: 'task' }, { category: 'deep' }), /disabled/);
-  await assert.rejects(f.guard.parameters({ ...input, model: { id: 'deepseek-flash', providerID: 'opencode-go' } }, { options: {} }), /differs/);
+  await assert.rejects(f.guard.parameters({ ...input, model: { id: 'deepseek-v4.1-flash', providerID: 'opencode-go' } }, { options: {} }), /differs/);
   await assert.rejects(f.guard.before({ sessionID: 'ses_root', tool: 'background_output' }, { task_id: 'bg_unrelated' }), /not owned/);
 });
 test('category selects DeepSeek despite Junior default Muse; writer reservations are exclusive', async () => {
@@ -55,7 +58,7 @@ test('category selects DeepSeek despite Junior default Muse; writer reservations
   assert.equal(results.filter(r => r.status === 'fulfilled').length, 1);
   await assert.rejects(f.guard.before({ sessionID: 'ses_root', tool: 'edit' }, { filePath: 'owned.txt' }), /still owns/);
   f.sessions.ses_writer = { id: 'ses_writer', parentID: 'ses_root', directory: f.directory };
-  await f.guard.parameters({ sessionID: 'ses_writer', agent: 'Sisyphus-Junior', model: { id: 'deepseek-flash', providerID: 'opencode-go' }, message: { id: 'm_write' } }, { options: {} });
+  await f.guard.parameters({ sessionID: 'ses_writer', agent: 'Sisyphus-Junior', model: { id: 'deepseek-v4.1-flash', providerID: 'opencode-go' }, message: { id: 'm_write' } }, { options: {} });
   await f.guard.before({ sessionID: 'ses_writer', tool: 'write' }, { filePath: 'owned.txt' });
   await assert.rejects(f.guard.before({ sessionID: 'ses_writer', tool: 'write' }, { filePath: 'forbidden.txt' }), /outside writable/);
   f.messages.ses_writer = [{ info: { role: 'assistant', parentID: 'm_write', finish: 'stop', time: { completed: 1 } }, parts: [] }];
@@ -86,8 +89,9 @@ test('native agent permissions hide unrelated tools and retain literal write sco
   process.env.OPENCODE_WORKER_TASK_FILE = f.file;
   try {
     const hooks = await factory({ client: {}, worktree: f.directory });
-    const cfg: any = { agent: Object.fromEntries(Object.entries(f.task.routing!.agents).map(([name, route]) => [name, { model: `${route.providerID}/${route.modelID}`, permission: { '*': 'allow' } }])) };
+    const cfg: any = { mcp: { inherited: { type: 'remote', url: 'https://example.invalid/mcp' } }, agent: Object.fromEntries(Object.entries(f.task.routing!.agents).map(([name, route]) => [name, { model: `${route.providerID}/${route.modelID}`, permission: { '*': 'allow' } }])) };
     await hooks.config(cfg);
+    assert.deepEqual(cfg.mcp, { inherited: { enabled: false } });
     assert.equal(cfg.agent.explore.permission['*'], 'deny');
     assert.deepEqual(cfg.agent.explore.permission.read, { '*': 'allow', '*.env*': 'deny', 'mcp:*': 'deny' });
     assert.equal(cfg.agent.explore.permission.bash, 'deny');

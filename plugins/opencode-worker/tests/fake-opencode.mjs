@@ -26,7 +26,7 @@ const server = http.createServer(async (req, res) => {
   if (route === '/global/health') return send({ healthy: true, version: 'fixture-1.18.29' });
   if (route === '/config') return send(cfg);
   if (route === '/agent') return send(Object.keys(routes.agents).map(n => ({ name: n === 'sisyphus' ? agent : n, mode: ['sisyphus','atlas','prometheus'].includes(n) ? 'primary' : 'subagent', model: resolve(n) })));
-  if (route === '/provider') return send({ connected: ['opencode-go'], all: [{ id: 'opencode-go', models: { 'deepseek-flash': { variants: { low: {}, high: {}, max: {} } }, 'muse-spark-1.3-contributor': { variants: { low: {}, high: {}, xhigh: {} } } } }] });
+  if (route === '/provider') return send({ connected: ['opencode-go'], all: [{ id: 'opencode-go', models: { 'deepseek-v4.1-flash': { variants: { low: {}, high: {}, max: {} } }, 'muse-spark-1.3-contributor': { variants: { low: {}, high: {}, xhigh: {} } } } }] });
   if (route === '/path') return send({ directory, worktree: directory });
   if (route === '/session/status') return send(state);
   if (route === '/session' && req.method === 'POST') {

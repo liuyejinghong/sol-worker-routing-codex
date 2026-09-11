@@ -16,7 +16,7 @@ try {
   const done = await call('wait', { task_id: running.task_id, timeout_seconds: 10 });
   assert.equal(done.state, 'completed');
   assert.equal(done.result.sessions.length, 2);
-  assert.equal(done.result.sessions[0].modelID, 'deepseek-flash');
+  assert.equal(done.result.sessions[0].modelID, 'deepseek-v4.1-flash');
   assert.equal(done.result.sessions[1].modelID, 'muse-spark-1.3-contributor');
   assert.equal(done.result.sessions[1].state, 'completed');
   const wrong = await call('run', { request_id: 'wrong-child', directory, task: 'FAKE_CHILD_WRONG_MODEL', timeout_seconds: 30, wait_seconds: 10 });

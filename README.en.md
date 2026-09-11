@@ -78,6 +78,8 @@ After an installation or lane switch is forcibly interrupted, rerun the original
 
 Luna Medium is retired. Upgrades remove its known enabled or disabled profile and preserve the Luna Max state. Small tasks stay with the main agent.
 
+The fix uses OpenCode Worker 0.3.1 with the exact default ID `opencode-go/deepseek-v4.1-flash` (`max`). Existing plugin users must also reinstall the plugin and update their OMO profile; `scripts/update.sh` updates only the native Worker and routing Skill.
+
 ## Documentation
 
 - [Routing and handoff rules](skills/sol-worker-routing/SKILL.md)

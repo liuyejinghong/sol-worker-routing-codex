@@ -1,6 +1,6 @@
 {
   "name": "opencode-worker",
-  "version": "0.3.0+codex.20260910074819",
+  "version": "0.3.1+codex.20260911041724",
   "description": "Codex delegates bounded tasks to local OpenCode with profile-driven OMO models and controlled child agents.",
   "author": {
     "name": "Ethan"

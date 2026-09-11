@@ -23025,7 +23025,7 @@ import os from "node:os";
 import fs from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 var PROVIDER = "opencode-go";
-var VERSION = "0.3.0";
+var VERSION = "0.3.1";
 var requestId = external_exports.string().regex(/^[A-Za-z0-9._-]{1,100}$/);
 var taskId = external_exports.string().uuid();
 var startSchema = external_exports.object({

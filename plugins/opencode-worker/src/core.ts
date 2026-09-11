@@ -6,7 +6,7 @@ import { z } from 'zod';
 import type { Routing } from './routing.js';
 
 export const PROVIDER = 'opencode-go';
-export const VERSION = '0.3.0';
+export const VERSION = '0.3.1';
 export const requestId = z.string().regex(/^[A-Za-z0-9._-]{1,100}$/);
 export const taskId = z.string().uuid();
 export const startSchema = z.object({

@@ -1,5 +1,7 @@
 # OMO 混合 Worker 开发验收
 
+> 2026-09-11 更正：当前 Go 可调用 ID 为 `opencode-go/deepseek-v4.1-flash`，最高推理档为 `max`。下文历史 `deepseek-flash` 标识不能作为当前配置依据，参见 [修复验收](2026-09-11-opencode-worker-v41-fix-acceptance.md)。
+
 后续状态：已按新授权完成安装，见 [安装验收](2026-09-10-omo-installation-acceptance.md)。下文保留开发阶段的原始边界。
 
 2026-09-10。已完成独立 OpenCode Worker 0.3.0 源码开发、真实模型验证与源码回写。当前已安装的 0.2 插件、日常 OMO/OpenCode 配置没有更新；本记录不代表安装或发布完成。

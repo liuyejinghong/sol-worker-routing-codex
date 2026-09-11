@@ -78,6 +78,8 @@ bash scripts/install.sh
 
 Luna Medium 已退役：升级会删除已知的启用或停用配置，保留 Luna Max 的开关状态。小任务由主代理直接处理。
 
+修复版使用 OpenCode Worker 0.3.1，默认 DeepSeek 精确 ID 为 `opencode-go/deepseek-v4.1-flash`（`max`）。已安装旧插件的用户还需重装插件并更新 OMO profile；`scripts/update.sh` 只更新原生 Worker 和路由 Skill。
+
 ## 更多文档
 
 - [路由与任务交接规则](skills/sol-worker-routing/SKILL.md)

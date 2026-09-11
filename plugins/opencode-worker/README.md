@@ -1,6 +1,6 @@
 # OpenCode Worker
 
-一个 Codex 入口，通过用户选择的 OMO profile 在 OpenCode Go 中分配模型。Codex 保留任务范围、授权和最终验收。0.3.0 支持 Sisyphus 主控、一层子代理、只读并行和串行写入；所有参与模型使用其 Provider 目录支持的最高推理档。
+一个 Codex 入口，通过用户选择的 OMO profile 在 OpenCode Go 中分配模型。Codex 保留任务范围、授权和最终验收。0.3.1 支持 Sisyphus 主控、一层子代理、只读并行和串行写入；所有参与模型使用其 Provider 目录支持的最高推理档。
 
 模型映射来自 `~/.omo/omo.jsonc` 的 `profiles.codex-worker`，不写死 Muse 或 DeepSeek。随附 `config/omo-profile.jsonc` 是 DeepSeek V4.1 Flash `max` + Muse Spark 1.3 Contributor `xhigh` 的合并样例；不得用它覆盖整个用户配置。模型变化通常只需调整 profile，新任务会重新读取；角色/分类必须完整显式配置，缺失 profile 不回落到基础配置。
 
@@ -77,3 +77,7 @@ OPENCODE_WORKER_LIVE_TEST=1 npm run test:omo
 ```
 
 测试请求观察器仅用于验收，检查请求/响应模型及最高 reasoning，不记录密钥或请求头，不作为生产运行的额外代理。开发验证不自动授权安装、提交、推送或发布。
+
+默认 DeepSeek 模型使用精确 ID `opencode-go/deepseek-v4.1-flash`，推理档为 `max`。`deepseek-flash` 是 family 名称，不能作为当前 Go 模型 ID；不得改用 V4 替代 V4.1。
+
+Worker 启动的临时运行环境会禁用继承的 MCP 服务，避免范围外资源工具被暴露给子任务；不会改写全局 MCP 配置。

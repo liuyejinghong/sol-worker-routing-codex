@@ -9,6 +9,8 @@ export default async function OpenCodeWorkerGuard(ctx: any) {
     config: async (config: any) => {
       const task = await readJson<Task>(file);
       if (!task.routing) throw new Error('Worker routing was not reserved');
+      // MCP resource tools share the read permission; disable inherited servers in this runtime.
+      config.mcp = Object.fromEntries(Object.keys(config.mcp || {}).map(name => [name, { enabled: false }]));
       for (const [name, agent] of Object.entries(config.agent || {}) as [string, any][]) {
         const role = canonicalAgent(name);
         const route = AUXILIARY.has(role) ? task.routing.auxiliary : task.routing.agents[role];

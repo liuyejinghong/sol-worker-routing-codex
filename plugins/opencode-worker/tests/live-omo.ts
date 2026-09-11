@@ -42,12 +42,13 @@ try {
     const deepChecks = 'from intervals import merge_intervals\nx=[(5,7),(1,3),(3,4),(2,2),(9,10)]\nassert merge_intervals(x)==[(1,4),(5,7),(9,10)]\nassert x==[(5,7),(1,3),(3,4),(2,2),(9,10)]\nassert merge_intervals([])==[]\nassert merge_intervals([(2,5),(1,7),(7,8)])==[(1,8)]\ntry: merge_intervals([(4,2)])\nexcept ValueError: pass\nelse: raise AssertionError("inverted interval accepted")\nprint("DEEP_CHECK_PASS")\n';
     await fs.writeFile(path.join(directory, 'deep_check.py'), deepChecks);
     const deep = await run('deep', 'Delegate exactly one foreground task(category="deep", load_skills=[]): implement merge_intervals in intervals.py. Merge overlapping or touching closed intervals, return sorted tuples, do not mutate input, reject reversed intervals with ValueError. Child must read deep_check.py, modify only intervals.py, and run exactly python3 deep_check.py. Do not implement it yourself.', { mode: 'write', writable_paths: ['intervals.py'], allowed_commands: ['python3 deep_check.py'] });
-    assert.ok(deep.result.sessions.some((s: any) => s.category === 'deep' && s.modelID === 'deepseek-flash' && s.reasoning === 'max'));
+    assert.ok(deep.result.sessions.some((s: any) => s.category === 'deep' && s.modelID === 'deepseek-v4.1-flash' && s.reasoning === 'max'));
     assert.equal(await fs.readFile(path.join(directory, 'deep_check.py'), 'utf8'), deepChecks); execFileSync('python3', ['deep_check.py'], { cwd: directory });
     const oracle = await run('oracle', 'Delegate exactly one read-only task(subagent_type="oracle", load_skills=[]): read intervals.py and deep_check.py and identify whether the input-mutation and reversed-interval requirements are met. Ask it to return concise evidence, not edits or further delegation. Collect its response.');
-    assert.ok(oracle.result.sessions.some((s: any) => s.role === 'oracle' && s.modelID === 'deepseek-flash'));
+    assert.ok(oracle.result.sessions.some((s: any) => s.role === 'oracle' && s.modelID === 'deepseek-v4.1-flash'));
     evidence.outcome = 'passed';
   }
+  assert.ok(observer.requests.every(r => !r.tools.some((name: string) => ['list_mcp_resources', 'list_mcp_resource_templates', 'read_mcp_resource'].includes(name))));
   assert.ok(observer.requests.length > 0 && observer.requests.every(r => !r.blocked && r.status === 200 && r.response_models?.includes(r.model)));
 } catch (e) { evidence.outcome = 'failed'; evidence.error = String(e); throw e; }
 finally {
