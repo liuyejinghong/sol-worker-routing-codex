@@ -1,6 +1,6 @@
 # OpenCode Worker
 
-一个 Codex 入口，通过用户选择的 OMO profile 在 OpenCode Go 中分配模型。Codex 保留任务范围、授权和最终验收。0.3.1 支持 Sisyphus 主控、一层子代理、只读并行和串行写入；所有参与模型使用其 Provider 目录支持的最高推理档。
+一个 Codex 入口，通过用户选择的 OMO profile 在 OpenCode Go 中分配模型。Codex 保留任务范围、授权和最终验收。0.3.2 支持 Sisyphus 主控、一层子代理、只读并行和串行写入；所有参与模型使用其 Provider 目录支持的最高推理档。
 
 模型映射来自 `~/.omo/omo.jsonc` 的 `profiles.codex-worker`，不写死 Muse 或 DeepSeek。随附 `config/omo-profile.jsonc` 是 DeepSeek V4.1 Flash `max` + Muse Spark 1.3 Contributor `xhigh` 的合并样例；不得用它覆盖整个用户配置。模型变化通常只需调整 profile，新任务会重新读取；角色/分类必须完整显式配置，缺失 profile 不回落到基础配置。
 
@@ -38,7 +38,9 @@
 - 根会话先结束时继续等待子会话；子结果产生后，还要等主控完成结果整理。子错误不会被主控的成功措辞盖过。
 - cancel 终止整棵所属任务树，再关闭专属 OpenCode 服务。只有停止确认后才释放文件所有权。RPC 等待中断不自动取消执行。
 
-每个任务独占一个 runner 与私有 loopback OpenCode 服务。`finished=false` 包括未知执行状态，仍持有任务槽。`completed` 是执行结束，验收始终由 Codex 完成。结果的 sessions 列出根/子会话、role/category、模型、最高推理档、状态和错误；完整证据位于任务目录。
+每个任务独占一个 runner 与私有 loopback OpenCode 服务。`finished=false` 包括未知执行状态，仍持有任务槽。`completed` 是执行结束，验收始终由 Codex 完成。结果的 sessions 列出根/子会话、role/category、模型、最高推理档、状态和错误；完整证据位于任务目录。回执保留根/子角色的 `finish_reasons` 和逐消息 token 数据（缺失为 `null`）；长度截断或无文本/工具产物返回 `needs_attention`，不自动换模型或推理档。
+
+MCP 启动时读取 runner/guard，每轮派发前保存到该轮任务目录，运行和恢复均使用这份文件，随任务证据保留。插件缓存被清理不会删除在途执行文件；旧连接须重新加载插件才能获得此修复。恢复只在 `not_sent`、无 session/服务回执且日志明确证明 runner 入口缺失时收口为失败；证据不足或已尝试发送仍保留未知状态。
 
 followup 保留原会话、权限和模型映射。若 profile 已变更，会拒绝在旧任务上静默应用。0.2 旧任务可查询/取消，不改写其历史；继续开发请在确认旧执行停止、审阅已有修改后开始新的 profile 任务。
 

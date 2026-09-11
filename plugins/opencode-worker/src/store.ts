@@ -2,14 +2,27 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import lockfile from 'proper-lockfile';
 import { alive, atomicJson, errorText, maybeJson, messageId, normalizeInput, now, publicTask, readJson, requestId, startSchema, taskDir, taskFile, type Receipt, type Task } from './core.js';
 
 import { loadRouting, sameRouting } from './routing.js';
 
 export class Store {
+  private runtimeFiles?: { name: string; data: Buffer }[];
   constructor(public root: string) {}
+  async loadRuntime() {
+    this.runtimeFiles = await Promise.all(['runner.mjs', 'guard.mjs'].map(async name => ({
+      name, data: await fs.readFile(new URL(`./${name}`, import.meta.url)),
+    })));
+  }
+  async stageRuntime(folder: string) {
+    if (!this.runtimeFiles) await this.loadRuntime();
+    await fs.mkdir(folder, { recursive: true, mode: 0o700 });
+    for (const { name, data } of this.runtimeFiles!) {
+      await fs.writeFile(path.join(folder, name), data, { mode: 0o600 });
+    }
+    return path.join(folder, 'runner.mjs');
+  }
   async init() { await fs.mkdir(this.root, { recursive: true, mode: 0o700 }); }
   async locked<T>(fn: () => Promise<T>): Promise<T> {
     await this.init();
@@ -32,14 +45,14 @@ export class Store {
     return { ...publicTask(await this.reconcile(await this.get(receipt.task_id))), requested_turn: receipt.turn, deduplicated: true };
   }
   async reserve(task: Task, operation: 'start' | 'followup', input: unknown) {
+    const folder = path.join(taskDir(this.root, task.id), `turn-${task.turn}`);
+    const runner = await this.stageRuntime(folder);
     await atomicJson(taskFile(this.root, task.id), task);
     await atomicJson(path.join(this.root, 'active.json'), { id: task.id });
     await atomicJson(path.join(this.root, 'requests', task.request_id + '.json'), { task_id: task.id, turn: task.turn, operation, input } satisfies Receipt);
-    const folder = path.join(taskDir(this.root, task.id), `turn-${task.turn}`);
-    await fs.mkdir(folder, { recursive: true, mode: 0o700 });
     const log = await fs.open(path.join(folder, 'runner.log'), 'a', 0o600);
-    const child = spawn(process.execPath, [fileURLToPath(new URL('./runner.mjs', import.meta.url)), this.root, task.id], {
-      detached: true, stdio: ['ignore', log.fd, log.fd], env: process.env,
+    const child = spawn(process.execPath, [runner, this.root, task.id], {
+      cwd: task.input.directory, detached: true, stdio: ['ignore', log.fd, log.fd], env: process.env,
     });
     const spawned = new Promise<void>((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); });
     await log.close();
@@ -90,8 +103,14 @@ export class Store {
       if (task.finished_at) return publicTask(task);
       await atomicJson(path.join(taskDir(this.root, id), `turn-${task.turn}`, 'cancel.json'), { requested_at: now() });
       if (!alive(task.runner_pid) && Date.now() - Date.parse(task.updated_at) >= 10000) {
-        const log = await fs.open(path.join(taskDir(this.root, id), `turn-${task.turn}`, 'recovery.log'), 'a', 0o600);
-        const recovery = spawn(process.execPath, [fileURLToPath(new URL('./runner.mjs', import.meta.url)), this.root, id, '--recover'], { detached: true, stdio: ['ignore', log.fd, log.fd], env: process.env });
+        const folder = path.join(taskDir(this.root, id), `turn-${task.turn}`);
+        let runner = path.join(folder, 'runner.mjs');
+        try { await fs.access(runner); } catch (e) {
+          if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
+          runner = await this.stageRuntime(folder);
+        }
+        const log = await fs.open(path.join(folder, 'recovery.log'), 'a', 0o600);
+        const recovery = spawn(process.execPath, [runner, this.root, id, '--recover'], { cwd: task.input.directory, detached: true, stdio: ['ignore', log.fd, log.fd], env: process.env });
         const spawned = new Promise<void>((resolve, reject) => { recovery.once('spawn', resolve); recovery.once('error', reject); });
         await log.close();
         await spawned;

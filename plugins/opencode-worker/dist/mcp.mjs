@@ -23025,7 +23025,7 @@ import os from "node:os";
 import fs from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 var PROVIDER = "opencode-go";
-var VERSION = "0.3.1";
+var VERSION = "0.3.2";
 var requestId = external_exports.string().regex(/^[A-Za-z0-9._-]{1,100}$/);
 var taskId = external_exports.string().uuid();
 var startSchema = external_exports.object({
@@ -24071,10 +24071,24 @@ import fs3 from "node:fs/promises";
 import path4 from "node:path";
 import { randomUUID as randomUUID2 } from "node:crypto";
 import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 var Store = class {
   constructor(root) {
     this.root = root;
+  }
+  runtimeFiles;
+  async loadRuntime() {
+    this.runtimeFiles = await Promise.all(["runner.mjs", "guard.mjs"].map(async (name) => ({
+      name,
+      data: await fs3.readFile(new URL(`./${name}`, import.meta.url))
+    })));
+  }
+  async stageRuntime(folder) {
+    if (!this.runtimeFiles) await this.loadRuntime();
+    await fs3.mkdir(folder, { recursive: true, mode: 448 });
+    for (const { name, data } of this.runtimeFiles) {
+      await fs3.writeFile(path4.join(folder, name), data, { mode: 384 });
+    }
+    return path4.join(folder, "runner.mjs");
   }
   async init() {
     await fs3.mkdir(this.root, { recursive: true, mode: 448 });
@@ -24106,13 +24120,14 @@ var Store = class {
     return { ...publicTask(await this.reconcile(await this.get(receipt.task_id))), requested_turn: receipt.turn, deduplicated: true };
   }
   async reserve(task, operation, input) {
+    const folder = path4.join(taskDir(this.root, task.id), `turn-${task.turn}`);
+    const runner = await this.stageRuntime(folder);
     await atomicJson(taskFile(this.root, task.id), task);
     await atomicJson(path4.join(this.root, "active.json"), { id: task.id });
     await atomicJson(path4.join(this.root, "requests", task.request_id + ".json"), { task_id: task.id, turn: task.turn, operation, input });
-    const folder = path4.join(taskDir(this.root, task.id), `turn-${task.turn}`);
-    await fs3.mkdir(folder, { recursive: true, mode: 448 });
     const log = await fs3.open(path4.join(folder, "runner.log"), "a", 384);
-    const child = spawn(process.execPath, [fileURLToPath(new URL("./runner.mjs", import.meta.url)), this.root, task.id], {
+    const child = spawn(process.execPath, [runner, this.root, task.id], {
+      cwd: task.input.directory,
       detached: true,
       stdio: ["ignore", log.fd, log.fd],
       env: process.env
@@ -24192,8 +24207,16 @@ var Store = class {
       if (task.finished_at) return publicTask(task);
       await atomicJson(path4.join(taskDir(this.root, id), `turn-${task.turn}`, "cancel.json"), { requested_at: now() });
       if (!alive(task.runner_pid) && Date.now() - Date.parse(task.updated_at) >= 1e4) {
-        const log = await fs3.open(path4.join(taskDir(this.root, id), `turn-${task.turn}`, "recovery.log"), "a", 384);
-        const recovery = spawn(process.execPath, [fileURLToPath(new URL("./runner.mjs", import.meta.url)), this.root, id, "--recover"], { detached: true, stdio: ["ignore", log.fd, log.fd], env: process.env });
+        const folder = path4.join(taskDir(this.root, id), `turn-${task.turn}`);
+        let runner = path4.join(folder, "runner.mjs");
+        try {
+          await fs3.access(runner);
+        } catch (e) {
+          if (e.code !== "ENOENT") throw e;
+          runner = await this.stageRuntime(folder);
+        }
+        const log = await fs3.open(path4.join(folder, "recovery.log"), "a", 384);
+        const recovery = spawn(process.execPath, [runner, this.root, id, "--recover"], { cwd: task.input.directory, detached: true, stdio: ["ignore", log.fd, log.fd], env: process.env });
         const spawned = new Promise((resolve, reject) => {
           recovery.once("spawn", resolve);
           recovery.once("error", reject);
@@ -24225,6 +24248,7 @@ async function awaitTask(lookup2, seconds, signal) {
 
 // src/mcp.ts
 var store = new Store(stateRoot());
+await store.loadRuntime();
 var server = new McpServer({ name: "opencode-worker", version: VERSION }, {
   instructions: "Delegate bounded authorized work to local OpenCode using its selected OMO profile on OpenCode Go. All roles use their model maximum reasoning. The default profile delegates one level; single mode disables delegation. Contributor permits training on submitted prompts/completions. Keep Codex in charge of judgment and acceptance. Use stable request_id values; wait timeouts are not failures. completed means execution ended, not accepted. Never silently switch provider or overlap file ownership. Prefer run for foreground work; do not poll status during its pending request. Background start does not register a wakeup. run/start/followup spend the user's Go quota."
 });

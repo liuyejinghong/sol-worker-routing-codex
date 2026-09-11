@@ -59,6 +59,7 @@ const server = http.createServer(async (req, res) => {
         if (!text.includes('FAKE_CHILD_PENDING')) setTimeout(() => {
           const info = { id: 'child_result', role: 'assistant', parentID: childMessage, agent: 'Sisyphus-Junior', ...route, time: { completed: Date.now() }, finish: 'stop' };
           if (text.includes('FAKE_CHILD_WRONG_MODEL')) info.modelID = 'wrong-child-model';
+          if (text.includes('FAKE_CHILD_LENGTH')) info.finish = 'length';
           if (text.includes('FAKE_CHILD_ERROR')) info.error = { name: 'APIError' };
           sessions[childID].messages.push({ info, parts: [{ type: 'text', text: 'child result' }] });
           delete state[childID]; save();
@@ -71,7 +72,8 @@ const server = http.createServer(async (req, res) => {
         const info = { id: `a_${Date.now()}`, parentID: body.messageID, role: 'assistant', ...model, agent, time: { completed: Date.now() }, finish: 'stop' };
         if (text.includes('FAKE_MODEL_ERROR')) info.error = { name: 'APIError', data: { message: 'fixture rate limit exhausted', statusCode: 429 } };
         if (text.includes('FAKE_WRONG_MODEL')) info.modelID = 'unexpected-model';
-        session.messages.push({ info, parts: [{ type: 'text', text: 'fixture result' }] });
+        if (text.includes('FAKE_LENGTH')) { info.finish = 'length'; info.tokens = { reasoning: 32000 }; }
+        session.messages.push({ info, parts: /FAKE_LENGTH|FAKE_EMPTY/.test(text) ? [] : [{ type: 'text', text: 'fixture result' }] });
         delete state[id]; save();
       };
       if (text.includes('FAKE_STALL')) return;

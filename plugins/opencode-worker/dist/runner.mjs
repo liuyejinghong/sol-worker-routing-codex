@@ -4553,6 +4553,8 @@ function summarize(messages, messageId) {
       error: p.state?.error,
       exit_code: p.state?.metadata?.exit
     }))),
+    finish_reasons: assistants.map((m) => m.info.finish).filter((finish) => typeof finish === "string"),
+    tokens: assistants.map((m) => m.info.tokens ?? null),
     observed_states: [],
     acceptance: "pending"
   };
@@ -4578,7 +4580,7 @@ function terminalState(messages, messageId, runtimeState) {
       return tool.tool === "read" ? ["read", "edit", "write"].includes(later.tool) : ["edit", "write"].includes(later.tool);
     });
   });
-  if (unresolved) return "needs_attention";
+  if (unresolved || last.info.finish === "length" || !result.text.trim() && !result.tools.length) return "needs_attention";
   return "completed";
 }
 async function snapshot(task, target2) {
@@ -4676,6 +4678,16 @@ async function execute(root, id, recovery) {
       connection.url = log.match(/opencode server listening on (http:\/\/127\.0\.0\.1:\d+)/)?.[1] || "";
     }
     if (!connection) {
+      const log = await fs3.readFile(path4.join(folder, "runner.log"), "utf8").catch(() => "");
+      const missingEntry = /^Error: Cannot find module '[^'\r\n]*\/runner\.mjs'$/m.test(log);
+      if (task.submission === "not_sent" && !task.session_id && missingEntry) {
+        task.state = "failed";
+        task.reason = "Runner entry was missing; prompt was not sent";
+        task.finished_at = now();
+        await save();
+        await atomicJson(path4.join(folder, "result.json"), task);
+        return;
+      }
       task.state = "unknown";
       task.reason = "No service receipt: cannot prove orphaned execution stopped. Inspect runner.log before manual recovery.";
       await save();
@@ -4786,7 +4798,7 @@ Exact allowed shell commands: ${JSON.stringify(task.input.allowed_commands)}`,
       task.result = summarize(messages, task.message_id);
       task.result.observed_states = states.slice(-50);
       const rootRoute = task.routing.agents.sisyphus;
-      const rows = [{ session_id: task.session_id, role: "sisyphus", ...rootRoute, state: runtimeState, message_id: task.message_id, errors: task.result.errors, tools: task.result.tools }];
+      const rows = [{ session_id: task.session_id, role: "sisyphus", ...rootRoute, state: runtimeState, message_id: task.message_id, errors: task.result.errors, tools: task.result.tools, text: task.result.text, tokens: task.result.tokens, finish_reasons: task.result.finish_reasons }];
       if (!verifyIdentities(rows[0], task.result.identity)) throw new Error("Actual assistant identity differs from the requested worker");
       let pendingChildren = false, childErrors = false, latestChildCompletion = 0;
       for (const child of children) {
@@ -4800,7 +4812,7 @@ Exact allowed shell commands: ${JSON.stringify(task.input.allowed_commands)}`,
         const childMessages = currentMessages(await api(runtime.connection, `/session/${child.id}/message`), binding.startMessageID);
         const result = summarize(childMessages, binding.startMessageID);
         const terminal2 = terminalState(childMessages, binding.startMessageID, childState);
-        const row = { session_id: child.id, parent_id: child.parentID, role: binding.role, category: binding.category, ...binding.route, state: terminal2 ?? childState, message_id: binding.startMessageID, errors: result.errors, tools: result.tools, text: result.text, tokens: childMessages.filter((m) => m.info?.role === "assistant").map((m) => m.info.tokens) };
+        const row = { session_id: child.id, parent_id: child.parentID, role: binding.role, category: binding.category, ...binding.route, state: terminal2 ?? childState, message_id: binding.startMessageID, errors: result.errors, tools: result.tools, text: result.text, tokens: result.tokens, finish_reasons: result.finish_reasons };
         if (!verifyIdentities(row, result.identity)) throw new Error("Actual child identity differs from the dispatched route");
         rows.push(row);
         latestChildCompletion = Math.max(latestChildCompletion, ...childMessages.filter((m) => m.info?.role === "assistant").map((m) => m.info.time?.completed || 0));
@@ -4832,7 +4844,7 @@ Exact allowed shell commands: ${JSON.stringify(task.input.allowed_commands)}`,
       const waitingForSynthesis = !childErrors && latestChildCompletion > rootCompletion;
       if (terminal && !pendingChildren && !waitingForSynthesis) {
         final = childErrors ? "needs_attention" : terminal;
-        if (final === "needs_attention") task.reason = "Root or child errors require inspection";
+        if (final === "needs_attention") task.reason = "Root or child errors, truncated or empty output require inspection";
         break;
       }
       if (terminal && pendingChildren) task.reason = "Root replied; owned children are still unfinished";

@@ -53,7 +53,8 @@ test('idle and step completion are not task completion; prior turns are ignored'
   assert.equal(terminalState([assistant()], 'different-message', 'idle'), undefined);
   assert.equal(terminalState([assistant()], 'm1', 'busy'), undefined);
   assert.equal(terminalState([assistant()], 'm1', 'retry'), undefined);
-  assert.equal(terminalState([assistant()], 'm1', 'idle'), 'completed');
+  assert.equal(terminalState([assistant()], 'm1', 'idle'), 'needs_attention');
+  assert.equal(terminalState([assistant('stop', [{ type: 'text', text: 'done' }])], 'm1', 'idle'), 'completed');
 });
 test('tool errors and nonzero shell exits require attention even when assistant says done', () => {
   assert.equal(terminalState([assistant('stop', [{ type: 'tool', tool: 'write', state: { status: 'error', error: 'denied' } }])], 'm1', 'idle'), 'needs_attention');
@@ -98,4 +99,12 @@ test('a missing file read resolved by a later write does not block completion', 
   assert.equal(summarize([assistant('stop', parts)], 'm1').tools[0].status, 'error');
   parts[0].state.error = 'permission denied';
   assert.equal(terminalState([assistant('stop', parts)], 'm1', 'idle'), 'needs_attention');
+});
+
+test('length termination remains visible even with partial output; missing tokens are unknown', () => {
+  const messages = [assistant('length', [{ type: 'text', text: 'partial' }])];
+  assert.equal(terminalState(messages, 'm1', 'idle'), 'needs_attention');
+  assert.deepEqual(summarize(messages, 'm1').finish_reasons, ['length']);
+  assert.deepEqual(summarize(messages, 'm1').tokens, [null]);
+  assert.equal(terminalState([assistant('length')], 'm1', 'idle'), 'needs_attention');
 });

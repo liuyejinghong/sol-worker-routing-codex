@@ -9,15 +9,17 @@
 
 One model does not need to do everything. This workflow keeps requirements, task breakdown and final acceptance with Codex, while native subagents or external workers handle suitable implementation work.
 
-- **Divide work by task**: the main Agent owns critical decisions; workers handle defined development tasks.
+The main agent defaults to implementing core money, authorization, transactions, state machines and recovery. Workers handle peripheral work with frozen interfaces and independently checkable expectations; a detailed packet or separate directory alone does not justify delegation.
+
+- **Divide work by task**: the main Agent owns core decisions and implementation; workers handle independently verifiable peripheral tasks.
 - **Connect your tools**: the OpenCode Worker plugin lets Codex delegate directly to OpenCode.
 - **Use an existing subscription**: external tasks use OpenCode Go credits while the main Agent stays on your chosen Codex model.
 - **Avoid empty checks**: one `run` call handles dispatch and program-side waiting; Codex reviews the result when it returns.
 
 | Executor | Main responsibility |
 |---|---|
-| Codex main Agent | Understand requirements, choose an approach, integrate and verify |
-| Luna Max | Native subagents for bounded tasks |
+| Codex main Agent | Understand requirements, implement core paths, integrate and verify |
+| Luna Max | Native subagents for frozen peripheral tasks |
 | OpenCode / OMO | One external Worker routing work to DeepSeek and Muse |
 
 ## Codex × OpenCode

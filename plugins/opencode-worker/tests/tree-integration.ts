@@ -23,6 +23,9 @@ try {
   assert.equal(wrong.state, 'failed'); assert.match(wrong.reason, /child identity/);
   const bad = await call('run', { request_id: 'child-error', directory, task: 'FAKE_CHILD_ERROR', timeout_seconds: 30, wait_seconds: 10 });
   assert.equal(bad.state, 'needs_attention');
+  const truncated = await call('run', { request_id: 'child-length', directory, task: 'FAKE_CHILD_LENGTH', timeout_seconds: 30, wait_seconds: 10 });
+  assert.equal(truncated.state, 'needs_attention');
+  assert.deepEqual(truncated.result.sessions[1].finish_reasons, ['length']);
   const pending = await call('run', { request_id: 'pending-child', directory, task: 'FAKE_CHILD_PENDING', timeout_seconds: 30, wait_seconds: 2 });
   assert.equal(pending.finished, false);
   await call('cancel', { task_id: pending.task_id });

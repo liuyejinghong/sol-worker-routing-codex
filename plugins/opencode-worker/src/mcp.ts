@@ -10,7 +10,9 @@ import { Store } from './store.js';
 import { loadRouting } from './routing.js';
 import { awaitTask } from './await-task.js';
 
+// Keep executable bytes before a plugin update can remove this connection's cache directory.
 const store = new Store(stateRoot());
+await store.loadRuntime();
 const server = new McpServer({ name: 'opencode-worker', version: VERSION }, {
   instructions: 'Delegate bounded authorized work to local OpenCode using its selected OMO profile on OpenCode Go. All roles use their model maximum reasoning. The default profile delegates one level; single mode disables delegation. Contributor permits training on submitted prompts/completions. Keep Codex in charge of judgment and acceptance. Use stable request_id values; wait timeouts are not failures. completed means execution ended, not accepted. Never silently switch provider or overlap file ownership. Prefer run for foreground work; do not poll status during its pending request. Background start does not register a wakeup. run/start/followup spend the user\'s Go quota.',
 });

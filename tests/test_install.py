@@ -102,6 +102,21 @@ def main():
         root = Path(folder).resolve()
         directory = wrappers(root)
 
+        for disabled in (False, True):
+            home = root / ("previous-max-disabled" if disabled else "previous-max-enabled")
+            previous = "d058287492a01419922b17100f041abf1ac2d1eb"
+            for source, target in (
+                ("agents/luna-worker.toml", ".codex/agents/luna-worker.toml" + (".disabled" if disabled else "")),
+                ("skills/sol-worker-routing/SKILL.md", ".agents/skills/sol-worker-routing/SKILL.md"),
+            ):
+                file = home / target
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.write_bytes(subprocess.check_output(["git", "show", f"{previous}:{source}"], cwd=ROOT))
+            result = run(home)
+            assert result.returncode == 0, result.stdout + result.stderr
+            verify(home, (disabled,))
+            checks += 1
+
         def fault(action="KILL", at=1, journal=False):
             counter = root / "counter"
             counter.unlink(missing_ok=True)

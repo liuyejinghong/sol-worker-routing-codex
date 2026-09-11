@@ -177,6 +177,7 @@ installer_known_legacy_skill_digests=(
 # Exact installed Skill content from the previous repository release. This is
 # the only in-place upgrade source accepted for the current Skill path.
 installer_known_current_skill_digests=(
+  "8f1da484cf04205c500b98be7e47a3f70b960ae1f22d79fc64fa3c53910bd70e"
   "7c0e32d587611176f20d4c14063977940a30e519463aaf3d5dea38fffa7e15fb"
   "64c526105a470d1096e880ddf8db331456d32782d22ac8b391c3acb8eca718bb"
   "39c8ce653fefea972e6e38cb5210e1ec5db47fdaf94edf5c5e5e2e342a6379d4"
@@ -213,6 +214,7 @@ installer_known_deepseek_agent_digests=(
 # accepts its own listed content; append the prior digest before changing that
 # profile in a future release.
 installer_known_luna_agent_digests=(
+  "6a8af2eefa27a89e385e544d0be25371e3716b6a9ea01208eea75f5c76f543c3"
   "86021a3589f2676e8512d71a7aa16c9942d7109b6cc61b13dd37960abbeb2296"
   "260d2b6a9542c56960a8ab62fd2e6f2279c3c859bec04570234a3aba89ff6cfe"
   "efd1f746804ffc345536a40c8fde753e47ad4dd98dc5b766231be03beef6ad93"

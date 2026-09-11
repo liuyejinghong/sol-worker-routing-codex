@@ -1,6 +1,6 @@
 ---
 name: sol-worker-routing
-description: Route bounded work under the current main Agent, including Astra. Use Luna Max to implement a settled development packet; keep unresolved design and root-cause decisions with the main Agent. Use the optional OpenCode Worker plugin for bounded externally authorized OMO work when its tools are available.
+description: Route bounded work under the current main Agent, including Astra. Use Luna Max for frozen, independently verifiable peripheral work; keep core implementation, unresolved design and root-cause decisions with the main Agent. Use the optional OpenCode Worker plugin for bounded externally authorized OMO work when its tools are available.
 ---
 
 # Main Agent with bounded workers
@@ -44,10 +44,12 @@ Upgrades preserve the Luna Max lane's enabled/disabled state. Unknown content, a
 small direct task, unresolved root cause or design    -> main Agent
 tightly coupled work, costly-to-verify reasoning      -> main Agent
 small, well-defined change or evidence task           -> main Agent
-settled development packet for a feature or module   -> luna_worker
+frozen peripheral behavior with independent examples -> luna_worker
 ```
 
-Luna Max is the programmer for an independently testable feature or module whose critical behavior and design decisions are settled. It owns implementation and relevant tests within the development packet. It may choose local function structure, names, existing utilities, and necessary tests. A complete packet settles decisions that affect correctness without prescribing every line of code. A small task can use a concise message; a formal spec file is not mandatory.
+For both native and external workers, the main Agent defaults to directly implementing money and reservations, authorization boundaries, transactions, state machines, persistence/recovery, and core interfaces. A READY packet or separate directory does not make these semantics independent. Delegate only a narrow part whose inputs, exceptions and expected results are frozen and can be checked without reconstructing the core algorithm. A display that interprets unknown account state still contains core semantics. Controlled experiments on core delegation need a separate bounded evaluation, not a critical delivery.
+
+Luna Max implements independently verifiable peripheral work with frozen behavior and interfaces. It owns implementation and relevant tests within the development packet. It may choose local function structure, names, existing utilities, and necessary tests. A complete packet settles decisions that affect correctness without prescribing every line of code. A small task can use a concise message; a formal spec file is not mandatory.
 
 A specifically assigned hypothesis check or bounded review can also go to Max when its evidence is independently useful. It does not own open-ended root-cause investigation, architecture, or business decisions. The `max` effort setting is not proof that delegation improves quality.
 
@@ -59,7 +61,7 @@ When `opencode-worker` is installed and its MCP tools are callable in the curren
 
 Respect the tools and argument limits advertised by the current task. If run or the new wait arguments are not yet available, use the existing status/wait tools within their advertised limits to finish already-started work; refresh tool discovery in a new task before new foreground dispatch. Do not force unsupported arguments or replace the plugin with an ad hoc CLI.
 
-The 0.3.1 profile uses `opencode-go/deepseek-v4.1-flash` at `max` for coordination and hard roles, and `opencode-go/muse-spark-1.3-contributor` at `xhigh` for bulk roles. Use the exact model ID from the Provider catalog, not its family name (`deepseek-flash`). If the selected model is unavailable, report the mismatch; do not substitute V4 for V4.1 or create a different task profile to bypass it. Verify the installed tool version before using `model_mode: "omo"`; 0.2 remains single-model. Profile changes require explicit configuration and installation; repository development does not activate them. Respect the user's chosen executor. When none is specified, choose among the main Agent, qualified enabled Luna lanes and the available plugin by handoff cost and task fit. Do not interpret one integration test as proof that Muse always outperforms Luna. Contributor permits training on submitted inputs and outputs; existing external-use authorization applies without repeated confirmation.
+The 0.3.2 profile uses `opencode-go/deepseek-v4.1-flash` at `max` for coordination and hard roles, and `opencode-go/muse-spark-1.3-contributor` at `xhigh` for bulk roles. Use the exact model ID from the Provider catalog, not its family name (`deepseek-flash`). If the selected model is unavailable, report the mismatch; do not substitute V4 for V4.1 or create a different task profile to bypass it. Verify the installed tool version before using `model_mode: "omo"`; 0.2 remains single-model. Profile changes require explicit configuration and installation; repository development does not activate them. Respect the user's chosen executor. When none is specified, choose among the main Agent, qualified enabled Luna lanes and the available plugin by handoff cost and task fit. Do not interpret one integration test as proof that Muse always outperforms Luna. Contributor permits training on submitted inputs and outputs; existing external-use authorization applies without repeated confirmation.
 
 Default to the plugin's `run` tool, which dispatches and waits inside one call. Use `wait_seconds: 300`; if using Code Mode, set the enclosing exec pragma `yield_time_ms` to 360000 so it covers the wait window and handoff margin. Do not repeatedly wake the model for empty status checks or periodic progress messages. Pass the same bounded packet and ownership contract used for native workers, plus the assigned absolute directory, exact writable paths and trusted commands. Keep request IDs stable across retries. The plugin owns its OpenCode session, runtime and result collection; the Skill does not reproduce that logic through shell commands.
 
@@ -83,9 +85,11 @@ Goal and observable behavior:
 Settled design: affected module, state owner, interfaces and invariants, or `none`
 Scope: readable sources, owned writable paths, non-goals, behavior to preserve
 Source baseline / spec and relevant existing callers or tests:
-Acceptance: expected outcomes, relevant failure behavior, verification method
+Acceptance: independent input/expected-result examples, their business or source basis, actual entry point, relevant failure behavior
+Tools: file-tool purposes and exact authorized commands; do not append shell commands
 Decision boundary: implementation discretion and decisions to return to the main Agent
-Return: changes, actual verification, spec deviations, unresolved items and evidence
+Return: changes, actual verification commands/results, spec deviations, unresolved items and evidence
+Stop: return unsettled semantics, scope expansion or a repeated root cause to the main Agent
 ```
 
 Missing facts that can be resolved within the assigned read scope do not require a new packet. If the spec conflicts with actual code, behavior or interface meaning must change, ownership must move, or work exceeds the assigned scope, pause the dependent implementation and return the specific conflict, evidence, and viable options. Continue unaffected authorized work. The main Agent resolves the question where existing authority permits, rather than automatically forwarding a Worker blocker to the user.
@@ -111,9 +115,11 @@ Before adding a test, gate, dry run, review, or tool, answer:
 
 Use the smallest verification that establishes the requested behavior. Low-risk wording changes may need only direct inspection; behavior changes need the affected path checked; shared interface changes need relevant consumer coverage. Complete explicitly required checks. Add or repeat tests only for new changes, failures, or unresolved concrete concerns, not to meet a fixed check count.
 
-The main Agent checks business semantics, integration, and important failure paths against the agreed packet. Worker-authored tests alone are not sufficient evidence; use the spec and existing caller or consumer behavior as independent anchors. Preserve useful evidence and correct parts of the patch when something fails. A small omission can go back for correction; an incorrect root cause, business interpretation, or interface assumption returns to the main Agent for diagnosis and replanning. Do not coach a Worker through repeated speculative rewrites. Repeated substantial rework on the same task type is a reason to keep that work with the main Agent, not to grow the packet into a rulebook.
+The main Agent checks business semantics, integration, and important failure paths against the agreed packet. Worker-authored tests alone are not sufficient evidence. Before core work begins, the main Agent sets a few expected outcomes from business facts, not implementation formulas. Use those examples through the public entry point and real storage when ordering or persistence matters. For fault injection, assert the intermediate state and actual side effects at the fault, then check recovery and absence of duplicate effects; a crash label or exit code is not proof. A second model rerunning the same tests is not independent evidence. Workers may add examples but must not rewrite the oracle to match their implementation; a disputed oracle returns to its business basis. Preserve useful evidence and correct parts of the patch when something fails. A small omission can go back for correction; an incorrect root cause, business interpretation, or interface assumption returns to the main Agent for diagnosis and replanning. After a first failure, give the reproducer, expected/actual difference, cause evidence and repair scope. If the same root cause fails again, or repair requires rebuilding core architecture, the main Agent defaults to taking over that core part after the entire previous writer tree is confirmed stopped. Judge new independent defects separately; preserve valid work. Do not coach a Worker through repeated speculative rewrites. Repeated substantial rework on the same task type is a reason to keep that work with the main Agent, not to grow the packet into a rulebook.
 
 Do not create a standing reviewer lane. When an explicitly requested fresh-context review could change delivery, its terminal verdict is `ship`, `fix-first`, or `rethink`. Any source change invalidates that verdict. `ship` never authorizes commit, push, merge, tag, release, deployment, account, or another external change.
+
+For completed delegations, reuse the existing task record: task category, first-pass acceptance, rework causes (code / requirements / tools), main-Agent preparation/review/repair effort, elapsed dispatch-to-acceptance time, and verifiable root/child usage. Unknown usage stays unknown. Waiting is not human work time. Judge total preparation, execution, review, rework and integration, not lines produced; one project is not a model ranking.
 
 ## 6. Parallelism and ownership
 

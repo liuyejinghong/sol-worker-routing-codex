@@ -17,7 +17,7 @@ If the call goes through Code Mode `functions.exec`, put `// @exec: {"yield_time
 
 The waiting window is finite. `wait_expired=true` and `finished=false` mean execution may still be running. Repeat run with the same request_id and identical task parameters to await that existing task, or use wait. Never create a new ID as a retry of an uncertain submission. Do not end the main response with an unfinished task unless another supported followup is actually bound or the user has chosen manual followup.
 
-`completed` means the worker stopped, not that Codex accepted its work. Inspect real artifacts, actual checks, tool errors and scope before delivery. Do not rely on the worker's final prose alone.
+`completed` means the worker stopped, not that Codex accepted its work. Inspect real artifacts, actual checks, tool errors and scope before delivery. Do not rely on the worker's final prose alone. Inspect finish_reasons, root/child tokens (null means unavailable), text/tools and changed_files. Length-truncated or empty output requires diagnosis; preserve the requested model and effort, then narrow the next deliverable instead of blindly repeating the same large prompt.
 
 For a correction, call followup with a new request_id and `wait_seconds: 300`. It keeps the OpenCode session, original permissions and routing. A changed profile requires explicit handling rather than silently rebinding an existing task. Old request IDs refer to their own archived turn, not a newer correction.
 
@@ -25,7 +25,7 @@ For a correction, call followup with a new request_id and `wait_seconds: 300`. I
 
 Use start only for explicitly intended background/manual operation. It returns immediately and does not register a completion wakeup. An MCP notification or a file on disk is not proof that an ended Codex conversation will resume.
 
-Cancelling an RPC wait stops waiting, not the worker. Use cancel when the user wants execution stopped, then confirm finished=true before transferring file ownership. Preserve edits. An unknown unfinished task requires recovery, not another writer. A wait timeout alone does not justify cancelling or duplicating work.
+Cancelling an RPC wait stops waiting, not the worker. Use cancel when the user wants execution stopped, then confirm finished=true before transferring file ownership. Preserve edits. An unknown unfinished task requires recovery, not another writer. Use cancel to reconcile the recorded task: a proven missing runner entry with not_sent and no session/service receipt can finish as failed; missing evidence or an attempted submission stays unknown. Do not manually rewrite task state. Each turn retains its runner and guard alongside its artifacts so plugin cache cleanup cannot remove them; an already-connected older plugin needs reconnection to gain this behavior. A wait timeout alone does not justify cancelling or duplicating work.
 
 The plugin supports one active task. It runs Sisyphus with at most two direct child tasks. Only configured categories and read-only specialists may be delegated; category tasks are foreground, with one writer at a time. No further child delegation, arbitrary skills, external tools or Team Mode. Wait for all children and the root's synthesis before completion. `model_mode=single` disables delegation and uses the primary model for all calls. Read-only mode has no shell. OpenCode does not inherit Codex's sandbox or context; trusted exact commands run under the user's local account and are not an OS filesystem sandbox.
 

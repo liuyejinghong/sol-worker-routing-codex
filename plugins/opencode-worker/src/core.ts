@@ -6,7 +6,7 @@ import { z } from 'zod';
 import type { Routing } from './routing.js';
 
 export const PROVIDER = 'opencode-go';
-export const VERSION = '0.3.1';
+export const VERSION = '0.3.2';
 export const requestId = z.string().regex(/^[A-Za-z0-9._-]{1,100}$/);
 export const taskId = z.string().uuid();
 export const startSchema = z.object({
@@ -27,10 +27,10 @@ export interface Identity { agent: string; providerID: string; modelID: string; 
 export interface ToolResult { tool: string; status: string; input?: unknown; output?: string; error?: string; exit_code?: number }
 export interface Result {
   text: string; tools: ToolResult[]; errors: unknown[]; identity: Partial<Identity>[];
-  sessions?: SessionResult[];
+  sessions?: SessionResult[]; finish_reasons?: string[]; tokens?: unknown[];
   observed_states: string[]; acceptance: 'pending'; changed_files?: string[]; diff_path?: string;
 }
-export interface SessionResult { text?: string; session_id: string; parent_id?: string; role: string; category?: string; providerID: string; modelID: string; reasoning: string; state: string; message_id?: string; tokens?: unknown; errors: unknown[]; tools: ToolResult[] }
+export interface SessionResult { text?: string; session_id: string; parent_id?: string; role: string; category?: string; providerID: string; modelID: string; reasoning: string; state: string; message_id?: string; tokens?: unknown; finish_reasons?: string[]; errors: unknown[]; tools: ToolResult[] }
 export interface Task {
   routing?: Routing;
   id: string; input: Start; state: State; created_at: string; updated_at: string;
