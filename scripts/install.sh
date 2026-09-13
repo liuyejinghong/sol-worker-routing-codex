@@ -177,6 +177,7 @@ installer_known_legacy_skill_digests=(
 # Exact installed Skill content from the previous repository release. This is
 # the only in-place upgrade source accepted for the current Skill path.
 installer_known_current_skill_digests=(
+  "87d53f7effaa0c77a5c85d9c9753e229ed225d8b26d3a2d630a23ea0e77954f0"
   "8f1da484cf04205c500b98be7e47a3f70b960ae1f22d79fc64fa3c53910bd70e"
   "7c0e32d587611176f20d4c14063977940a30e519463aaf3d5dea38fffa7e15fb"
   "64c526105a470d1096e880ddf8db331456d32782d22ac8b391c3acb8eca718bb"

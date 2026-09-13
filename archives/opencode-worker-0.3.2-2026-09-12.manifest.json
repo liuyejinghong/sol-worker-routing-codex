@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "plugin_version": "0.3.2+codex.20260911064656",
+  "source_git_head": "6d406e4254d6f60336b6290a4743da6b91b10920",
+  "source_path": "plugins/opencode-worker",
+  "excluded": [
+    "node_modules",
+    ".git"
+  ],
+  "archive": "opencode-worker-0.3.2-2026-09-12.tar.gz",
+  "archive_sha256": "ec6324313ba01d7fe342095eb5a16ab9d209d25e35a217c1d425cbad989bd010",
+  "file_count": 38,
+  "files": [
+    {
+      "path": ".codex-plugin/plugin.json",
+      "bytes": 832,
+      "sha256": "c8b2bb00ead6b60e33826275ea5bb019e8121cadea78c627f9fea63385409940"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 30,
+      "sha256": "2f9aebd7a15d0a9e62d69bff1c888bb93ec5eab506a9db272de622defda4735c"
+    },
+    {
+      "path": ".mcp.json",
+      "bytes": 567,
+      "sha256": "8219a6cf7e9d58462f374284ae7ddb6afb8969129110e208ac9f1dc5ae71e0d2"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6156,
+      "sha256": "03697e24398ad6de0c14f9fcc1dcc70d987eb96b2d96e2ff5e8c0fcd2758e855"
+    },
+    {
+      "path": "config/omo-profile.jsonc",
+      "bytes": 5187,
+      "sha256": "d27c4aea9369c333ae93f34d6ad208a3940be595ae18b55ac45f955c776983a3"
+    },
+    {
+      "path": "dist/guard.mjs",
+      "bytes": 149682,
+      "sha256": "5c38548b71d627bdbe16efa4411709c1f4879922bcac025735ca3a3039f19f94"
+    },
+    {
+      "path": "dist/mcp.mjs",
+      "bytes": 843455,
+      "sha256": "836075854899baed885962488c12de9b5e33e5b79a9f80724ec0eb2ca0d1b8e5"
+    },
+    {
+      "path": "dist/runner.mjs",
+      "bytes": 163687,
+      "sha256": "b0345e4279a52f4df0d9656790fd991870ff66e1bb1c1c86c06083450e06e4e0"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 76041,
+      "sha256": "35cbac336fe37138b3523a649091f86a2fb117ed5386c390c5097463d453de74"
+    },
+    {
+      "path": "package.json",
+      "bytes": 831,
+      "sha256": "ee3f786f6d714174079617b287bf8045154fae6d9be5c2ea2768ba3c12f74546"
+    },
+    {
+      "path": "scripts/build.mjs",
+      "bytes": 395,
+      "sha256": "01d4ba74cc9203e035a5db9cb68124089ee30d2467ea09b1779151ca799306e9"
+    },
+    {
+      "path": "scripts/launch.sh",
+      "bytes": 386,
+      "sha256": "9ff4e571b72699bf5b035132591d43425b8d2a8e6b29ffb3f89a8deb99849841"
+    },
+    {
+      "path": "skills/opencode-worker/SKILL.md",
+      "bytes": 5365,
+      "sha256": "f256dcbf48ff780606f5b771ffea53569e41699750ce794523214c3fc02cf44c"
+    },
+    {
+      "path": "src/await-task.ts",
+      "bytes": 638,
+      "sha256": "bb41d645c74b1280a9250ad3e733761d5ef3f5fbd774607c26be90e97e9a8018"
+    },
+    {
+      "path": "src/core.ts",
+      "bytes": 8875,
+      "sha256": "d4de8f20e884b463145d14e6c2f8a84770d147301f36378fcfd8478d7eb16268"
+    },
+    {
+      "path": "src/guard-policy.ts",
+      "bytes": 2307,
+      "sha256": "dcbac2a55f08cfd376102c71ef94e173e0f31f593be84f626891afed334830ea"
+    },
+    {
+      "path": "src/guard.ts",
+      "bytes": 2718,
+      "sha256": "637770091337966df9e26b4bf9acee88024e82fc71172dee27d1a67157aa688c"
+    },
+    {
+      "path": "src/mcp.ts",
+      "bytes": 7692,
+      "sha256": "7c002f1c37418eb523bc6adf3c4f679e903ad58431d056c20c4611d36bc782b8"
+    },
+    {
+      "path": "src/routing.ts",
+      "bytes": 5012,
+      "sha256": "e6b4acbc97718c2a1b53c39ff93eadaae7bfb8e69807e7845c64bc4777a00059"
+    },
+    {
+      "path": "src/runner.ts",
+      "bytes": 18890,
+      "sha256": "8aac0df3479f1ce88cba27e360449c3ed198314b543ba8f0120211169d57ce6e"
+    },
+    {
+      "path": "src/runtime.ts",
+      "bytes": 9416,
+      "sha256": "1950781c34547423160f519866dcb93fd6b00c7fca14d1c11801647197e3cb52"
+    },
+    {
+      "path": "src/store.ts",
+      "bytes": 7425,
+      "sha256": "9ebe6880453777881d12fe76752256dd1f6ed00006b01e988028b1e3cdf0327e"
+    },
+    {
+      "path": "src/tree-guard.ts",
+      "bytes": 11703,
+      "sha256": "4f742f741546602e1dfa865446a0818b526ebcfa542de5f596da7dac740a766b"
+    },
+    {
+      "path": "src/tree.ts",
+      "bytes": 1864,
+      "sha256": "959b767b50e7b711f2ef83fcb3d9908be8ca3ac04057b3a474ab7019a00cf4ab"
+    },
+    {
+      "path": "tests/await-task.test.ts",
+      "bytes": 1631,
+      "sha256": "d7a0e5344902b16f1fd2ed645de6396938d1016946521ad6337330a809512596"
+    },
+    {
+      "path": "tests/contracts.test.ts",
+      "bytes": 7570,
+      "sha256": "c666e3e1eb93ac5832c6a11a56d9337499e7f68856dbc55fdcda1bdac8319cbe"
+    },
+    {
+      "path": "tests/fake-opencode.mjs",
+      "bytes": 6618,
+      "sha256": "7754ee952341cb23e8cde21a008de51948c58a69d011cf813867f609310fdcf5"
+    },
+    {
+      "path": "tests/go-observer.ts",
+      "bytes": 2773,
+      "sha256": "c27d4c94e0cc474866bfb3163f47f691042cdea59521f45329d44a203937bcc5"
+    },
+    {
+      "path": "tests/lifecycle.test.ts",
+      "bytes": 7393,
+      "sha256": "61a219d4264c83da96f431eb02ac655d63def835f8847921bd1a38c1c45c720a"
+    },
+    {
+      "path": "tests/live-omo.ts",
+      "bytes": 7499,
+      "sha256": "5ac821b83b0f506faf09aec07a5d0e3660d7a2e330f00c78d4d381b99d461ce0"
+    },
+    {
+      "path": "tests/live-shell-cancel.ts",
+      "bytes": 3190,
+      "sha256": "06dfb7f209ec58d932708e2a58674a479e401c8a0e2cbda90362115643dbbb69"
+    },
+    {
+      "path": "tests/live-tree-safety.ts",
+      "bytes": 5916,
+      "sha256": "dcb094f521796304812714246cbc2f1afa82c4762a246b1857efec12a58c55d0"
+    },
+    {
+      "path": "tests/live.ts",
+      "bytes": 7274,
+      "sha256": "d44baffc29496f748dea17db6de1c990fb2f8b9bd7581b40f1a59877ddbafe57"
+    },
+    {
+      "path": "tests/profile-fixture.ts",
+      "bytes": 422,
+      "sha256": "563efbce059c12343cbb0df417722a550d3caaef11578f6ef971d4665fc43719"
+    },
+    {
+      "path": "tests/routing-tree.test.ts",
+      "bytes": 10109,
+      "sha256": "19507560132ae5e0c5c983b9e35e2e625ea20d3d420710f53aa2b1b947f286dd"
+    },
+    {
+      "path": "tests/run-integration.ts",
+      "bytes": 3039,
+      "sha256": "4eaeebb636d45ac3cc27ca30ef7b76fd8ad76e70216ba498a553e73e2881f434"
+    },
+    {
+      "path": "tests/tree-integration.ts",
+      "bytes": 3303,
+      "sha256": "2faf32bef3be00c9f793bc9f429674fc8737819c8f396d04ef4f0c7ed63ecda5"
+    },
+    {
+      "path": "tsconfig.json",
+      "bytes": 220,
+      "sha256": "c6d3ad02bd9d0f1ce715166306a45fc22a75cfeb291592176479822c53f02c31"
+    }
+  ],
+  "verification": "Every tar member read back and matched to its source SHA256; source checked again after archiving."
+}

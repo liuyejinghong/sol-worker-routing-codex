@@ -1,6 +1,6 @@
 ---
 name: sol-worker-routing
-description: Route bounded work under the current main Agent, including Astra. Use Luna Max for frozen, independently verifiable peripheral work; keep core implementation, unresolved design and root-cause decisions with the main Agent. Use the optional OpenCode Worker plugin for bounded externally authorized OMO work when its tools are available.
+description: Route bounded work under the current main Agent, including Astra. Choose models by task capability and total completion cost; Luna Max is the lowest-priority fallback. Keep requirements, integration and final acceptance with the main Agent. Use Agent-Bridge for external local agents, preserving their native workflow and capabilities.
 ---
 
 # Main Agent with bounded workers
@@ -9,7 +9,7 @@ The current main Agent owns requirements, root-cause analysis, architecture, dev
 
 User instructions and existing authorization take precedence over this routing guidance within the applicable permission boundary. Continue authorized work through ordinary implementation choices and unknown facts that can be investigated in scope. Ask the user only for a missing decision that materially changes the objective or authorization, while continuing work that does not depend on that decision.
 
-The only managed worker is `luna_worker` (Luna Max). Luna Medium (`luna_medium_worker`) is retired; keep its former small tasks with the main Agent. Retired `spark_scout`, `deepseek_worker`, and `deepseek_pro_worker` roles remain outside this workflow. Their historical Provider limitation and retirement contract are recorded in the repository's `AGENTS.md`; do not revive their native-role workaround or add a provider-protocol bridge. The separately installed, user-authorized OpenCode Worker plugin is an optional external execution channel; it does not restore those retired roles.
+The only managed worker is `luna_worker` (Luna Max). Luna Medium (`luna_medium_worker`) is retired; keep its former small tasks with the main Agent. Retired `spark_scout`, `deepseek_worker`, and `deepseek_pro_worker` roles remain outside this workflow. Their historical Provider limitation and retirement contract are recorded in the repository's `AGENTS.md`; do not revive their native-role workaround or add a provider-protocol bridge. Agent-Bridge is the selected connector for external local agents; it does not restore those retired native roles. The native Luna restrictions and packet template below govern Luna, not Agent-Bridge workers. External workers follow the Agent-Bridge skill and the user's task instructions.
 
 ## 0. Whole-agent anti-overdefense (HERO-derived)
 
@@ -44,34 +44,29 @@ Upgrades preserve the Luna Max lane's enabled/disabled state. Unknown content, a
 small direct task, unresolved root cause or design    -> main Agent
 tightly coupled work, costly-to-verify reasoning      -> main Agent
 small, well-defined change or evidence task           -> main Agent
-frozen peripheral behavior with independent examples -> luna_worker
+delegable work                                      -> task/capability/API-cost policy
+Luna Max                                            -> lowest-priority fallback or explicit user choice
 ```
 
-For both native and external workers, the main Agent defaults to directly implementing money and reservations, authorization boundaries, transactions, state machines, persistence/recovery, and core interfaces. A READY packet or separate directory does not make these semantics independent. Delegate only a narrow part whose inputs, exceptions and expected results are frozen and can be checked without reconstructing the core algorithm. A display that interprets unknown account state still contains core semantics. Controlled experiments on core delegation need a separate bounded evaluation, not a critical delivery.
+For native Luna workers, the main Agent defaults to directly implementing money and reservations, authorization boundaries, transactions, state machines, persistence/recovery, and core interfaces. A READY packet or separate directory does not make these semantics independent. Delegate only a narrow part whose inputs, exceptions and expected results are frozen and can be checked without reconstructing the core algorithm. A display that interprets unknown account state still contains core semantics. Controlled experiments on core delegation need a separate bounded evaluation, not a critical delivery.
 
-Luna Max implements independently verifiable peripheral work with frozen behavior and interfaces. It owns implementation and relevant tests within the development packet. It may choose local function structure, names, existing utilities, and necessary tests. A complete packet settles decisions that affect correctness without prescribing every line of code. A small task can use a concise message; a formal spec file is not mandatory.
+Luna Max is the lowest-priority option, not the default for peripheral work. Use it when explicitly requested or when other suitable executors are unavailable. When selected, it implements independently verifiable peripheral work with frozen behavior and interfaces. It owns implementation and relevant tests within the development packet. It may choose local function structure, names, existing utilities, and necessary tests. A complete packet settles decisions that affect correctness without prescribing every line of code. A small task can use a concise message; a formal spec file is not mandatory.
 
 A specifically assigned hypothesis check or bounded review can also go to Max when its evidence is independently useful. It does not own open-ended root-cause investigation, architecture, or business decisions. The `max` effort setting is not proof that delegation improves quality.
 
 Do not duplicate packets to make Workers vote. Separate a hypothesis check from implementation only when its result changes the design; do not turn that into a mandatory two-pass workflow. Shared mutable state, ordered dependencies, and overlapping writes remain sequential.
 
-## 2a. Optional OpenCode Worker plugin
+## 2a. External local agents through Agent-Bridge
 
-When `opencode-worker` is installed and its MCP tools are callable in the current task, it is a candidate for bounded work explicitly allowed to use external execution. Discover its tools and consult `status` when needed; do not infer readiness from files on disk or repeatedly spend quota on empty probes. Dependency availability, actual runtime configuration and recent model success are different facts. `run` checks the runtime before dispatch; normal work does not need a preliminary status probe.
+Use the installed `agent-bridge` skill and callable Agent-Bridge MCP tools for external local agents. The aim is to combine available agents and resources while preserving their native tools, permissions and workflows. OpenCode and ZCode are currently verified workers, not a permanent limit on supported products.
 
-Respect the tools and argument limits advertised by the current task. If run or the new wait arguments are not yet available, use the existing status/wait tools within their advertised limits to finish already-started work; refresh tool discovery in a new task before new foreground dispatch. Do not force unsupported arguments or replace the plugin with an ad hoc CLI.
+Use the task/capability/cost baseline in Agent Bench routing/model-policy.json and the effective Agent-Bridge coordinator.instructions. Preserve the historical DeepSeek V4.1 Flash hard-work and Muse Spark 1.3 bulk-work split as a revisable baseline; GLM-5.3 and GLM-5.3-Flash are candidates selected using comparable task results. Do not replace this with the upstream Grok/Kimi/tool-priority order. Use correctness, final quality, official API-equivalent completion cost, elapsed time and observed rework together; a cheap token rate is not proof of cheap completed work. Luna Max has the lowest coordinator-selection priority. Choose an available worker by task fit, user preference and resource availability. Give it the task, project directory and expected outcome in ordinary language. Do not carry over the retired OpenCode Worker's exact command whitelist, per-file permission machinery, single-task limit or fixed OMO role mapping. Normal authorization and project requirements still apply.
 
-The 0.3.2 profile uses `opencode-go/deepseek-v4.1-flash` at `max` for coordination and hard roles, and `opencode-go/muse-spark-1.3-contributor` at `xhigh` for bulk roles. Use the exact model ID from the Provider catalog, not its family name (`deepseek-flash`). If the selected model is unavailable, report the mismatch; do not substitute V4 for V4.1 or create a different task profile to bypass it. Verify the installed tool version before using `model_mode: "omo"`; 0.2 remains single-model. Profile changes require explicit configuration and installation; repository development does not activate them. Respect the user's chosen executor. When none is specified, choose among the main Agent, qualified enabled Luna lanes and the available plugin by handoff cost and task fit. Do not interpret one integration test as proof that Muse always outperforms Luna. Contributor permits training on submitted inputs and outputs; existing external-use authorization applies without repeated confirmation.
+Keep the chosen session when continuing a task, inspect the actual files and checks before acceptance, and distinguish waiting from execution. After a bridge restart, inspect saved sessions and results before resubmitting an uncertain request: the installed Agent Bench patch preserves new request bindings across restarts, while missing or pruned task records require inspection rather than resubmission. Respect explicitly requested model identities and report any mapped or unavailable effort rather than pretending it was applied unchanged.
 
-Default to the plugin's `run` tool, which dispatches and waits inside one call. Use `wait_seconds: 300`; if using Code Mode, set the enclosing exec pragma `yield_time_ms` to 360000 so it covers the wait window and handoff margin. Do not repeatedly wake the model for empty status checks or periodic progress messages. Pass the same bounded packet and ownership contract used for native workers, plus the assigned absolute directory, exact writable paths and trusted commands. Keep request IDs stable across retries. The plugin owns its OpenCode session, runtime and result collection; the Skill does not reproduce that logic through shell commands.
+The locally configured `zcode` ACP worker has been verified with GLM-5.3 and GLM-5.3-Flash. This Bridge version does not apply `dispatch_task.model` or `effort` to custom ACP workers. Start its session with `/model GLM-5.3` or `/model GLM-5.3-Flash`, read the switch confirmation, then dispatch the task on the same session_id. Do not substitute OpenCode models for a requested ZCode run. Its generic discovery version is the Node entrypoint version, not the ZCode version.
 
-Only one external task may run at a time. `finished=false`, including an unknown or cancelling task, retains file ownership. `completed` means execution ended, not acceptance. Inspect real artifacts, tool errors and relevant verification. Use followup with `wait_seconds: 300` for corrections within the same session and permissions. When cancelled or failed, recover changes before choosing another executor; never start a replacement writer merely because a wait timed out.
-
-A foreground window can expire. If `wait_expired=true` and `finished=false`, keep ownership and repeat the identical run request or wait for that task; do not invent a new request ID. RPC interruption stops waiting, not execution. Use cancel only when execution should stop. Do not end the main response with unfinished work unless supported host followup is actually bound or the user explicitly chose manual followup. Background start remains available for that explicit mode but does not register any completion wakeup. This workflow keeps the current turn pending; it does not claim to wake an already-ended conversation.
-
-In profile mode, the plugin runs one OMO primary role with at most two direct children, no nested delegation or fallback, and one writer across the tree. Read-only specialists remain read-only. Inspect child receipts as well as the root result; cancellation applies to the full tree. Single mode disables delegation. Its tools and permissions do not inherit Codex's sandbox. Allow only task-specific trusted foreground commands; read-only mode has no shell. Native Luna enabled/disabled state remains independent of the plugin.
-
-If the plugin is absent, unavailable, or outside the user's authorization, keep the original routing choices. An explicitly requested Muse task must not silently switch to Luna, another Go model, Zen or a different paid Provider. Report the limitation and retain useful work.
+The old `opencode-worker` plugin is retired and uninstalled; its source and tests are archived in codex-workflow/archives/opencode-worker-0.3.2-2026-09-12.tar.gz. Do not use it as an automatic fallback. Native Luna enable/disable state remains separate.
 
 ## 3. Route receipt and Worker packet
 
@@ -80,7 +75,7 @@ Before a non-obvious dispatch, briefly identify the executor, qualified lane, re
 For development, reuse an existing spec where available and supply enough context for the Worker to act independently:
 
 ```text
-Worker and mode: luna_worker | opencode-worker; read-only | write
+Worker and mode: luna_worker; read-only | write
 Goal and observable behavior:
 Settled design: affected module, state owner, interfaces and invariants, or `none`
 Scope: readable sources, owned writable paths, non-goals, behavior to preserve
@@ -139,6 +134,6 @@ When this workflow is installed or a Luna lane is unavailable, the main Agent ow
 2. The installer manages the Luna Max profile and this Skill. It preserves lane states and removes only exact known retired profiles; it never edits Providers, credentials, or model catalogs.
 3. After installation or a state change, ask for a new task so Agent discovery reloads.
 4. In that new task, probe each newly enabled Luna lane with a bounded task whose answer and acceptance are obvious. Inspect the named child lifecycle and result; a profile on disk is not route proof.
-5. If a lane fails, diagnose the actual native route. Do not revive retired Spark or DeepSeek roles or add a provider-protocol bridge as a native-route repair. The optional OpenCode Worker plugin has its own installation and validation; it is not installed by this script.
+5. If a lane fails, diagnose the actual native route. Do not revive retired Spark or DeepSeek roles or add a provider-protocol bridge as a native-route repair. Agent-Bridge has its own installation and validation; it is not installed by this script.
 
 Outside repository installation, configuration mutation still requires explicit user authorization. Code or test completion does not authorize commit, push, merge, tag, release, deployment, or another external mutation.
