@@ -1,6 +1,6 @@
 name = "luna_worker"
 description = "Luna Max programmer for frozen peripheral work with independent acceptance examples."
-model = "gpt-5.6-luna"
+model = "gpt-6-luna"
 model_reasoning_effort = "max"
 sandbox_mode = "workspace-write"
 
